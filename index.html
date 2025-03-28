@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест на совместимость игроков</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e2e;
+        }
+        
+        h1, h2 {
+            color: #ffffff;
+            text-align: center;
+        }
+        
+        .question {
+            background-color: #2a2a3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option {
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #3a3a4a;
+            color: #ffffff;
+        }
+        
+        .option:hover {
+            background-color: #4a4a5a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .option.selected {
+            background-color: #28a745;
+            color: white;
+            border-color: #218838;
+            transform: scale(1.02);
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            background-color: #0069d9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #result {
+            display: none;
+            background-color: #2a2a3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #444;
+            border-radius: 10px;
+            margin: 20px 0;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .progress-text {
+            position: absolute;
+            right: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 2;
+        }
+        
+        .profile-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #3a3a4a;
+            border-radius: 8px;
+        }
+        
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .trait-name {
+            font-weight: bold;
+            width: 40%;
+        }
+        
+        .trait-bar {
+            width: 55%;
+            height: 15px;
+            background-color: #444;
+            border-radius: 7px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .trait-fill {
+            height: 100%;
+            border-radius: 7px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: 0%;
+            transition: width 0.8s ease-out;
+        }
+        
+        .trait-percent {
+            position: absolute;
+            right: 5px;
+            font-size: 11px;
+            color: white;
+            z-index: 2;
+        }
+        
+        .compatibility-level {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #28a745;
+            text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        .reset-button {
+            background-color: #dc3545;
+            margin-top: 30px;
+        }
+        
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(40, 167, 69, 0.8); }
+            100% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+        }
+        
+        .completion-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .question {
+                padding: 15px;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .trait-name {
+                width: 50%;
+                font-size: 14px;
+            }
+            
+            .trait-bar {
+                width: 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест на совместимость игроков</h1>
+    <p>Ответьте на вопросы, чтобы определить ваш игровой стиль и совместимость с другими игроками.</p>
+    
+    <div id="quiz-container">
+        <!-- Вопросы будут добавляться динамически -->
+    </div>
+    
+    <div class="completion-info" id="completion-info">
+        Ответьте на все вопросы, чтобы увидеть результат
+    </div>
+    
+    <button id="submit-btn" disabled>Получить результат</button>
+    
+    <div id="result">
+        <h2>Ваш профиль игрока</h2>
+        
+        <div class="compatibility-level" id="compatibility-level"></div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="compatibility-bar"></div>
+            <span class="progress-text" id="progress-text">0%</span>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Характеристики:</h3>
+            <div id="traits-container"></div>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Описание профиля:</h3>
+            <p id="profile-description"></p>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Советы по взаимодействию:</h3>
+            <p id="interaction-tips"></p>
+        </div>
+        
+        <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Как вы реагируете на проигрыш?",
+                options: [
+                    "Спокойно анализирую ошибки",
+                    "Лёгкое недовольство",
+                    "Сильно расстраиваюсь",
+                    "Злюсь и обвиняю команду"
+                ],
+                trait: "temperament",
+                weights: [100, 70, 30, 0]
+            },
+            {
+                question: "Вы предпочитаете играть:",
+                options: [
+                    "Всегда на команду",
+                    "В основном на команду",
+                    "Чаще на себя",
+                    "Только на себя"
+                ],
+                trait: "teamSpirit",
+                weights: [100, 75, 30, 0]
+            },
+            {
+                question: "Как часто вы общаетесь в голосовом чате?",
+                options: [
+                    "Очень активно",
+                    "В меру",
+                    "Редко",
+                    "Вообще не общаюсь"
+                ],
+                trait: "communication",
+                weights: [90, 80, 40, 20]
+            },
+            {
+                question: "Как вы относитесь к ошибкам напарников?",
+                options: [
+                    "Спокойно, все ошибаются",
+                    "Могу сделать замечание",
+                    "Злюсь, но молчу",
+                    "Ругаюсь и обвиняю"
+                ],
+                trait: "tolerance",
+                weights: [100, 60, 30, 0]
+            },
+            {
+                question: "Как вы обучаетесь в играх?",
+                options: [
+                    "Быстро изучаю и внедряю",
+                    "Учусь, но не сразу",
+                    "Долго адаптируюсь",
+                    "Не хочу учиться"
+                ],
+                trait: "learning",
+                weights: [100, 70, 30, 0]
+            },
+            {
+                question: "Какую роль в команде предпочитаете?",
+                options: [
+                    "Поддержка",
+                    "Тактик",
+                    "Боец",
+                    "Одиночка"
+                ],
+                trait: "teamRole",
+                weights: [90, 80, 70, 30]
+            },
+            {
+                question: "Как относитесь к долгим игровым сессиям?",
+                options: [
+                    "Люблю марафоны",
+                    "Могу играть долго",
+                    "Предпочитаю короткие сессии",
+                    "Быстро устаю"
+                ],
+                trait: "stamina",
+                weights: [90, 80, 50, 30]
+            },
+            {
+                question: "Как реагируете на токсичных игроков?",
+                options: [
+                    "Игнорирую",
+                    "Отвечаю спокойно",
+                    "Начинаю спорить",
+                    "Разжигаю конфликт"
+                ],
+                trait: "humor",
+                weights: [100, 80, 40, 0]
+            },
+            {
+                question: "Как относитесь к игре по стратегии?",
+                options: [
+                    "Обожаю тактику",
+                    "Люблю стратегию, но не всегда",
+                    "Предпочитаю спонтанность",
+                    "Вообще не люблю тактики"
+                ],
+                trait: "strategy",
+                weights: [100, 70, 40, 10]
+            },
+            {
+                question: "Как ведёте себя в критических ситуациях?",
+                options: [
+                    "Собран и хладнокровен",
+                    "Слегка нервничаю",
+                    "Паникую",
+                    "Бросаю игру"
+                ],
+                trait: "temperament",
+                weights: [100, 70, 30, 0]
+            },
+            {
+                question: "Как вы относитесь к новичкам в команде?",
+                options: [
+                    "Помогаю и объясняю",
+                    "Терплю, но с замечаниями",
+                    "Игнорирую",
+                    "Раздражаюсь"
+                ],
+                trait: "tolerance",
+                weights: [100, 60, 30, 0]
+            },
+            {
+                question: "Как вы выбираете героя/класс?",
+                options: [
+                    "Выбираю по нуждам команды",
+                    "Выбираю любимого героя",
+                    "Беру того, кто сильнее",
+                    "Всегда играю одной ролью"
+                ],
+                trait: "teamSpirit",
+                weights: [100, 70, 50, 30]
+            },
+            {
+                question: "Как вы ведёте себя при проигрышной серии?",
+                options: [
+                    "Играю дальше, не унываю",
+                    "Берусь за анализ ошибок",
+                    "Начинаю нервничать",
+                    "Выключаю игру"
+                ],
+                trait: "temperament",
+                weights: [90, 100, 40, 0]
+            },
+            {
+                question: "Как относитесь к рандомным напарникам?",
+                options: [
+                    "Нормально, готов к кооперации",
+                    "С подозрением, но стараюсь сработаться",
+                    "Редко им доверяю",
+                    "Ненавижу рандомных напарников"
+                ],
+                trait: "tolerance",
+                weights: [100, 70, 40, 0]
+            },
+            {
+                question: "Как реагируете на игру против более сильных соперников?",
+                options: [
+                    "Вызов! Это интересно!",
+                    "Немного напрягаюсь, но стараюсь",
+                    "Чувствую раздражение",
+                    "Быстро сдаюсь"
+                ],
+                trait: "competitiveness",
+                weights: [100, 70, 30, 0]
+            },
+            {
+                question: "Как относитесь к читерам?",
+                options: [
+                    "Жалуюсь и блокирую",
+                    "Игнорирую",
+                    "Пробую адаптироваться",
+                    "Читерю в ответ"
+                ],
+                trait: "ethics",
+                weights: [100, 60, 40, 0]
+            },
+            {
+                question: "Как ведёте себя в споре с командой?",
+                options: [
+                    "Обсуждаю аргументированно",
+                    "Могу вспылить, но быстро остываю",
+                    "Часто спорю",
+                    "Настаиваю на своём и злюсь"
+                ],
+                trait: "communication",
+                weights: [100, 70, 40, 0]
+            },
+            {
+                question: "Какую игровую роль вы ненавидите?",
+                options: [
+                    "Нет такой",
+                    "Не люблю одну, но могу играть",
+                    "Избегаю определённых ролей",
+                    "Никогда не беру ненавистную роль"
+                ],
+                trait: "flexibility",
+                weights: [100, 80, 50, 30]
+            },
+            {
+                question: "Что для вас важнее в игре?",
+                options: [
+                    "Командная победа",
+                    "Личный успех",
+                    "Приятное времяпрепровождение",
+                    "Оценки и рейтинги"
+                ],
+                trait: "priority",
+                weights: [100, 60, 80, 50]
+            },
+            {
+                question: "Как вы реагируете на несправедливый бан?",
+                options: [
+                    "Подаю апелляцию спокойно",
+                    "Расстраиваюсь, но принимаю",
+                    "Пишу гневные сообщения",
+                    "Создаю новый аккаунт"
+                ],
+                trait: "ethics",
+                weights: [100, 70, 30, 0]
+            }
+        ];
+
+        const quizContainer = document.getElementById('quiz-container');
+        const submitBtn = document.getElementById('submit-btn');
+        const resultSection = document.getElementById('result');
+        const compatibilityBar = document.getElementById('compatibility-bar');
+        const progressText = document.getElementById('progress-text');
+        const compatibilityLevel = document.getElementById('compatibility-level');
+        const profileDescription = document.getElementById('profile-description');
+        const interactionTips = document.getElementById('interaction-tips');
+        const traitsContainer = document.getElementById('traits-container');
+        const completionInfo = document.getElementById('completion-info');
+
+        let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
+        let scores = {
+            temperament: 0,
+            tolerance: 0,
+            communication: 0,
+            teamSpirit: 0,
+            learning: 0,
+            humor: 0,
+            teamRole: 0,
+            stamina: 0,
+            competitiveness: 0,
+            strategy: 0,
+            ethics: 0,
+            flexibility: 0,
+            priority: 0
+        };
+        let maxScores = {
+            temperament: 0,
+            tolerance: 0,
+            communication: 0,
+            teamSpirit: 0,
+            learning: 0,
+            humor: 0,
+            teamRole: 0,
+            stamina: 0,
+            competitiveness: 0,
+            strategy: 0,
+            ethics: 0,
+            flexibility: 0,
+            priority: 0
+        };
+
+        // Инициализация теста
+        initTest();
+
+        function initTest() {
+            // Создаем вопросы
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `
+                    <h3>Вопрос ${index + 1}/${questions.length}</h3>
+                    <p>${q.question}</p>
+                    <div class="options" id="options-${index}"></div>
+                `;
+                
+                const optionsDiv = questionDiv.querySelector(`#options-${index}`);
+                
+                q.options.forEach((option, optIndex) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'option';
+                    optionDiv.textContent = option;
+                    optionDiv.dataset.questionIndex = index;
+                    optionDiv.dataset.optionIndex = optIndex;
+                    
+                    optionDiv.addEventListener('click', function() {
+                        // Убираем выделение у всех вариантов этого вопроса
+                        const allOptions = optionsDiv.querySelectorAll('.option');
+                        allOptions.forEach(opt => opt.classList.remove('selected'));
+                        
+                        // Выделяем выбранный вариант
+                        this.classList.add('selected');
+                        
+                        // Сохраняем ответ
+                        answers[index] = {
+                            optionIndex: optIndex,
+                            trait: q.trait,
+                            weight: q.weights[optIndex]
+                        };
+                        
+                        localStorage.setItem('playerCompatibilityAnswers', JSON.stringify(answers));
+                        
+                        // Проверяем, все ли вопросы отвечены
+                        checkAllAnswered();
+                    });
+                    
+                    // Если ответ уже был выбран ранее, выделяем его
+                    if (answers[index] && answers[index].optionIndex === optIndex) {
+                        optionDiv.classList.add('selected');
+                    }
+                    
+                    optionsDiv.appendChild(optionDiv);
+                });
+                
+                quizContainer.appendChild(questionDiv);
+                
+                // Рассчитываем максимальные баллы для каждой характеристики
+                if (!maxScores[q.trait]) maxScores[q.trait] = 0;
+                maxScores[q.trait] += Math.max(...q.weights);
+            });
+
+            checkAllAnswered();
+        }
+
+        function checkAllAnswered() {
+            const answeredCount = Object.keys(answers).length;
+            const allAnswered = answeredCount === questions.length;
+            
+            submitBtn.disabled = !allAnswered;
+            
+            completionInfo.textContent = `Ответов: ${answeredCount}/${questions.length}`;
+            completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
+            
+            if (allAnswered) {
+                completionInfo.innerHTML = `Все вопросы отвечены! <span style="color:#28a745">✓</span>`;
+            }
+        }
+
+        submitBtn.addEventListener('click', function() {
+            calculateResults();
+            showResults();
+        });
+
+        function calculateResults() {
+            // Сбрасываем счетчики
+            for (let trait in scores) {
+                scores[trait] = 0;
+            }
+            
+            // Подсчитываем баллы для каждой характеристики
+            Object.values(answers).forEach(answer => {
+                const trait = answer.trait;
+                scores[trait] += answer.weight;
+            });
+            
+            // Нормализуем значения от 0 до 100
+            for (let trait in scores) {
+                if (maxScores[trait] > 0) {
+                    scores[trait] = Math.round((scores[trait] / maxScores[trait]) * 100);
+                } else {
+                    scores[trait] = 0;
+                }
+                // Ограничиваем диапазон
+                scores[trait] = Math.max(0, Math.min(100, scores[trait]));
+            }
+        }
+
+        function showResults() {
+            // Скрываем вопросы и показываем результаты
+            quizContainer.style.display = 'none';
+            submitBtn.style.display = 'none';
+            completionInfo.style.display = 'none';
+            resultSection.style.display = 'block';
+            
+            // Рассчитываем общую совместимость (среднее арифметическое по ключевым параметрам)
+            const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
+            const totalScore = keyTraits.reduce((sum, trait) => sum + scores[trait], 0) / keyTraits.length;
+            const roundedScore = Math.round(totalScore);
+            
+            // Анимация заполнения шкалы
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                const currentProgress = Math.min(progress, roundedScore);
+                compatibilityBar.style.width = `${currentProgress}%`;
+                progressText.textContent = `${currentProgress}%`;
+                
+                // Изменяем цвет прогресс-бара в зависимости от прогресса
+                if (currentProgress <= 33) {
+                    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #dc3545)';
+                } else if (currentProgress <= 66) {
+                    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107)';
+                } else {
+                    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107, #28a745)';
+                }
+                
+                if (progress >= roundedScore) {
+                    clearInterval(interval);
+                }
+            }, 20);
+            
+            // Устанавливаем текстовое описание совместимости
+            let compatibilityText, description, levelColor;
+            
+            if (roundedScore >= 90) {
+                compatibilityText = "Лучший друг по играм";
+                description = "Вы идеальный командный игрок, с которым приятно и продуктивно играть. Ваши напарники ценят вас за позитивный настрой, готовность помочь и стремление к победе.";
+                levelColor = "#28a745";
+            } else if (roundedScore >= 75) {
+                compatibilityText = "Идеальный напарник";
+                description = "Вы отличный командный игрок, с которым большинству будет комфортно играть. Ваши сильные стороны - уравновешенность и готовность работать в команде.";
+                levelColor = "#5cb85c";
+            } else if (roundedScore >= 60) {
+                compatibilityText = "Хороший вариант";
+                description = "Вы неплохой напарник, хотя есть моменты, над которыми можно поработать. В целом, с вами приятно играть, но иногда могут возникать небольшие трения.";
+                levelColor = "#ffc107";
+            } else if (roundedScore >= 40) {
+                compatibilityText = "Можно попробовать";
+                description = "Вы неплохо играете, но ваше поведение в команде иногда может вызывать напряжение. Возможно, стоит поработать над коммуникацией и терпимостью к ошибкам.";
+                levelColor = "#fd7e14";
+            } else {
+                compatibilityText = "Проблемный игрок";
+                description = "К сожалению, ваше поведение в игре может создавать проблемы для команды. Возможно, стоит пересмотреть свое отношение к игре и взаимодействию с напарниками.";
+                levelColor = "#dc3545";
+            }
+            
+            compatibilityLevel.textContent = compatibilityText;
+            compatibilityLevel.style.color = levelColor;
+            profileDescription.textContent = description;
+            
+            // Генерируем советы по взаимодействию
+            generateInteractionTips();
+            
+            // Отображаем характеристики
+            showTraits();
+        }
+
+        function generateInteractionTips() {
+            let tips = [];
+            
+            if (scores.temperament < 50) {
+                tips.push("Старайтесь контролировать эмоции во время игры. Глубокие вдохи перед реакцией могут помочь.");
+            }
+            
+            if (scores.tolerance < 50) {
+                tips.push("Помните, что все когда-то были новичками. Попробуйте давать конструктивные советы вместо критики.");
+            }
+            
+            if (scores.communication < 50) {
+                if (scores.communication < 30) {
+                    tips.push("Попробуйте больше общаться с командой, даже простые указания могут значительно улучшить координацию.");
+                } else {
+                    tips.push("Обращайте внимание на тон ваших сообщений, чтобы они не звучали как критика.");
+                }
+            }
+            
+            if (scores.teamSpirit < 50) {
+                tips.push("Попробуйте иногда жертвовать личными достижениями ради командной победы - это может принести больше удовольствия.");
+            }
+            
+            if (scores.humor < 50) {
+                tips.push("Попробуйте относиться к неудачам с юмором - это снизит напряжение и сделает игру приятнее.");
+            }
+            
+            if (tips.length === 0) {
+                tips.push("Вы уже отличный командный игрок! Продолжайте в том же духе и становитесь примером для других.");
+            }
+            
+            interactionTips.innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
+        }
+
+        function showTraits() {
+            traitsContainer.innerHTML = '';
+            
+            const traitNames = {
+                temperament: "Темперамент",
+                tolerance: "Толерантность",
+                communication: "Коммуникация",
+                teamSpirit: "Командный дух",
+                learning: "Обучение",
+                humor: "Чувство юмора",
+                teamRole: "Роль в команде",
+                stamina: "Выносливость",
+                competitiveness: "Конкурентоспособность",
+                strategy: "Стратегия",
+                ethics: "Этика",
+                flexibility: "Гибкость",
+                priority: "Приоритеты"
+            };
+            
+            // Показываем только основные характеристики
+            const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
+            
+            mainTraits.forEach(trait => {
+                const traitDiv = document.createElement('div');
+                traitDiv.className = 'trait';
+                
+                const nameSpan = document.createElement('div');
+                nameSpan.className = 'trait-name';
+                nameSpan.textContent = traitNames[trait];
+                
+                const barDiv = document.createElement('div');
+                barDiv.className = 'trait-bar';
+                
+                const fillDiv = document.createElement('div');
+                fillDiv.className = 'trait-fill';
+                fillDiv.style.width = `${scores[trait]}%`;
+                
+                const percentSpan = document.createElement('span');
+                percentSpan.className = 'trait-percent';
+                percentSpan.textContent = `${scores[trait]}%`;
+                
+                barDiv.appendChild(fillDiv);
+                barDiv.appendChild(percentSpan);
+                traitDiv.appendChild(nameSpan);
+                traitDiv.appendChild(barDiv);
+                
+                traitsContainer.appendChild(traitDiv);
+                
+                // Анимируем заполнение
+                setTimeout(() => {
+                    fillDiv.style.width = `${scores[trait]}%`;
+                }, 100);
+            });
+        }
+
+        function resetTest() {
+            if (confirm("Вы уверены, что хотите сбросить все ответы и начать заново?")) {
+                localStorage.removeItem('playerCompatibilityAnswers');
+                answers = {};
+                quizContainer.style.display = 'block';
+                submitBtn.style.display = 'block';
+                completionInfo.style.display = 'block';
+                resultSection.style.display = 'none';
+                
+                // Сбрасываем выделение ответов
+                const allOptions = document.querySelectorAll('.option');
+                allOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                checkAllAnswered();
+                window.scrollTo(0, 0);
+            }
+        }
+    </script>
+</body>
+</html>
