@@ -274,7 +274,19 @@
             <h3>Советы по взаимодействию:</h3>
             <p id="interaction-tips"></p>
         </div>
-        
+        <div class="share-section" style="margin: 20px 0; text-align: center;">
+    <button id="share-btn" class="share-button" style="
+        background: #6e45e2;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s;
+    ">Поделиться результатом</button>
+    <p id="share-status" style="margin-top: 10px; color: #aaa; font-size: 14px;"></p>
+</div>
         <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
     </div>
 
@@ -826,6 +838,123 @@
                 window.scrollTo(0, 0);
             }
         }
+		document.getElementById('share-btn').addEventListener('click', async function() {
+    const compatibilityText = document.getElementById('compatibility-level').textContent;
+    const compatibilityScore = document.getElementById('progress-text').textContent;
+    
+    const shareData = {
+        title: 'Мой результат теста на игровую совместимость',
+        text: `Я набрал ${compatibilityScore} в тесте! Мой уровень: "${compatibilityText}". Пройди тест и сравним результаты!`,
+        url: window.location.href
+    };
+
+    try {
+        if (navigator.share) {
+            // Для мобильных устройств (Android/iOS)
+            await navigator.share(shareData);
+            document.getElementById('share-status').textContent = 'Спасибо, что поделились!';
+        } else {
+            // Для десктопов (копирование в буфер)
+            const textArea = document.createElement('textarea');
+            textArea.value = `${shareData.text}\n${shareData.url}`;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            document.getElementById('share-status').textContent = 'Ссылка скопирована в буфер!';
+            setTimeout(() => {
+                document.getElementById('share-status').textContent = '';
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        document.getElementById('share-status').textContent = 'Не удалось поделиться';
+    }
+});
+// Функция для авто-заполнения + скролл вниз
+function autoFillTest() {
+  const questions = document.querySelectorAll('.question');
+  questions.forEach((question, index) => {
+    setTimeout(() => {
+      const options = question.querySelectorAll('.option');
+      options[Math.floor(Math.random() * options.length)].click();
+    }, 100 * index);
+  });
+  
+  // Плавный скролл в самый низ после заполнения
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  }, questions.length * 100 + 500);
+}
+
+// Система активации по вводу "dev"
+let inputSequence = [];
+const secretCode = ['d', 'e', 'v'];
+
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toLowerCase();
+  
+  // Проверяем последовательность
+  if (key === secretCode[inputSequence.length]) {
+    inputSequence.push(key);
+    
+    // Если ввели "dev"
+    if (inputSequence.join('') === 'dev') {
+      createDevButton();
+      inputSequence = []; // Сбрасываем ввод
+    }
+  } else {
+    inputSequence = []; // Сбрасываем при ошибке
+  }
+});
+
+// Создание кнопки
+function createDevButton() {
+  if (document.getElementById('dev-btn')) return;
+  
+  const btn = document.createElement('div');
+  btn.id = 'dev-btn';
+  btn.innerHTML = '⚡ AUTO-FILL';
+  btn.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #ff5722;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 50px;
+    cursor: pointer;
+    z-index: 9999;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+    opacity: 0.8;
+    transition: all 0.3s;
+  `;
+  
+  btn.addEventListener('click', () => {
+    autoFillTest();
+    btn.style.transform = 'scale(0.9)';
+    setTimeout(() => btn.remove(), 300);
+  });
+  
+  document.body.appendChild(btn);
+  
+  // Авто-скрытие через 15 сек
+  setTimeout(() => {
+    if (btn.parentNode) {
+      btn.style.opacity = '0';
+      setTimeout(() => btn.remove(), 300);
+    }
+  }, 15000);
+}
+
+// Подсказка в консоли
+console.log('%c[Подсказка] Введите "dev" для активации', 'color: #e91e63');
     </script>
+
 </body>
 </html>
