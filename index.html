@@ -195,6 +195,15 @@
             background-color: #c82333;
         }
         
+        .save-button {
+            background-color: #6e45e2;
+            margin-top: 15px;
+        }
+        
+        .save-button:hover {
+            background-color: #5a35c7;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -210,6 +219,39 @@
             text-align: center;
             margin-bottom: 20px;
             font-size: 18px;
+        }
+        
+        /* Стили для подсказок */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #666;
+            cursor: help;
+            color: #ffcc00;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
         
         @media (max-width: 600px) {
@@ -233,25 +275,78 @@
             .trait-bar {
                 width: 45%;
             }
+            
+            .tooltip .tooltiptext {
+                width: 150px;
+                margin-left: -75px;
+                font-size: 12px;
+            }
         }
     </style>
+	<!-- Supabase -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co'
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24'
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+  
+  // 1. Генерируем session_id при загрузке страницы
+let sessionId = sessionStorage.getItem('test_session_id');
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  sessionStorage.setItem('test_session_id', sessionId);
+}
+
+// 2. Функция сохранения результатов
+async function saveResults() {
+  // Устанавливаем сессию в Supabase (если используете RLS с current_setting)
+  await supabase.rpc('set_session', { session_id: sessionId });
+
+  // Сохраняем данные
+  const { data, error } = await supabase
+    .from('test_results')
+    .insert([{
+      session_id: sessionId, // Добавляем session_id
+      answers: { q1: 2, q2: 5 }, // Замените на реальные ответы
+      scores: calculateScores() // Ваша функция расчёта
+    }])
+    .select(); // Важно: .select() возвращает добавленные данные
+
+  if (error) {
+    console.error('Ошибка сохранения:', error);
+    alert('Не удалось сохранить результаты. Попробуйте ещё раз.');
+    return null;
+  }
+  
+  // Возвращаем ID для создания ссылки на результат
+  return data[0].id;
+}
+
+// 3. Пример использования (при отправке теста)
+document.getElementById('submit-test').addEventListener('click', async () => {
+  const resultId = await saveResults();
+  if (resultId) {
+    window.location.href = `/results.html?id=${resultId}`;
+  }
+});
+</script>
 </head>
 <body>
     <h1>Тест на совместимость игроков</h1>
-    <p>Ответьте на вопросы, чтобы определить ваш игровой стиль и совместимость с другими игроками.</p>
+    <p>Ответь на вопросы, чтобы определить твой игровой стиль и совместимость с другими игроками.</p>
     
     <div id="quiz-container">
         <!-- Вопросы будут добавляться динамически -->
     </div>
     
     <div class="completion-info" id="completion-info">
-        Ответьте на все вопросы, чтобы увидеть результат
+        Ответь на все вопросы, чтобы увидеть результат
     </div>
     
     <button id="submit-btn" disabled>Получить результат</button>
     
     <div id="result">
-        <h2>Ваш профиль игрока</h2>
+        <h2>Твой профиль игрока</h2>
         
         <div class="compatibility-level" id="compatibility-level"></div>
         
@@ -274,26 +369,15 @@
             <h3>Советы по взаимодействию:</h3>
             <p id="interaction-tips"></p>
         </div>
-        <div class="share-section" style="margin: 20px 0; text-align: center;">
-    <button id="share-btn" class="share-button" style="
-        background: #6e45e2;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: all 0.3s;
-    ">Поделиться результатом</button>
-    <p id="share-status" style="margin-top: 10px; color: #aaa; font-size: 14px;"></p>
-</div>
+        
+        <button class="save-button" id="save-btn">Сохранить результаты</button>
         <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
     </div>
 
     <script>
         const questions = [
             {
-                question: "Как вы реагируете на проигрыш?",
+                question: "Как ты реагируешь на проигрыш?",
                 options: [
                     "Спокойно анализирую ошибки",
                     "Лёгкое недовольство",
@@ -304,7 +388,7 @@
                 weights: [100, 70, 30, 0]
             },
             {
-                question: "Вы предпочитаете играть:",
+                question: "Ты предпочитаешь играть:",
                 options: [
                     "Всегда на команду",
                     "В основном на команду",
@@ -315,7 +399,7 @@
                 weights: [100, 75, 30, 0]
             },
             {
-                question: "Как часто вы общаетесь в голосовом чате?",
+                question: "Как часто ты общаешься в голосовом чате?",
                 options: [
                     "Очень активно",
                     "В меру",
@@ -326,7 +410,7 @@
                 weights: [90, 80, 40, 20]
             },
             {
-                question: "Как вы относитесь к ошибкам напарников?",
+                question: "Как ты относишься к ошибкам напарников?",
                 options: [
                     "Спокойно, все ошибаются",
                     "Могу сделать замечание",
@@ -337,9 +421,9 @@
                 weights: [100, 60, 30, 0]
             },
             {
-                question: "Как вы обучаетесь в играх?",
+                question: "Как ты обучаешься в играх?",
                 options: [
-                    "Быстро изучаю и внедряю",
+                    "Быстро разбираюсь и использую на практике",
                     "Учусь, но не сразу",
                     "Долго адаптируюсь",
                     "Не хочу учиться"
@@ -348,29 +432,29 @@
                 weights: [100, 70, 30, 0]
             },
             {
-                question: "Какую роль в команде предпочитаете?",
+                question: "Какую роль в команде предпочитаешь?",
                 options: [
-                    "Поддержка",
-                    "Тактик",
-                    "Боец",
-                    "Одиночка"
+                    "Поддержка (помогаю команде)",
+                    "Лидер (организую игру)",
+                    "Атакующий (иду на прорыв)",
+                    "Одиночка (играю сам по себе)"
                 ],
                 trait: "teamRole",
                 weights: [90, 80, 70, 30]
             },
             {
-                question: "Как относитесь к долгим игровым сессиям?",
+                question: "Как долго ты можешь играть без перерыва?",
                 options: [
-                    "Люблю марафоны",
-                    "Могу играть долго",
-                    "Предпочитаю короткие сессии",
-                    "Быстро устаю"
+                    "Очень долго (5+ часов)",
+                    "Долго (3-4 часа)",
+                    "Не очень долго (1-2 часа)",
+                    "Быстро устаю (менее часа)"
                 ],
                 trait: "stamina",
-                weights: [90, 80, 50, 30]
+                weights: [90, 80, 50, 0]
             },
             {
-                question: "Как реагируете на токсичных игроков?",
+                question: "Как ты реагируешь на <span class='tooltip'>токсичных игроков<span class='tooltiptext'>Грубят, оскорбляют, намеренно мешают игре</span></span>?",
                 options: [
                     "Игнорирую",
                     "Отвечаю спокойно",
@@ -381,18 +465,18 @@
                 weights: [100, 80, 40, 0]
             },
             {
-                question: "Как относитесь к игре по стратегии?",
+                question: "Как ты относишься к <span class='tooltip'>игре по стратегии<span class='tooltiptext'>Когда команда заранее планирует тактику и строго её придерживается</span></span>?",
                 options: [
-                    "Обожаю тактику",
-                    "Люблю стратегию, но не всегда",
-                    "Предпочитаю спонтанность",
+                    "Обожаю чёткие планы",
+                    "Нравится, но не всегда",
+                    "Мешает импровизации",
                     "Вообще не люблю тактики"
                 ],
                 trait: "strategy",
                 weights: [100, 70, 40, 10]
             },
             {
-                question: "Как ведёте себя в критических ситуациях?",
+                question: "Как ведёшь себя в <span class='tooltip'>критических<span class='tooltiptext'>Сложных, напряжённых моментах игры (например, когда команда проигрывает или остаётся в меньшинстве)</span></span> ситуациях?",
                 options: [
                     "Собран и хладнокровен",
                     "Слегка нервничаю",
@@ -403,7 +487,7 @@
                 weights: [100, 70, 30, 0]
             },
             {
-                question: "Как вы относитесь к новичкам в команде?",
+                question: "Как ты относишься к новичкам в команде?",
                 options: [
                     "Помогаю и объясняю",
                     "Терплю, но с замечаниями",
@@ -414,7 +498,7 @@
                 weights: [100, 60, 30, 0]
             },
             {
-                question: "Как вы выбираете героя/класс?",
+                question: "Как ты выбираешь героя/класс?",
                 options: [
                     "Выбираю по нуждам команды",
                     "Выбираю любимого героя",
@@ -425,29 +509,29 @@
                 weights: [100, 70, 50, 30]
             },
             {
-                question: "Как вы ведёте себя при проигрышной серии?",
+                question: "Что делаешь после нескольких поражений подряд?",
                 options: [
-                    "Играю дальше, не унываю",
-                    "Берусь за анализ ошибок",
-                    "Начинаю нервничать",
-                    "Выключаю игру"
+                    "Продолжаю играть спокойно",
+                    "Разбираю ошибки",
+                    "Злюсь, но играю",
+                    "Бросаю игру"
                 ],
                 trait: "temperament",
                 weights: [90, 100, 40, 0]
             },
             {
-                question: "Как относитесь к рандомным напарникам?",
+                question: "Как ты играешь с <span class='tooltip'>незнакомцами<span class='tooltiptext'>Случайные игроки в твоей команде (не друзья)</span></span>?",
                 options: [
-                    "Нормально, готов к кооперации",
-                    "С подозрением, но стараюсь сработаться",
-                    "Редко им доверяю",
-                    "Ненавижу рандомных напарников"
+                    "Легко нахожу общий язык",
+                    "Пробую сотрудничать",
+                    "Не доверяю",
+                    "Раздражают"
                 ],
                 trait: "tolerance",
                 weights: [100, 70, 40, 0]
             },
             {
-                question: "Как реагируете на игру против более сильных соперников?",
+                question: "Как реагируешь на игру против более сильных соперников?",
                 options: [
                     "Вызов! Это интересно!",
                     "Немного напрягаюсь, но стараюсь",
@@ -458,7 +542,7 @@
                 weights: [100, 70, 30, 0]
             },
             {
-                question: "Как относитесь к читерам?",
+                question: "Как относишься к читерам?",
                 options: [
                     "Жалуюсь и блокирую",
                     "Игнорирую",
@@ -469,7 +553,7 @@
                 weights: [100, 60, 40, 0]
             },
             {
-                question: "Как ведёте себя в споре с командой?",
+                question: "Как ведёшь себя в споре с командой?",
                 options: [
                     "Обсуждаю аргументированно",
                     "Могу вспылить, но быстро остываю",
@@ -480,18 +564,18 @@
                 weights: [100, 70, 40, 0]
             },
             {
-                question: "Какую игровую роль вы ненавидите?",
+                question: "Насколько ты <span class='tooltip'>чувствительный<span class='tooltiptext'>Как сильно ты эмоционально реагируешь на критику, троллинг или неудачи в игре</span></span>?",
                 options: [
-                    "Нет такой",
-                    "Не люблю одну, но могу играть",
-                    "Избегаю определённых ролей",
-                    "Никогда не беру ненавистную роль"
+                    "Очень спокойный, меня сложно вывести из себя",
+                    "В основном спокоен, но иногда могу расстроиться",
+                    "Довольно эмоциональный, часто переживаю из-за игры",
+                    "Чрезвычайно чувствительный, любая критика сильно задевает"
                 ],
-                trait: "flexibility",
-                weights: [100, 80, 50, 30]
+                trait: "temperament",
+                weights: [100, 70, 40, 10]
             },
             {
-                question: "Что для вас важнее в игре?",
+                question: "Что для тебя важнее в игре?",
                 options: [
                     "Командная победа",
                     "Личный успех",
@@ -502,14 +586,14 @@
                 weights: [100, 60, 80, 50]
             },
             {
-                question: "Как вы реагируете на несправедливый бан?",
+                question: "Часто ли ты отвлекаешься во время игры?",
                 options: [
-                    "Подаю апелляцию спокойно",
-                    "Расстраиваюсь, но принимаю",
-                    "Пишу гневные сообщения",
-                    "Создаю новый аккаунт"
+                    "Редко, полностью сосредоточен",
+                    "Иногда, но не мешает игре",
+                    "Часто, теряю концентрацию",
+                    "Постоянно отвлекаюсь"
                 ],
-                trait: "ethics",
+                trait: "focus",
                 weights: [100, 70, 30, 0]
             }
         ];
@@ -524,6 +608,7 @@
         const interactionTips = document.getElementById('interaction-tips');
         const traitsContainer = document.getElementById('traits-container');
         const completionInfo = document.getElementById('completion-info');
+        const saveBtn = document.getElementById('save-btn');
 
         let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
         let scores = {
@@ -538,6 +623,7 @@
             competitiveness: 0,
             strategy: 0,
             ethics: 0,
+            focus: 0,
             flexibility: 0,
             priority: 0
         };
@@ -553,6 +639,7 @@
             competitiveness: 0,
             strategy: 0,
             ethics: 0,
+            focus: 0,
             flexibility: 0,
             priority: 0
         };
@@ -701,23 +788,23 @@
             
             if (roundedScore >= 90) {
                 compatibilityText = "Лучший друг по играм";
-                description = "Вы идеальный командный игрок, с которым приятно и продуктивно играть. Ваши напарники ценят вас за позитивный настрой, готовность помочь и стремление к победе.";
+                description = "Ты идеальный командный игрок, с которым приятно и продуктивно играть. Твои напарники ценят тебя за позитивный настрой, готовность помочь и стремление к победе.";
                 levelColor = "#28a745";
             } else if (roundedScore >= 75) {
                 compatibilityText = "Идеальный напарник";
-                description = "Вы отличный командный игрок, с которым большинству будет комфортно играть. Ваши сильные стороны - уравновешенность и готовность работать в команде.";
+                description = "Ты отличный командный игрок, с которым большинству будет комфортно играть. Твои сильные стороны - уравновешенность и готовность работать в команде.";
                 levelColor = "#5cb85c";
             } else if (roundedScore >= 60) {
                 compatibilityText = "Хороший вариант";
-                description = "Вы неплохой напарник, хотя есть моменты, над которыми можно поработать. В целом, с вами приятно играть, но иногда могут возникать небольшие трения.";
+                description = "Ты неплохой напарник, хотя есть моменты, над которыми можно поработать. В целом, с тобой приятно играть, но иногда могут возникать небольшие трения.";
                 levelColor = "#ffc107";
             } else if (roundedScore >= 40) {
                 compatibilityText = "Можно попробовать";
-                description = "Вы неплохо играете, но ваше поведение в команде иногда может вызывать напряжение. Возможно, стоит поработать над коммуникацией и терпимостью к ошибкам.";
+                description = "Ты неплохо играешь, но твоё поведение в команде иногда может вызывать напряжение. Возможно, стоит поработать над коммуникацией и терпимостью к ошибкам.";
                 levelColor = "#fd7e14";
             } else {
                 compatibilityText = "Проблемный игрок";
-                description = "К сожалению, ваше поведение в игре может создавать проблемы для команды. Возможно, стоит пересмотреть свое отношение к игре и взаимодействию с напарниками.";
+                description = "К сожалению, твоё поведение в игре может создавать проблемы для команды. Возможно, стоит пересмотреть своё отношение к игре и взаимодействию с напарниками.";
                 levelColor = "#dc3545";
             }
             
@@ -736,31 +823,31 @@
             let tips = [];
             
             if (scores.temperament < 50) {
-                tips.push("Старайтесь контролировать эмоции во время игры. Глубокие вдохи перед реакцией могут помочь.");
+                tips.push("Старайся контролировать эмоции во время игры. Глубокие вдохи перед реакцией могут помочь.");
             }
             
             if (scores.tolerance < 50) {
-                tips.push("Помните, что все когда-то были новичками. Попробуйте давать конструктивные советы вместо критики.");
+                tips.push("Помни, что все когда-то были новичками. Попробуй давать конструктивные советы вместо критики.");
             }
             
             if (scores.communication < 50) {
                 if (scores.communication < 30) {
-                    tips.push("Попробуйте больше общаться с командой, даже простые указания могут значительно улучшить координацию.");
+                    tips.push("Попробуй больше общаться с командой, даже простые указания могут значительно улучшить координацию.");
                 } else {
-                    tips.push("Обращайте внимание на тон ваших сообщений, чтобы они не звучали как критика.");
+                    tips.push("Обращай внимание на тон твоих сообщений, чтобы они не звучали как критика.");
                 }
             }
             
             if (scores.teamSpirit < 50) {
-                tips.push("Попробуйте иногда жертвовать личными достижениями ради командной победы - это может принести больше удовольствия.");
+                tips.push("Попробуй иногда жертвовать личными достижениями ради командной победы - это может принести больше удовольствия.");
             }
             
             if (scores.humor < 50) {
-                tips.push("Попробуйте относиться к неудачам с юмором - это снизит напряжение и сделает игру приятнее.");
+                tips.push("Попробуй относиться к неудачам с юмором - это снизит напряжение и сделает игру приятнее.");
             }
             
             if (tips.length === 0) {
-                tips.push("Вы уже отличный командный игрок! Продолжайте в том же духе и становитесь примером для других.");
+                tips.push("Ты уже отличный командный игрок! Продолжай в том же духе и становись примером для других.");
             }
             
             interactionTips.innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
@@ -781,12 +868,13 @@
                 competitiveness: "Конкурентоспособность",
                 strategy: "Стратегия",
                 ethics: "Этика",
+                focus: "Концентрация",
                 flexibility: "Гибкость",
                 priority: "Приоритеты"
             };
             
             // Показываем только основные характеристики
-            const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
+            const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];
             
             mainTraits.forEach(trait => {
                 const traitDiv = document.createElement('div');
@@ -822,7 +910,7 @@
         }
 
         function resetTest() {
-            if (confirm("Вы уверены, что хотите сбросить все ответы и начать заново?")) {
+            if (confirm("Ты уверен, что хочешь сбросить все ответы и начать заново?")) {
                 localStorage.removeItem('playerCompatibilityAnswers');
                 answers = {};
                 quizContainer.style.display = 'block';
@@ -838,123 +926,268 @@
                 window.scrollTo(0, 0);
             }
         }
-		document.getElementById('share-btn').addEventListener('click', async function() {
-    const compatibilityText = document.getElementById('compatibility-level').textContent;
-    const compatibilityScore = document.getElementById('progress-text').textContent;
-    
-    const shareData = {
-        title: 'Мой результат теста на игровую совместимость',
-        text: `Я набрал ${compatibilityScore} в тесте! Мой уровень: "${compatibilityText}". Пройди тест и сравним результаты!`,
-        url: window.location.href
-    };
 
-    try {
-        if (navigator.share) {
-            // Для мобильных устройств (Android/iOS)
-            await navigator.share(shareData);
-            document.getElementById('share-status').textContent = 'Спасибо, что поделились!';
-        } else {
-            // Для десктопов (копирование в буфер)
-            const textArea = document.createElement('textarea');
-            textArea.value = `${shareData.text}\n${shareData.url}`;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            document.getElementById('share-status').textContent = 'Ссылка скопирована в буфер!';
-            setTimeout(() => {
-                document.getElementById('share-status').textContent = '';
-            }, 2000);
+        // Функция для сохранения результатов в HTML файл
+        saveBtn.addEventListener('click', function() {
+            // Создаем HTML с ответами
+            let answersHTML = '<div class="profile-section"><h3>Твои ответы:</h3><ol>';
+            questions.forEach((q, index) => {
+                if (answers[index]) {
+                    const selectedOption = q.options[answers[index].optionIndex];
+                    answersHTML += `<li><strong>${q.question}</strong><br>Ответ: ${selectedOption}</li>`;
+                }
+            });
+            answersHTML += '</ol></div>';
+
+            // Создаем HTML содержимое для сохранения
+            const resultHTML = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои результаты теста на совместимость игроков</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e2e;
         }
-    } catch (err) {
-        console.error('Ошибка:', err);
-        document.getElementById('share-status').textContent = 'Не удалось поделиться';
-    }
-});
-// Функция для авто-заполнения + скролл вниз
-function autoFillTest() {
-  const questions = document.querySelectorAll('.question');
-  questions.forEach((question, index) => {
-    setTimeout(() => {
-      const options = question.querySelectorAll('.option');
-      options[Math.floor(Math.random() * options.length)].click();
-    }, 100 * index);
-  });
-  
-  // Плавный скролл в самый низ после заполнения
-  setTimeout(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth'
-    });
-  }, questions.length * 100 + 500);
-}
-
-// Система активации по вводу "dev"
-let inputSequence = [];
-const secretCode = ['d', 'e', 'v'];
-
-document.addEventListener('keydown', (e) => {
-  const key = e.key.toLowerCase();
-  
-  // Проверяем последовательность
-  if (key === secretCode[inputSequence.length]) {
-    inputSequence.push(key);
+        h1, h2 {
+            color: #ffffff;
+            text-align: center;
+        }
+        .profile-section {
+            background-color: #2a2a3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #444;
+            border-radius: 10px;
+            margin: 20px 0;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: ${document.getElementById('progress-text').textContent};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
+        .progress-text {
+            position: absolute;
+            right: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 2;
+        }
+        .compatibility-level {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: ${document.getElementById('compatibility-level').style.color};
+            text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .trait-name {
+            font-weight: bold;
+            width: 40%;
+        }
+        .trait-bar {
+            width: 55%;
+            height: 15px;
+            background-color: #444;
+            border-radius: 7px;
+            position: relative;
+            overflow: hidden;
+        }
+        .trait-fill {
+            height: 100%;
+            border-radius: 7px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: 0%;
+        }
+        .trait-percent {
+            position: absolute;
+            right: 5px;
+            font-size: 11px;
+            color: white;
+            z-index: 2;
+        }
+        .date {
+            text-align: right;
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #444;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Мои результаты теста на совместимость игроков</h1>
+    <div class="date">${new Date().toLocaleString()}</div>
     
-    // Если ввели "dev"
-    if (inputSequence.join('') === 'dev') {
-      createDevButton();
-      inputSequence = []; // Сбрасываем ввод
-    }
-  } else {
-    inputSequence = []; // Сбрасываем при ошибке
-  }
-});
+    <div class="profile-section">
+        <div class="compatibility-level">${document.getElementById('compatibility-level').textContent}</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+            <span class="progress-text">${document.getElementById('progress-text').textContent}</span>
+        </div>
+    </div>
+    
+    <div class="profile-section">
+        <h3>Характеристики:</h3>
+        ${traitsContainer.innerHTML}
+    </div>
+    
+    <div class="profile-section">
+        <h3>Описание профиля:</h3>
+        <p>${document.getElementById('profile-description').textContent}</p>
+    </div>
+    
+    <div class="profile-section">
+        <h3>Советы по взаимодействию:</h3>
+        <p>${document.getElementById('interaction-tips').innerHTML}</p>
+    </div>
+    
+    ${answersHTML}
+</body>
+</html>
+            `;
 
-// Создание кнопки
-function createDevButton() {
-  if (document.getElementById('dev-btn')) return;
-  
-  const btn = document.createElement('div');
-  btn.id = 'dev-btn';
-  btn.innerHTML = '⚡ AUTO-FILL';
-  btn.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #ff5722;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 50px;
-    cursor: pointer;
-    z-index: 9999;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-    opacity: 0.8;
-    transition: all 0.3s;
-  `;
-  
-  btn.addEventListener('click', () => {
-    autoFillTest();
-    btn.style.transform = 'scale(0.9)';
-    setTimeout(() => btn.remove(), 300);
-  });
-  
-  document.body.appendChild(btn);
-  
-  // Авто-скрытие через 15 сек
-  setTimeout(() => {
-    if (btn.parentNode) {
-      btn.style.opacity = '0';
-      setTimeout(() => btn.remove(), 300);
-    }
-  }, 15000);
-}
+            // Создаем Blob с HTML содержимым
+            const blob = new Blob([resultHTML], { type: 'text/html' });
+            
+            // Создаем ссылку для скачивания
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'мои_результаты_совместимости.html';
+            
+            // Добавляем ссылку на страницу и эмулируем клик
+            document.body.appendChild(a);
+            a.click();
+            
+            // Удаляем ссылку и освобождаем память
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
 
-// Подсказка в консоли
-console.log('%c[Подсказка] Введите "dev" для активации', 'color: #e91e63');
+        // Функция для авто-заполнения + скролл вниз
+        function autoFillTest() {
+          const questions = document.querySelectorAll('.question');
+          questions.forEach((question, index) => {
+            setTimeout(() => {
+              const options = question.querySelectorAll('.option');
+              options[Math.floor(Math.random() * options.length)].click();
+            }, 100 * index);
+          });
+          
+          // Плавный скролл в самый низ после заполнения
+          setTimeout(() => {
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: 'smooth'
+            });
+          }, questions.length * 100 + 500);
+        }
+
+        // Система активации по вводу "dev"
+        let inputSequence = [];
+        const secretCode = ['d', 'e', 'v'];
+
+        document.addEventListener('keydown', (e) => {
+          const key = e.key.toLowerCase();
+          
+          // Проверяем последовательность
+          if (key === secretCode[inputSequence.length]) {
+            inputSequence.push(key);
+            
+            // Если ввели "dev"
+            if (inputSequence.join('') === 'dev') {
+              createDevButton();
+              inputSequence = []; // Сбрасываем ввод
+            }
+          } else {
+            inputSequence = []; // Сбрасываем при ошибке
+          }
+        });
+
+        // Создание кнопки
+        function createDevButton() {
+          if (document.getElementById('dev-btn')) return;
+          
+          const btn = document.createElement('div');
+          btn.id = 'dev-btn';
+          btn.innerHTML = '⚡ AUTO-FILL';
+          btn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff5722;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 9999;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+            opacity: 0.8;
+            transition: all 0.3s;
+          `;
+          
+          btn.addEventListener('click', () => {
+            autoFillTest();
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => btn.remove(), 300);
+          });
+          
+          document.body.appendChild(btn);
+          
+          // Авто-скрытие через 15 сек
+          setTimeout(() => {
+            if (btn.parentNode) {
+              btn.style.opacity = '0';
+              setTimeout(() => btn.remove(), 300);
+            }
+          }, 15000);
+        }
+
+        // Подсказка в консоли
+        console.log('%c[Подсказка] Введите "dev" для активации', 'color: #e91e63');
     </script>
-
 </body>
 </html>
