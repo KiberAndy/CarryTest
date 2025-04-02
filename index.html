@@ -323,25 +323,27 @@
             }
         }
     </style>
-	<!-- Supabase JS клиент -->
+<!-- Supabase JS клиент -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Инициализация Supabase -->
 <script>
-  // Проверка загрузки библиотеки (должно быть ПЕРВЫМ в скрипте)
-    // Проверка загрузки Supabase (с цветным выделением)
-console.log(
-  '%cSupabase:', 
-  'color: #FF5722; font-weight: bold;',
-  window.supabase ? '✅ Загружен' : '❌ Не загружен'
-);
- // 1. Сначала объявляем переменные с URL и ключом
-  const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24';
+  // Проверка загрузки Supabase (цветное выделение)
+  console.log(
+    '%cSupabase:', 
+    'color: #FF5722; font-weight: bold;',
+    window.supabase ? '✅ Загружен' : '❌ Не загружен'
+  );
 
-  // 2. Только потом создаём клиент
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-  console.log('Supabase Client:', supabaseClient);
+  // 1. Объявляем переменные с URL и ключом (НЕ ХРАНИТЬ В ОТКРЫТОМ ВИДЕ!)
+  const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24'; // Заменить на безопасное хранение
+
+  // 2. Создаём клиент ПРАВИЛЬНО
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  console.log('Supabase Client:', supabase);
+
   
   // Функция сохранения результатов
 async function saveResults() {
