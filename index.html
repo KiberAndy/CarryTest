@@ -288,7 +288,8 @@
 <script>
   const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24'
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+  const { createClient } = require('@supabase/supabase-js');
+  const supabase = createClient(supabaseUrl, supabaseKey);
   
   // 1. Генерируем session_id при загрузке страницы
 let sessionId = sessionStorage.getItem('test_session_id');
