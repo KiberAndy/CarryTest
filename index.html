@@ -328,12 +328,13 @@
 
 <!-- Инициализация Supabase -->
 <script>
+  // Создаем клиент Supabase
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+  
   // Замените эти значения на ваши из панели Supabase
   const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24'
   
-  // Создаем клиент Supabase
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey)
   
   // Функция сохранения результатов
 async function saveResults() {
