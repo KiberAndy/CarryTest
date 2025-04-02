@@ -291,45 +291,106 @@
   const { createClient } = require('@supabase/supabase-js');
   const supabase = createClient(supabaseUrl, supabaseKey);
   
-  // 1. Генерируем session_id при загрузке страницы
-let sessionId = sessionStorage.getItem('test_session_id');
-if (!sessionId) {
-  sessionId = crypto.randomUUID();
-  sessionStorage.setItem('test_session_id', sessionId);
-}
-
-// 2. Функция сохранения результатов
+// Функция сохранения результатов с генерацией ссылки
 async function saveResults() {
-  // Устанавливаем сессию в Supabase (если используете RLS с current_setting)
-  await supabase.rpc('set_session', { session_id: sessionId });
-
-  // Сохраняем данные
-  const { data, error } = await supabase
-    .from('test_results')
-    .insert([{
-      session_id: sessionId, // Добавляем session_id
-      answers: { q1: 2, q2: 5 }, // Замените на реальные ответы
-      scores: calculateScores() // Ваша функция расчёта
-    }])
-    .select(); // Важно: .select() возвращает добавленные данные
-
-  if (error) {
-    console.error('Ошибка сохранения:', error);
-    alert('Не удалось сохранить результаты. Попробуйте ещё раз.');
-    return null;
-  }
-  
-  // Возвращаем ID для создания ссылки на результат
-  return data[0].id;
+    try {
+        // Рассчитываем результаты перед сохранением
+        calculateResults();
+        
+        // Подготавливаем данные для сохранения
+        const resultData = {
+            session_id: sessionId,
+            answers: Object.keys(answers).reduce((acc, key) => {
+                acc[`q${parseInt(key)+1}`] = answers[key].optionIndex;
+                return acc;
+            }, {}),
+            scores: scores,
+            created_at: new Date().toISOString()
+        };
+        
+        // Сохраняем данные в Supabase
+        const { data, error } = await supabase
+            .from('test_results')
+            .insert([resultData])
+            .select();
+        
+        if (error) throw error;
+        
+        console.log('Результаты сохранены:', data);
+        return data[0].id; // Возвращаем ID записи
+        
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('Не удалось сохранить результаты. Попробуйте ещё раз.');
+        return null;
+    }
 }
 
-// 3. Пример использования (при отправке теста)
-document.getElementById('submit-test').addEventListener('click', async () => {
-  const resultId = await saveResults();
-  if (resultId) {
-    window.location.href = `/results.html?id=${resultId}`;
-  }
-});
+// Функция для генерации случайного токена
+function generateShareToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 16; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+}
+
+// Функция создания ссылки для общего доступа
+async function createShareLink() {
+    const shareBtn = document.getElementById('share-btn');
+    shareBtn.disabled = true;
+    shareBtn.textContent = 'Создание ссылки...';
+    
+    try {
+        // Сохраняем результаты и получаем ID
+        const resultId = await saveResults();
+        if (!resultId) return;
+        
+        // Генерируем уникальный токен
+        const shareToken = generateShareToken();
+        
+        // Сохраняем токен в Supabase
+        const { error } = await supabase
+            .from('share_tokens')
+            .insert([{
+                result_id: resultId,
+                token: shareToken,
+                created_at: new Date().toISOString()
+            }]);
+        
+        if (error) throw error;
+        
+        // Формируем ссылку
+        const shareLink = `${window.location.origin}${window.location.pathname.replace('index.html', '')}view.html?token=${shareToken}`;
+        
+        // Показываем ссылку пользователю
+        const shareLinkContainer = document.getElementById('share-link-container');
+        const shareLinkElement = document.getElementById('share-link');
+        
+        shareLinkElement.href = shareLink;
+        shareLinkElement.textContent = shareLink;
+        shareLinkContainer.style.display = 'block';
+        
+        // Кнопка копирования
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(shareLink).then(() => {
+                alert('Ссылка скопирована в буфер обмена!');
+            });
+        });
+        
+        shareBtn.textContent = 'Ссылка создана!';
+        
+    } catch (error) {
+        console.error('Ошибка создания ссылки:', error);
+        alert('Не удалось создать ссылку для общего доступа');
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+    }
+}
+
+// Добавляем обработчик для кнопки "Поделиться"
+document.getElementById('share-btn').addEventListener('click', createShareLink);
 </script>
 </head>
 <body>
@@ -374,6 +435,14 @@ document.getElementById('submit-test').addEventListener('click', async () => {
         <button class="save-button" id="save-btn">Сохранить результаты</button>
         <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
     </div>
+	<button class="share-button" id="share-btn">Поделиться результатами</button>
+<div class="share-link-container" id="share-link-container">
+    <p>Ссылка для просмотра результатов:</p>
+    <div>
+        <a href="#" id="share-link" class="share-link"></a>
+        <button class="copy-btn" id="copy-btn">Копировать</button>
+    </div>
+</div>
 
     <script>
         const questions = [
@@ -1055,6 +1124,48 @@ document.getElementById('submit-test').addEventListener('click', async () => {
             border-bottom: none;
         }
     </style>
+	
+	<!-- В разделе стилей добавьте новый стиль для кнопки поделиться -->
+<style>
+    .share-button {
+        background-color: #6e45e2;
+        margin-top: 15px;
+    }
+    
+    .share-button:hover {
+        background-color: #5a35c7;
+    }
+    
+    .share-link-container {
+        display: none;
+        margin-top: 20px;
+        background-color: #3a3a4a;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .share-link {
+        word-break: break-all;
+        color: #6e45e2;
+        font-weight: bold;
+    }
+    
+    .copy-btn {
+        background-color: #4a4a5a;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: all 0.3s;
+    }
+    
+    .copy-btn:hover {
+        background-color: #5a5a6a;
+    }
+</style>
 </head>
 <body>
     <h1>Мои результаты теста на совместимость игроков</h1>
