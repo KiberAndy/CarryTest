@@ -326,14 +326,23 @@ async function saveResults() {
     }
 }
 
-// Функция для генерации случайного токена
-function generateShareToken() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let token = '';
-    for (let i = 0; i < 16; i++) {
-        token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return token;
+// Новая реализация (хэш на основе ответов)
+async function generateShareToken(answers) {
+    // 1. Преобразуем ответы в стабильную JSON-строку
+    const answersString = JSON.stringify(answers);
+    
+    // 2. Генерируем SHA-256 хэш
+    const hashBuffer = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(answersString)
+    );
+    
+    // 3. Конвертируем в hex-строку
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // 4. Берем первые 16 символов как токен
+    return hashHex.substring(0, 16);
 }
 
 // Функция создания ссылки для общего доступа
@@ -343,47 +352,39 @@ async function createShareLink() {
     shareBtn.textContent = 'Создание ссылки...';
     
     try {
-        // Сохраняем результаты и получаем ID
-        const resultId = await saveResults();
-        if (!resultId) return;
+        // 1. Получаем ответы пользователя
+        const userAnswers = Object.values(answers).map(a => a.optionIndex);
         
-        // Генерируем уникальный токен
-        const shareToken = generateShareToken();
+        // 2. Генерируем токен на основе ответов
+        const shareToken = await generateShareToken(userAnswers);
         
-        // Сохраняем токен в Supabase
-        const { error } = await supabase
+        // 3. Проверяем, есть ли такой токен в БД
+        const { data: existing } = await supabase
             .from('share_tokens')
-            .insert([{
+            .select('result_id')
+            .eq('token', shareToken)
+            .maybeSingle();
+
+        let resultId;
+        if (existing) {
+            resultId = existing.result_id; // Используем существующий результат
+        } else {
+            // Сохраняем новые результаты
+            const { data, error } = await supabase.from('test_results')...;
+            resultId = data[0].id;
+            
+            // Сохраняем токен
+            await supabase.from('share_tokens').insert({
                 result_id: resultId,
-                token: shareToken,
-                created_at: new Date().toISOString()
-            }]);
-        
-        if (error) throw error;
-        
-        // Формируем ссылку
-        const shareLink = `${window.location.origin}${window.location.pathname.replace('index.html', '')}view.html?token=${shareToken}`;
-        
-        // Показываем ссылку пользователю
-        const shareLinkContainer = document.getElementById('share-link-container');
-        const shareLinkElement = document.getElementById('share-link');
-        
-        shareLinkElement.href = shareLink;
-        shareLinkElement.textContent = shareLink;
-        shareLinkContainer.style.display = 'block';
-        
-        // Кнопка копирования
-        document.getElementById('copy-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(shareLink).then(() => {
-                alert('Ссылка скопирована в буфер обмена!');
+                token: shareToken
             });
-        });
+        }
         
-        shareBtn.textContent = 'Ссылка создана!';
-        
+        // Формируем ссылку (как раньше)
+        const shareLink = `${window.location.origin}/view.html?token=${shareToken}`;
+        // ... остальной код показа ссылки
     } catch (error) {
-        console.error('Ошибка создания ссылки:', error);
-        alert('Не удалось создать ссылку для общего доступа');
+        console.error('Ошибка:', error);
         shareBtn.disabled = false;
         shareBtn.textContent = 'Поделиться результатами';
     }
