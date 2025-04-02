@@ -346,20 +346,17 @@ console.log(
   // Функция сохранения результатов
 async function saveResults() {
     try {
-        // Рассчитываем результаты перед сохранением
         calculateResults();
         
-        // Генерируем токен для общего доступа
         const shareToken = generateShareToken();
         
-        // Подготавливаем данные для сохранения
         const resultData = {
             answers: answers,
             scores: scores,
-            share_token: shareToken
+            share_token: shareToken,
+            created_at: new Date().toISOString()
         };
         
-        // Сохраняем данные в Supabase
         const { data, error } = await supabase
             .from('test_results')
             .insert([resultData])
@@ -367,20 +364,26 @@ async function saveResults() {
         
         if (error) throw error;
         
-        console.log('Результаты сохранены:', data);
         return data[0];
         
     } catch (error) {
         console.error('Ошибка сохранения:', error);
-        alert('Не удалось сохранить результаты. Попробуйте ещё раз.');
-        return null;
+        throw error;
     }
 }
 
 // Генерация токена для общего доступа
 function generateShareToken() {
-    return Math.random().toString(36).substring(2, 10) + 
-           Math.random().toString(36).substring(2, 10);
+    const consonants = 'bcdfghjklmnpqrstvwxyz'; // Только согласные для лучшей читаемости
+    const digits = '0123456789';
+    const allChars = consonants + digits;
+    let token = '';
+    
+    for (let i = 0; i < 6; i++) {
+        token += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    return token;
 }
 
 // Функция "Поделиться результатами"
@@ -449,7 +452,36 @@ function checkForSharedResults() {
 checkForSharedResults();
 
 // Назначаем обработчик для кнопки "Поделиться"
-shareBtn.addEventListener('click', shareResults);
+shareBtn.addEventListener('click', async () => {
+    try {
+        shareBtn.disabled = true;
+        shareBtn.textContent = 'Создание ссылки...';
+        
+        // Сохраняем результаты и получаем токен
+        const savedData = await saveResults();
+        
+        if (!savedData) throw new Error('Не удалось сохранить результаты');
+        
+        // Формируем правильную ссылку на view.html
+        const baseUrl = 'https://kiberandy.github.io/CarryTest/';
+        const shareLink = `${baseUrl}view.html?share=${savedData.share_token}`;
+        
+        // Показываем ссылку пользователю
+        shareLinkInput.value = shareLink;
+        shareLinkContainer.style.display = 'block';
+        shareBtn.textContent = 'Поделиться результатами';
+        shareBtn.disabled = false;
+        
+        // Прокручиваем к ссылке
+        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+        alert('Не удалось создать ссылку для общего доступа');
+    }
+});
 </script>
 </head>
 <body>
