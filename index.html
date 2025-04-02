@@ -345,29 +345,46 @@ console.log(
   
   // Функция сохранения результатов
 async function saveResults() {
+    console.groupCollapsed('[CarryTest] Saving results to Supabase'); // Сворачиваемая группа логов
+    
     try {
+        // 1. Рассчитываем результаты
         calculateResults();
-        
+        console.log('Calculated scores:', scores);
+
+        // 2. Генерируем токен
         const shareToken = generateShareToken();
-        
+        console.log('Generated share token:', shareToken);
+
+        // 3. Формируем данные для сохранения
         const resultData = {
             answers: answers,
             scores: scores,
             share_token: shareToken,
             created_at: new Date().toISOString()
         };
-        
+        console.log('Data to save:', resultData);
+
+        // 4. Отправляем в Supabase
+        console.log('Sending to Supabase...');
         const { data, error } = await supabase
             .from('test_results')
             .insert([resultData])
             .select();
-        
-        if (error) throw error;
-        
+
+        if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+        }
+
+        // 5. Успешное завершение
+        console.log('✅ Successfully saved:', data);
+        console.groupEnd(); // Закрываем группу логов
         return data[0];
-        
+
     } catch (error) {
-        console.error('Ошибка сохранения:', error);
+        console.error('❌ Critical save error:', error);
+        console.groupEnd(); // Закрываем группу даже при ошибке
         throw error;
     }
 }
@@ -451,37 +468,7 @@ function checkForSharedResults() {
 // Вызываем при загрузке страницы
 checkForSharedResults();
 
-// Назначаем обработчик для кнопки "Поделиться"
-shareBtn.addEventListener('click', async () => {
-    try {
-        shareBtn.disabled = true;
-        shareBtn.textContent = 'Создание ссылки...';
-        
-        // Сохраняем результаты и получаем токен
-        const savedData = await saveResults();
-        
-        if (!savedData) throw new Error('Не удалось сохранить результаты');
-        
-        // Формируем правильную ссылку на view.html
-        const baseUrl = 'https://kiberandy.github.io/CarryTest/';
-        const shareLink = `${baseUrl}view.html?share=${savedData.share_token}`;
-        
-        // Показываем ссылку пользователю
-        shareLinkInput.value = shareLink;
-        shareLinkContainer.style.display = 'block';
-        shareBtn.textContent = 'Поделиться результатами';
-        shareBtn.disabled = false;
-        
-        // Прокручиваем к ссылке
-        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
-        alert('Не удалось создать ссылку для общего доступа');
-    }
-});
+
 </script>
 </head>
 <body>
@@ -530,6 +517,39 @@ shareBtn.addEventListener('click', async () => {
         
         <button class="save-button" id="save-btn">Сохранить результаты</button>
         <button class="share-button" id="share-btn">Поделиться результатами</button>
+		<script>
+		// Назначаем обработчик для кнопки "Поделиться"
+		shareBtn.addEventListener('click', async () => {
+    try {
+        shareBtn.disabled = true;
+        shareBtn.textContent = 'Создание ссылки...';
+        
+        // Сохраняем результаты и получаем токен
+        const savedData = await saveResults();
+        
+        if (!savedData) throw new Error('Не удалось сохранить результаты');
+        
+        // Формируем правильную ссылку на view.html
+        const baseUrl = 'https://kiberandy.github.io/CarryTest/';
+        const shareLink = `${baseUrl}view.html?share=${savedData.share_token}`;
+        
+        // Показываем ссылку пользователю
+        shareLinkInput.value = shareLink;
+        shareLinkContainer.style.display = 'block';
+        shareBtn.textContent = 'Поделиться результатами';
+        shareBtn.disabled = false;
+        
+        // Прокручиваем к ссылке
+        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+        alert('Не удалось создать ссылку для общего доступа');
+    }
+});
+</script>
         <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
         
         <div class="share-link-container" id="share-link-container">
