@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Просмотр результатов теста</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e2e;
+        }
+        
+        h1, h2 {
+            color: #ffffff;
+            text-align: center;
+        }
+        
+        .profile-section {
+            background-color: #2a2a3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #444;
+            border-radius: 10px;
+            margin: 20px 0;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .progress-text {
+            position: absolute;
+            right: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 2;
+        }
+        
+        .compatibility-level {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #28a745;
+            text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .trait-name {
+            font-weight: bold;
+            width: 40%;
+        }
+        
+        .trait-bar {
+            width: 55%;
+            height: 15px;
+            background-color: #444;
+            border-radius: 7px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .trait-fill {
+            height: 100%;
+            border-radius: 7px;
+            background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+            width: 0%;
+            transition: width 0.8s ease-out;
+        }
+        
+        .trait-percent {
+            position: absolute;
+            right: 5px;
+            font-size: 11px;
+            color: white;
+            z-index: 2;
+        }
+        
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            margin: 50px 0;
+        }
+        
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin: 50px 0;
+        }
+        
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(40, 167, 69, 0.8); }
+            100% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+        }
+    </style>
+    <!-- Подключаем Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    </script>
+</head>
+<body>
+    <h1>Результаты теста на совместимость игроков</h1>
+    
+    <div id="loading" class="loading">
+        Загрузка результатов...
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+        Не удалось загрузить результаты. Проверьте правильность ссылки.
+    </div>
+    
+    <div id="result" style="display: none;">
+        <div class="profile-section">
+            <h2>Профиль игрока</h2>
+            
+            <div class="compatibility-level" id="compatibility-level"></div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="compatibility-bar"></div>
+                <span class="progress-text" id="progress-text">0%</span>
+            </div>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Характеристики:</h3>
+            <div id="traits-container"></div>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Описание профиля:</h3>
+            <p id="profile-description"></p>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Советы по взаимодействию:</h3>
+            <p id="interaction-tips"></p>
+        </div>
+    </div>
+
+    <script>
+        // Получаем токен из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const shareToken = urlParams.get('token');
+        
+        if (!shareToken) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = 'Ссылка не содержит токена для просмотра результатов';
+        } else {
+            loadResults(shareToken);
+        }
+        
+        async function loadResults(token) {
+            try {
+                // 1. Находим запись с токеном
+                const { data: tokenData, error: tokenError } = await supabase
+                    .from('share_tokens')
+                    .select('result_id')
+                    .eq('token', token)
+                    .single();
+                
+                if (tokenError || !tokenData) throw new Error('Токен не найден');
+                
+                // 2. Получаем результаты по ID
+                const { data: resultData, error: resultError } = await supabase
+                    .from('test_results')
+                    .select('*')
+                    .eq('id', tokenData.result_id)
+                    .single();
+                
+                if (resultError || !resultData) throw new Error('Результаты не найдены');
+                
+                // 3. Отображаем результаты
+                displayResults(resultData);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки результатов:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+        
+        function displayResults(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            
+            const scores = data.scores;
+            
+            // Рассчитываем общую совместимость
+            const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
+            const totalScore = keyTraits.reduce((sum, trait) => sum + (scores[trait] || 0), 0) / keyTraits.length;
+            const roundedScore = Math.round(totalScore);
+            
+            // Устанавливаем прогресс
+            const compatibilityBar = document.getElementById('compatibility-bar');
+            compatibilityBar.style.width = `${roundedScore}%`;
+            document.getElementById('progress-text').textContent = `${roundedScore}%`;
+            
+            // Изменяем цвет прогресс-бара
+            if (roundedScore <= 33) {
+                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #dc3545)';
+            } else if (roundedScore <= 66) {
+                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107)';
+            } else {
+                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107, #28a745)';
+            }
+            
+            // Устанавливаем текстовое описание совместимости
+            let compatibilityText, description, levelColor;
+            
+            if (roundedScore >= 90) {
+                compatibilityText = "Лучший друг по играм";
+                description = "Этот игрок - идеальный командный игрок, с которым приятно и продуктивно играть. Его напарники ценят его за позитивный настрой, готовность помочь и стремление к победе.";
+                levelColor = "#28a745";
+            } else if (roundedScore >= 75) {
+                compatibilityText = "Идеальный напарник";
+                description = "Этот игрок - отличный командный игрок, с которым большинству будет комфортно играть. Его сильные стороны - уравновешенность и готовность работать в команде.";
+                levelColor = "#5cb85c";
+            } else if (roundedScore >= 60) {
+                compatibilityText = "Хороший вариант";
+                description = "Этот игрок - неплохой напарник, хотя есть моменты, над которыми можно поработать. В целом, с ним приятно играть, но иногда могут возникать небольшие трения.";
+                levelColor = "#ffc107";
+            } else if (roundedScore >= 40) {
+                compatibilityText = "Можно попробовать";
+                description = "Этот игрок неплохо играет, но его поведение в команде иногда может вызывать напряжение. Возможно, ему стоит поработать над коммуникацией и терпимостью к ошибкам.";
+                levelColor = "#fd7e14";
+            } else {
+                compatibilityText = "Проблемный игрок";
+                description = "К сожалению, поведение этого игрока в игре может создавать проблемы для команды. Возможно, ему стоит пересмотреть своё отношение к игре и взаимодействию с напарниками.";
+                levelColor = "#dc3545";
+            }
+            
+            document.getElementById('compatibility-level').textContent = compatibilityText;
+            document.getElementById('compatibility-level').style.color = levelColor;
+            document.getElementById('profile-description').textContent = description;
+            
+            // Генерируем советы по взаимодействию
+            generateInteractionTips(scores);
+            
+            // Отображаем характеристики
+            showTraits(scores);
+        }
+        
+        function generateInteractionTips(scores) {
+            let tips = [];
+            
+            if (scores.temperament < 50) {
+                tips.push("Этот игрок может эмоционально реагировать на события в игре. Старайтесь не провоцировать его и сохраняйте спокойствие.");
+            }
+            
+            if (scores.tolerance < 50) {
+                tips.push("Он может быть нетерпим к ошибкам новичков. Постарайтесь объяснять свои действия, если играете вместе.");
+            }
+            
+            if (scores.communication < 50) {
+                if (scores.communication < 30) {
+                    tips.push("Он редко общается в чате. Пробуйте инициировать обсуждение тактики, но не настаивайте слишком сильно.");
+                } else {
+                    tips.push("Обращайте внимание на тон его сообщений, они могут звучать как критика.");
+                }
+            }
+            
+            if (scores.teamSpirit < 50) {
+                tips.push("Он может предпочитать личные достижения командным. Постарайтесь найти баланс в совместной игре.");
+            }
+            
+            if (scores.humor < 50) {
+                tips.push("Он может серьезно относиться к игре. Избегайте шуток, которые могут быть восприняты как насмешка.");
+            }
+            
+            if (tips.length === 0) {
+                tips.push("Это отличный командный игрок! Наслаждайтесь совместной игрой.");
+            }
+            
+            document.getElementById('interaction-tips').innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
+        }
+        
+        function showTraits(scores) {
+            const traitNames = {
+                temperament: "Темперамент",
+                tolerance: "Толерантность",
+                communication: "Коммуникация",
+                teamSpirit: "Командный дух",
+                learning: "Обучение",
+                humor: "Чувство юмора",
+                teamRole: "Роль в команде",
+                stamina: "Выносливость",
+                competitiveness: "Конкурентоспособность",
+                strategy: "Стратегия",
+                ethics: "Этика",
+                focus: "Концентрация",
+                flexibility: "Гибкость",
+                priority: "Приоритеты"
+            };
+            
+            // Показываем только основные характеристики
+            const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];
+            const traitsContainer = document.getElementById('traits-container');
+            
+            mainTraits.forEach(trait => {
+                if (!scores[trait]) return;
+                
+                const traitDiv = document.createElement('div');
+                traitDiv.className = 'trait';
+                
+                const nameSpan = document.createElement('div');
+                nameSpan.className = 'trait-name';
+                nameSpan.textContent = traitNames[trait] || trait;
+                
+                const barDiv = document.createElement('div');
+                barDiv.className = 'trait-bar';
+                
+                const fillDiv = document.createElement('div');
+                fillDiv.className = 'trait-fill';
+                fillDiv.style.width = `${scores[trait]}%`;
+                
+                const percentSpan = document.createElement('span');
+                percentSpan.className = 'trait-percent';
+                percentSpan.textContent = `${scores[trait]}%`;
+                
+                barDiv.appendChild(fillDiv);
+                barDiv.appendChild(percentSpan);
+                traitDiv.appendChild(nameSpan);
+                traitDiv.appendChild(barDiv);
+                
+                traitsContainer.appendChild(traitDiv);
+            });
+        }
+    </script>
+</body>
+</html>
