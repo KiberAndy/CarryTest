@@ -254,6 +254,46 @@
             opacity: 1;
         }
         
+        /* Стили для кнопки поделиться */
+        .share-button {
+            background-color: #6e45e2;
+            margin-top: 15px;
+        }
+        
+        .share-button:hover {
+            background-color: #5a35c7;
+        }
+        
+        .share-link-container {
+            display: none;
+            margin-top: 20px;
+            background-color: #3a3a4a;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .share-link {
+            word-break: break-all;
+            color: #6e45e2;
+            font-weight: bold;
+        }
+        
+        .copy-btn {
+            background-color: #4a4a5a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #5a5a6a;
+        }
+        
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -283,29 +323,32 @@
             }
         }
     </style>
-	<!-- Supabase -->
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+	<!-- Supabase JS клиент -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Инициализация Supabase -->
 <script>
+  // Замените эти значения на ваши из панели Supabase
   const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24'
-  const { createClient } = require('@supabase/supabase-js');
-  const supabase = createClient(supabaseUrl, supabaseKey);
   
-// Функция сохранения результатов с генерацией ссылки
+  // Создаем клиент Supabase
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+  
+  // Функция сохранения результатов
 async function saveResults() {
     try {
         // Рассчитываем результаты перед сохранением
         calculateResults();
         
+        // Генерируем токен для общего доступа
+        const shareToken = generateShareToken();
+        
         // Подготавливаем данные для сохранения
         const resultData = {
-            session_id: sessionId,
-            answers: Object.keys(answers).reduce((acc, key) => {
-                acc[`q${parseInt(key)+1}`] = answers[key].optionIndex;
-                return acc;
-            }, {}),
+            answers: answers,
             scores: scores,
-            created_at: new Date().toISOString()
+            share_token: shareToken
         };
         
         // Сохраняем данные в Supabase
@@ -317,7 +360,7 @@ async function saveResults() {
         if (error) throw error;
         
         console.log('Результаты сохранены:', data);
-        return data[0].id; // Возвращаем ID записи
+        return data[0];
         
     } catch (error) {
         console.error('Ошибка сохранения:', error);
@@ -326,72 +369,79 @@ async function saveResults() {
     }
 }
 
-// Новая реализация (хэш на основе ответов)
-async function generateShareToken(answers) {
-    // 1. Преобразуем ответы в стабильную JSON-строку
-    const answersString = JSON.stringify(answers);
-    
-    // 2. Генерируем SHA-256 хэш
-    const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(answersString)
-    );
-    
-    // 3. Конвертируем в hex-строку
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    // 4. Берем первые 16 символов как токен
-    return hashHex.substring(0, 16);
+// Генерация токена для общего доступа
+function generateShareToken() {
+    return Math.random().toString(36).substring(2, 10) + 
+           Math.random().toString(36).substring(2, 10);
 }
 
-// Функция создания ссылки для общего доступа
-async function createShareLink() {
-    const shareBtn = document.getElementById('share-btn');
+// Функция "Поделиться результатами"
+async function shareResults() {
     shareBtn.disabled = true;
     shareBtn.textContent = 'Создание ссылки...';
     
     try {
-        // 1. Получаем ответы пользователя
-        const userAnswers = Object.values(answers).map(a => a.optionIndex);
+        // Сохраняем результаты и получаем токен
+        const savedData = await saveResults();
         
-        // 2. Генерируем токен на основе ответов
-        const shareToken = await generateShareToken(userAnswers);
+        if (!savedData) throw new Error('Не удалось сохранить результаты');
         
-        // 3. Проверяем, есть ли такой токен в БД
-        const { data: existing } = await supabase
-            .from('share_tokens')
-            .select('result_id')
-            .eq('token', shareToken)
-            .maybeSingle();
-
-        let resultId;
-        if (existing) {
-            resultId = existing.result_id; // Используем существующий результат
-        } else {
-            // Сохраняем новые результаты
-            const { data, error } = await supabase.from('test_results')...;
-            resultId = data[0].id;
-            
-            // Сохраняем токен
-            await supabase.from('share_tokens').insert({
-                result_id: resultId,
-                token: shareToken
-            });
-        }
+        // Формируем ссылку
+        const shareLink = `${window.location.origin}${window.location.pathname}?share=${savedData.share_token}`;
         
-        // Формируем ссылку (как раньше)
-        const shareLink = `${window.location.origin}/view.html?token=${shareToken}`;
-        // ... остальной код показа ссылки
+        // Показываем ссылку
+        shareLinkInput.value = shareLink;
+        shareLinkContainer.style.display = 'block';
+        shareBtn.textContent = 'Поделиться результатами';
+        shareBtn.disabled = false;
+        
+        // Прокручиваем к ссылке
+        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+        
     } catch (error) {
         console.error('Ошибка:', error);
         shareBtn.disabled = false;
         shareBtn.textContent = 'Поделиться результатами';
+        alert('Не удалось создать ссылку для общего доступа');
     }
 }
 
-// Добавляем обработчик для кнопки "Поделиться"
-document.getElementById('share-btn').addEventListener('click', createShareLink);
+// Загрузка общих результатов
+async function loadSharedResults(shareToken) {
+    try {
+        const { data, error } = await supabase
+            .from('test_results')
+            .select('*')
+            .eq('share_token', shareToken)
+            .single();
+            
+        if (error || !data) throw error;
+        
+        // Здесь можно отобразить результаты другого игрока
+        console.log('Загружены общие результаты:', data);
+        // Ваш код для отображения чужих результатов
+        
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        alert('Не удалось загрузить общие результаты. Ссылка может быть недействительной.');
+    }
+}
+
+// Проверка URL на наличие общего доступа
+function checkForSharedResults() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareToken = urlParams.get('share');
+    
+    if (shareToken) {
+        loadSharedResults(shareToken);
+    }
+}
+
+// Вызываем при загрузке страницы
+checkForSharedResults();
+
+// Назначаем обработчик для кнопки "Поделиться"
+shareBtn.addEventListener('click', shareResults);
 </script>
 </head>
 <body>
@@ -409,6 +459,11 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
     <button id="submit-btn" disabled>Получить результат</button>
     
     <div id="result">
+	<div id="shared-result" style="display: none;">
+    <h2>Результаты другого игрока</h2>
+    <div id="shared-result-content"></div>
+    <button onclick="resetTest()" class="reset-button">Пройти тест самому</button>
+</div>
         <h2>Твой профиль игрока</h2>
         
         <div class="compatibility-level" id="compatibility-level"></div>
@@ -434,16 +489,17 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
         </div>
         
         <button class="save-button" id="save-btn">Сохранить результаты</button>
+        <button class="share-button" id="share-btn">Поделиться результатами</button>
         <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
+        
+        <div class="share-link-container" id="share-link-container">
+            <p>Ссылка для просмотра результатов:</p>
+            <div>
+                <input type="text" id="share-link" class="share-link" readonly>
+                <button class="copy-btn" id="copy-btn">Копировать</button>
+            </div>
+        </div>
     </div>
-	<button class="share-button" id="share-btn">Поделиться результатами</button>
-<div class="share-link-container" id="share-link-container">
-    <p>Ссылка для просмотра результатов:</p>
-    <div>
-        <a href="#" id="share-link" class="share-link"></a>
-        <button class="copy-btn" id="copy-btn">Копировать</button>
-    </div>
-</div>
 
     <script>
         const questions = [
@@ -680,6 +736,10 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
         const traitsContainer = document.getElementById('traits-container');
         const completionInfo = document.getElementById('completion-info');
         const saveBtn = document.getElementById('save-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const shareLinkContainer = document.getElementById('share-link-container');
+        const shareLinkInput = document.getElementById('share-link');
+        const copyBtn = document.getElementById('copy-btn');
 
         let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
         let scores = {
@@ -988,6 +1048,7 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
                 submitBtn.style.display = 'block';
                 completionInfo.style.display = 'block';
                 resultSection.style.display = 'none';
+                shareLinkContainer.style.display = 'none';
                 
                 // Сбрасываем выделение ответов
                 const allOptions = document.querySelectorAll('.option');
@@ -1125,48 +1186,6 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
             border-bottom: none;
         }
     </style>
-	
-	<!-- В разделе стилей добавьте новый стиль для кнопки поделиться -->
-<style>
-    .share-button {
-        background-color: #6e45e2;
-        margin-top: 15px;
-    }
-    
-    .share-button:hover {
-        background-color: #5a35c7;
-    }
-    
-    .share-link-container {
-        display: none;
-        margin-top: 20px;
-        background-color: #3a3a4a;
-        padding: 15px;
-        border-radius: 8px;
-        text-align: center;
-    }
-    
-    .share-link {
-        word-break: break-all;
-        color: #6e45e2;
-        font-weight: bold;
-    }
-    
-    .copy-btn {
-        background-color: #4a4a5a;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-left: 10px;
-        transition: all 0.3s;
-    }
-    
-    .copy-btn:hover {
-        background-color: #5a5a6a;
-    }
-</style>
 </head>
 <body>
     <h1>Мои результаты теста на совместимость игроков</h1>
@@ -1218,6 +1237,59 @@ document.getElementById('share-btn').addEventListener('click', createShareLink);
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
+
+        // Функция для генерации ссылки для общего доступа
+        shareBtn.addEventListener('click', function() {
+            // Рассчитываем результаты перед генерацией ссылки
+            calculateResults();
+            
+            // Создаем уникальный идентификатор на основе ответов
+            const answersString = JSON.stringify(answers);
+            let hash = 0;
+            for (let i = 0; i < answersString.length; i++) {
+                const char = answersString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Преобразуем в 32bit integer
+            }
+            
+            const shareToken = Math.abs(hash).toString(36).substring(0, 8);
+            const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareToken}`;
+            
+            // Показываем ссылку
+            shareLinkInput.value = shareLink;
+            shareLinkContainer.style.display = 'block';
+            
+            // Прокручиваем страницу к ссылке
+            shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Функция для копирования ссышки
+        copyBtn.addEventListener('click', function() {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            
+            // Меняем текст кнопки на короткое время
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Скопировано!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        });
+
+        // Проверяем URL на наличие параметра share
+        function checkForSharedResults() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareToken = urlParams.get('share');
+            
+            if (shareToken) {
+                // Здесь можно добавить логику для загрузки общих результатов
+                // В демо-версии просто показываем сообщение
+                alert('Функция просмотра общих результатов в демо-версии не реализована. В полной версии здесь будут отображаться результаты другого игрока.');
+            }
+        }
+
+        // Проверяем при загрузке страницы
+        checkForSharedResults();
 
         // Функция для авто-заполнения + скролл вниз
         function autoFillTest() {
