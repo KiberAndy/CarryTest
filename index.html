@@ -329,7 +329,7 @@
 <!-- Инициализация Supabase -->
 <script>
   // Запрос переменных окружения из Netlify Functions
-  fetch('/.netlify/functions/env')
+  fetch('/CarryTest/functions/env')
     .then(response => response.json())
     .then(env => {
       // Инициализация Supabase с полученными переменными
