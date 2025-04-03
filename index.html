@@ -330,40 +330,29 @@
 
 <script>
   // Запрос переменных окружения
+<script>
   fetch('/.netlify/functions/env')
     .then(response => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Ошибка! Статус: ${response.status}`);
       }
       return response.json();
     })
     .then(env => {
-      // Инициализация Supabase
       const supabase = supabase.createClient(
-        env.SUPABASE_URL,
+        env.SUPABASE_URL, 
         env.SUPABASE_KEY,
         {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true
-          }
+          auth: { persistSession: true }
         }
       );
-
-      console.log('✅ Supabase подключён!');
-      
-      // Тестовый запрос
-      return supabase.from('test_table').select('*').limit(1);
+      console.log("Supabase инициализирован");
     })
-    .then(({ data, error }) => {
-      if (error) throw error;
-      console.log('Данные:', data);
-    })
-    .catch(err => {
-      console.error('Ошибка:', err);
-      // Можно показать сообщение пользователю
-      document.body.innerHTML = `<div style="color: red">Ошибка: ${err.message}</div>`;
+    .catch(error => {
+      console.error("Ошибка:", error);
+      alert("Ошибка загрузки. Обновите страницу.");
     });
+
 
 
 
