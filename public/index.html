@@ -332,27 +332,36 @@
   // Запрос переменных окружения
   fetch('/.netlify/functions/env')
     .then(response => {
-      if (!response.ok) {
-        throw new Error(`Ошибка! Статус: ${response.status}`);
-      }
+      if (!response.ok) throw new Error('Network error');
       return response.json();
     })
-    .then(env => {
+    .then(({ SUPABASE_URL, SUPABASE_KEY }) => {
+      // 1. Инициализация Supabase
       const supabase = supabase.createClient(
-        env.SUPABASE_URL, 
-        env.SUPABASE_KEY,
+        SUPABASE_URL,
+        SUPABASE_KEY,
         {
           auth: { persistSession: true }
         }
       );
-      console.log("Supabase инициализирован");
+
+      // 2. Проверка подключения
+      supabase.from('test_table').select('*').limit(1)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Supabase error:', error);
+            alert('Ошибка подключения к базе');
+          } else {
+            console.log('Успешное подключение:', data);
+            // 3. Сохраните объект supabase для использования
+            window.supabase = supabase;
+          }
+        });
     })
     .catch(error => {
-      console.error("Ошибка:", error);
-      alert("Ошибка загрузки. Обновите страницу.");
+      console.error('Ошибка:', error);
+      alert('Ошибка загрузки приложения');
     });
-
-
 
 
   
