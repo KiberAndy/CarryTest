@@ -336,8 +336,9 @@
   );
 
 // Инициализация Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+console.log(import.meta.env);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_DATABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = supabase.createClient(supabaseUrl, supabaseKey, {
   auth: {
