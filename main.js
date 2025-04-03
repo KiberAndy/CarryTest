@@ -12,3 +12,4 @@ fetch('/.netlify/functions/env')
     console.log('✅ Supabase подключён!', supabase);
   })
   .catch(err => console.error('Ошибка получения переменных:', err));
+
