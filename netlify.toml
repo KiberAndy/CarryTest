@@ -1,7 +1,7 @@
 [build]
-  publish = "CarryTest"
-  functions = "CarryTest/functions"
-  command = "echo 'No build needed'"
+  command = "echo 'Build skipped'"
+  publish = "public"  # Важно: указываем папку public
+  functions = "functions"
 
 [[redirects]]
   from = "/*"
