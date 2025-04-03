@@ -1,9 +1,9 @@
 {
   "name": "CarryTest",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "vite": "latest"
   },
+  "devDependencies": {},
   "scripts": {
     "start": "vite",
     "dev": "vite",
