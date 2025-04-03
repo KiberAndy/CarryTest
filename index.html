@@ -328,29 +328,42 @@
 <!-- Supabase JS клиент -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Инициализация Supabase -->
 <script>
-  // Запрос переменных окружения из Netlify Functions
+  // Запрос переменных окружения
   fetch('/.netlify/functions/env')
-    .then(response => response.json())
-    .then(env => {
-      // Инициализация Supabase с полученными переменными
-      const supabase = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true
-        }
-      });
-
-      console.log('✅ Supabase подключён!', supabase);
-
-      // Пример запроса данных
-      supabase.from('test_table').select('*').limit(1)
-        .then(data => console.log('Supabase connected:', data))
-        .catch(err => console.error('Connection error:', err));
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
     })
-    .catch(err => console.error('Ошибка получения переменных:', err));
+    .then(env => {
+      // Инициализация Supabase
+      const supabase = supabase.createClient(
+        env.SUPABASE_URL,
+        env.SUPABASE_KEY,
+        {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true
+          }
+        }
+      );
 
+      console.log('✅ Supabase подключён!');
+      
+      // Тестовый запрос
+      return supabase.from('test_table').select('*').limit(1);
+    })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      console.log('Данные:', data);
+    })
+    .catch(err => {
+      console.error('Ошибка:', err);
+      // Можно показать сообщение пользователю
+      document.body.innerHTML = `<div style="color: red">Ошибка: ${err.message}</div>`;
+    });
 
 
 
