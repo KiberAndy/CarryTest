@@ -1,3 +1,4 @@
+// Функция для получения переменных из окружения
 export const handler = async () => {
   return {
     statusCode: 200,
