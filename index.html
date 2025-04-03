@@ -328,29 +328,29 @@
 
 <!-- Инициализация Supabase -->
 <script>
-  // Проверка загрузки Supabase (цветное выделение)
-  console.log(
-    '%cSupabase:', 
-    'color: #FF5722; font-weight: bold;',
-    window.supabase ? '✅ Загружен' : '❌ Не загружен'
-  );
+  // Запрос переменных окружения из Netlify Functions
+  fetch('/.netlify/functions/env')
+    .then(response => response.json())
+    .then(env => {
+      // Инициализация Supabase с полученными переменными
+      const supabase = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      });
 
-// Инициализация Supabase
-console.log(import.meta.env);
-const supabaseUrl = import.meta.env.VITE_SUPABASE_DATABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log('✅ Supabase подключён!', supabase);
 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true
-  }
-});
+      // Пример запроса данных
+      supabase.from('test_table').select('*').limit(1)
+        .then(data => console.log('Supabase connected:', data))
+        .catch(err => console.error('Connection error:', err));
+    })
+    .catch(err => console.error('Ошибка получения переменных:', err));
 
-// Проверка подключения (для отладки)
-supabase.from('test_table').select('*').limit(1)
-  .then(() => console.log('Supabase connected'))
-  .catch(err => console.error('Connection error:', err));
+
+
 
   
   // Функция сохранения результатов
