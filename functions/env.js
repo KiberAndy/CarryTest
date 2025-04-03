@@ -6,8 +6,8 @@ exports.handler = async function () {
       "Access-Control-Allow-Origin": "*"
     },
     body: JSON.stringify({
-      SUPABASE_URL: process.env.SUPABASE_URL,
-      SUPABASE_KEY: process.env.SUPABASE_KEY
+      SUPABASE_URL: process.env.SUPABASE_DATABASE_URL,
+      SUPABASE_KEY: process.env.SUPABASE_ANON_KEY
     })
   };
 };
