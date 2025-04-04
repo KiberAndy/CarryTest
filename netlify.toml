@@ -1,11 +1,11 @@
 [build]
   command = "echo 'Skip'"  # Пропускаем сборку (если не нужно)
-  publish = "public"                # Папка с фронтендом
-  functions = "functions"           # Папка для serverless-функций
+  publish = "public"        # Папка с фронтендом
+  functions = "functions"   # Папка для serverless-функций
 
 # Оптимизация функций (добавляем)
 [functions]
-  node_bundler = "esbuild"          # Ускоряет деплой функций
+  node_bundler = "esbuild"  # Ускоряет деплой функций
   external_node_modules = ["@supabase/supabase-js"]  # Исключает лишние зависимости
 
 # Перенаправления для SPA (ваш существующий код)
@@ -13,8 +13,8 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  
-  [[redirects]]
+
+[[redirects]]
   from = "/view.html"
   to = "/view.html"
   status = 200
@@ -23,9 +23,11 @@
 [[headers]]
   for = "/functions/*"
   [headers.values]
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "https://carrytest.netlify.app"  # Разрешаем доступ только с carrytest.netlify.app
     Access-Control-Allow-Methods = "GET, POST"
-	
+    Access-Control-Allow-Headers = "Authorization, Content-Type"
+    Access-Control-Allow-Credentials = "true"  # Если требуется передавать куки или другие данные с запросом
+
 # Устанавливаем версию Node.js
 [build.environment]
   NODE_VERSION = "22.14.0"
