@@ -1,33 +1,39 @@
 [build]
-  command = "echo 'Skip'"  # Пропускаем сборку (если не нужно)
-  publish = "public"        # Папка с фронтендом
-  functions = "functions"   # Папка для serverless-функций
+  command = "echo 'Skip build'"  # Пропускаем сборку, если не требуется
+  publish = "public"             # Папка с фронтендом
+  functions = "functions"        # Папка для serverless-функций
 
-# Оптимизация функций (добавляем)
+[build.environment]
+  NODE_VERSION = "22.14.0"       # Фиксируем версию Node.js
+
 [functions]
-  node_bundler = "esbuild"  # Ускоряет деплой функций
-  external_node_modules = ["@supabase/supabase-js"]  # Исключает лишние зависимости
+  node_bundler = "esbuild"       # Ускоряет деплой функций
+  external_node_modules = ["@supabase/supabase-js"]  # Исключаем лишние зависимости
 
-# Перенаправления для SPA (ваш существующий код)
+# Перенаправления для SPA (учтена папка public/)
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/public/:splat"          # Все запросы перенаправляем в public/
   status = 200
+  force = true                   # Приоритет над дефолтными правилами
 
 [[redirects]]
   from = "/view.html"
-  to = "/view.html"
+  to = "/public/view.html"       # Явное перенаправление для view.html
   status = 200
 
-# Важно: разрешаем CORS для функций (добавляем)
+# Настройки кэширования для статики
+[[headers]]
+  for = "/public/*"              # Применяем только к файлам в public/
+  [headers.values]
+    Cache-Control = "public, max-age=3600"  # Кэшировать на 1 час
+    Access-Control-Allow-Origin = "*"
+
+# CORS для функций (оптимизированная версия)
 [[headers]]
   for = "/functions/*"
   [headers.values]
-    Access-Control-Allow-Origin = "https://carrytest.netlify.app"  # Разрешаем доступ только с carrytest.netlify.app
-    Access-Control-Allow-Methods = "GET, POST"
+    Access-Control-Allow-Origin = "https://carrytest.netlify.app"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Authorization, Content-Type"
-    Access-Control-Allow-Credentials = "true"  # Если требуется передавать куки или другие данные с запросом
-
-# Устанавливаем версию Node.js
-[build.environment]
-  NODE_VERSION = "22.14.0"
+    Access-Control-Max-Age = "86400"        # Кэшировать CORS-префлайт на 24 часа
