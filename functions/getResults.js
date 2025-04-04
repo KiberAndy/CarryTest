@@ -8,6 +8,12 @@ exports.handler = async (event) => {
         );
 
         const testData = JSON.parse(event.body);
+		
+		        // Дополнительная проверка
+        if (!testData.completed) {
+            return { statusCode: 400, body: JSON.stringify({ error: 'Тест не завершён' }) };
+        }
+		
         const share_token = crypto.randomUUID().split('-')[0]; // Более надежный токен
 
         const { error } = await supabase
