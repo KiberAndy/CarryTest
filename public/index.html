@@ -328,45 +328,58 @@
 <!-- Supabase JS клиент -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // 1. Сначала загружаем переменные окружения
+  // 1. Загрузка ключей из Netlify Function
   fetch('/.netlify/functions/env')
     .then(response => {
-      if (!response.ok) throw new Error('Ошибка сети');
+      if (!response.ok) throw new Error('Ошибка загрузки конфигурации');
       return response.json();
     })
     .then(env => {
-      // 2. Только после получения переменных инициализируем Supabase
-      const supabase = window.supabase.createClient(
+      // 2. Инициализация Supabase
+      window.supabase = supabase.createClient(
         env.SUPABASE_URL,
         env.SUPABASE_KEY,
         {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true
-          }
+          auth: { persistSession: true }
         }
       );
 
-      // 3. Проверяем подключение
-      return supabase.from('test_table').select('*').limit(1)
-        .then(({ data, error }) => {
-          if (error) throw error;
-          console.log('Успешное подключение:', data);
-          return supabase; // Возвращаем инициализированный клиент
-        });
+      // 3. Проверка подключения к вашей таблице
+      return supabase.from('test_results')
+        .select('id', { count: 'exact', head: true });
     })
-    .then(supabaseClient => {
-      // 4. Сохраняем для глобального доступа (если нужно)
-      window.supabase = supabaseClient;
-      
-      // 5. Здесь можно использовать supabaseClient для запросов
-      // Например:
-      // supabaseClient.from('table').insert(...)
+    .then(({ count }) => {
+      console.log('Supabase подключён. Записей в таблице:', count);
     })
     .catch(error => {
       console.error('Ошибка:', error);
-      alert('Произошла ошибка при загрузке приложения');
+      alert('Приложение не может загрузиться');
     });
+
+  // 4. Функции для работы с таблицей (как в предыдущем примере)
+  function generateToken() {
+    return Math.random().toString(36).substring(2, 10) + 
+           Math.random().toString(36).substring(2, 10);
+  }
+
+  async function saveResults(answers, scores) {
+    if (!window.supabase) throw new Error('Supabase не инициализирован');
+    
+    const { data, error } = await supabase
+      .from('test_results')
+      .insert([{
+        answers: answers,
+        scores: scores,
+        session_id: 'session-' + generateToken(),
+        share_token: generateToken(),
+        created_at: new Date().toISOString()
+      }])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  }
+
 
 
 
