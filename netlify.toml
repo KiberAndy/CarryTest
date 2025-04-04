@@ -1,39 +1,48 @@
 [build]
-  command = "echo 'Skip build'"  # Пропускаем сборку, если не требуется
-  publish = "public"             # Папка с фронтендом
-  functions = "functions"        # Папка для serverless-функций
+  command = "echo 'Skip build'"
+  publish = "public"
+  functions = "functions"
 
 [build.environment]
-  NODE_VERSION = "22.14.0"       # Фиксируем версию Node.js
+  NODE_VERSION = "22.14.0"
 
 [functions]
-  node_bundler = "esbuild"       # Ускоряет деплой функций
-  external_node_modules = ["@supabase/supabase-js"]  # Исключаем лишние зависимости
+  node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js"]
 
-# Перенаправления для SPA (учтена папка public/)
+# Основные перенаправления
 [[redirects]]
   from = "/*"
-  to = "/public/:splat"          # Все запросы перенаправляем в public/
+  to = "/public/:splat"
   status = 200
-  force = true                   # Приоритет над дефолтными правилами
+  force = true
+
+[[redirects]]
+  from = "/"
+  to = "/public/index.html"  # Явное указание index.html
+  status = 200
+
+[[redirects]]
+  from = "/index.html"
+  to = "/public/index.html"  # Дублирующее правило для index
+  status = 200
 
 [[redirects]]
   from = "/view.html"
-  to = "/public/view.html"       # Явное перенаправление для view.html
+  to = "/public/view.html"
   status = 200
 
-# Настройки кэширования для статики
+# Заголовки
 [[headers]]
-  for = "/public/*"              # Применяем только к файлам в public/
+  for = "/public/*"
   [headers.values]
-    Cache-Control = "public, max-age=3600"  # Кэшировать на 1 час
+    Cache-Control = "public, max-age=3600"
     Access-Control-Allow-Origin = "*"
 
-# CORS для функций (оптимизированная версия)
 [[headers]]
   for = "/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "https://carrytest.netlify.app"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Authorization, Content-Type"
-    Access-Control-Max-Age = "86400"        # Кэшировать CORS-префлайт на 24 часа
+    Access-Control-Max-Age = "86400"
