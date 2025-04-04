@@ -328,29 +328,56 @@
 <!-- Supabase JS клиент -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // 1. Инициализация Supabase через env
-  let supabase;
-  
-  fetch('/.netlify/functions/env')
-    .then(response => response.json())
-    .then(env => {
-      supabase = supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
-        db: { schema: 'public' },
-        auth: { persistSession: true }
+  // 1. Ожидаем загрузку библиотеки Supabase
+  function initSupabase() {
+    // Проверяем доступность supabase.createClient
+    if (typeof supabase === 'undefined' || !supabase.createClient) {
+      setTimeout(initSupabase, 100);
+      return;
+    }
+
+    // 2. Загружаем конфиг из Netlify Function
+    fetch('/.netlify/functions/env')
+      .then(response => {
+        if (!response.ok) throw new Error('Network error');
+        return response.json();
+      })
+      .then(env => {
+        // 3. Инициализируем клиент
+        window.supabase = supabase.createClient(
+          env.SUPABASE_URL,
+          env.SUPABASE_KEY,
+          {
+            db: { schema: 'public' },
+            auth: { persistSession: true }
+          }
+        );
+        console.log('Supabase готов к использованию');
+        
+        // 4. Можно вызывать функции, которые зависят от supabase
+        if (window.onSupabaseReady) {
+          window.onSupabaseReady();
+        }
+      })
+      .catch(err => {
+        console.error('Ошибка инициализации:', err);
+        alert('Приложение не может загрузиться. Обновите страницу.');
       });
-      console.log('Supabase инициализирован');
-    })
-    .catch(err => {
-      console.error('Ошибка загрузки конфига:', err);
-      alert('Ошибка загрузки приложения');
-    });
+  }
 
-  // 2. Генератор ID
-  const generateId = (prefix = '') => prefix + Math.random().toString(36).substr(2, 9);
+  // Запускаем инициализацию
+  document.addEventListener('DOMContentLoaded', initSupabase);
 
-  // 3. Сохранение результатов (используйте в своем коде)
+  // 5. Функции для работы с Supabase
+  function generateId(prefix = '') {
+    return prefix + Math.random().toString(36).substr(2, 9);
+  }
+
+  // 6. Сохранение результатов (с проверкой инициализации)
   window.saveTestResults = async (answers, scores) => {
-    if (!supabase) throw new Error('Supabase не инициализирован');
+    if (!window.supabase) {
+      throw new Error('Supabase не инициализирован. Попробуйте позже.');
+    }
     
     const { data, error } = await supabase
       .from('test_results')
@@ -366,6 +393,20 @@
     if (error) throw error;
     return data[0];
   };
+
+  // 7. Функция для тестирования из консоли
+  window.testConnection = async () => {
+    try {
+      const result = await saveTestResults(
+        { q1: 5, q2: "Тест" },
+        { total: 90 }
+      );
+      console.log('✅ Успешно:', result);
+    } catch (error) {
+      console.error('❌ Ошибка:', error);
+    }
+  };
+
 
   // 4. Тестовая функция для консоли
   window.testSupabase = async () => {
