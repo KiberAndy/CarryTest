@@ -23,8 +23,8 @@
 
 # Явное разрешение favicon (на всякий случай)
 [[redirects]]
-  from = "/favicon/*"
-  to = "/favicon/:splat"  # :splat — это часть после /favicon/
+  from = "/public/favicon/*"
+  to = "/favicon/:splat"  # Перенаправляем на правильный путь
   status = 200
   force = true
 
