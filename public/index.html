@@ -612,8 +612,13 @@ checkForSharedResults();
 
 <script>
 // Конфигурация из переменных окружения
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || process.env.SUPABASE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+// Проверка наличия переменных (для отладки)
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("Supabase credentials not found in process.env");
+}
 
 // Инициализация Supabase
 async function initSupabaseClient() {
@@ -682,12 +687,18 @@ async function saveTestResults() {
     return { share_token: shareToken, is_fallback: true };
 }
 
-// Генерация "чистой" ссылки
+// Функция генерации правильной ссылки
 function generateCleanLink(token) {
-    const baseUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000/view' 
-        : 'https://yourdomain.com/view';
-    return `${baseUrl}?id=${token}`;
+    // Получаем базовый URL текущей страницы
+    const baseUrl = window.location.href.split('?')[0].split('#')[0];
+    
+    // Заменяем текущий файл на view.html
+    const viewUrl = baseUrl.includes('/index.html') 
+        ? baseUrl.replace('/index.html', '/view.html')
+        : baseUrl.replace(/(\/)?$/, '/view.html');
+    
+    // Возвращаем ссылку с параметром result
+    return `${viewUrl}?result=${token}`;
 }
 
 // Основной код выполнения
@@ -699,35 +710,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!shareBtn || !shareLink || !copyBtn) return;
 
-    shareBtn.addEventListener('click', async () => {
-        try {
-            // Блокировка UI на время обработки
-            shareBtn.disabled = true;
-            shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
+shareBtn.addEventListener('click', async () => {
+    try {
+        shareBtn.disabled = true;
+        shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
 
-            const result = await saveTestResults();
-            if (!result?.share_token) {
-                throw new Error('Failed to generate share token');
-            }
-
-            const cleanLink = generateCleanLink(result.share_token);
-            shareLink.value = cleanLink;
-            shareLinkContainer.style.display = 'block';
-
-            // Анимация и восстановление UI
-            setTimeout(() => {
-                shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
-                shareBtn.disabled = false;
-                shareBtn.textContent = 'Поделиться результатами';
-            }, 150);
-
-        } catch (error) {
-            console.error('Share error:', error);
-            shareBtn.disabled = false;
-            shareBtn.textContent = 'Поделиться результатами';
-            alert('Ошибка: ' + (error.message || 'Попробуйте позже'));
+        const result = await saveTestResults();
+        if (!result?.share_token) {
+            throw new Error('Не удалось создать ссылку');
         }
-    });
+
+        // Используем новую функцию генерации
+        const resultLink = generateCleanLink(result.share_token);
+        shareLink.value = resultLink;
+        shareLinkContainer.style.display = 'block';
+
+        // Копирование в буфер обмена
+        navigator.clipboard.writeText(resultLink).then(() => {
+            copyBtn.textContent = 'Скопировано!';
+            setTimeout(() => copyBtn.textContent = 'Копировать', 2000);
+        });
+
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+        alert('Ошибка при создании ссылки');
+    }
+});
 
     copyBtn.addEventListener('click', () => {
         shareLink.select();

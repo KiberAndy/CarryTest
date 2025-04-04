@@ -175,46 +175,62 @@
 
     <script>
         // Получаем токен из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('token');
-        
-        if (!shareToken) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error').textContent = 'Ссылка не содержит токена для просмотра результатов';
-        } else {
-            loadResults(shareToken);
-        }
+const urlParams = new URLSearchParams(window.location.search);
+const shareToken = urlParams.get('result'); // Изменили 'token' на 'result'
+
+if (!shareToken) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Ссылка на результаты недействительна';
+} else {
+    loadResults(shareToken);
+}
         
         async function loadResults(token) {
-            try {
-                // 1. Находим запись с токеном
-                const { data: tokenData, error: tokenError } = await supabase
-                    .from('share_tokens')
-                    .select('result_id')
-                    .eq('token', token)
-                    .single();
-                
-                if (tokenError || !tokenData) throw new Error('Токен не найден');
-                
-                // 2. Получаем результаты по ID
-                const { data: resultData, error: resultError } = await supabase
-                    .from('test_results')
-                    .select('*')
-                    .eq('id', tokenData.result_id)
-                    .single();
-                
-                if (resultError || !resultData) throw new Error('Результаты не найдены');
-                
-                // 3. Отображаем результаты
-                displayResults(resultData);
-                
-            } catch (error) {
-                console.error('Ошибка загрузки результатов:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-            }
-        }
+    try {
+        if (!token || token.length < 6) throw new Error('Некорректная ссылка');
+        
+        console.log('Загрузка результатов для токена:', token);
+        
+        // 1. Поиск токена
+        const { data: tokenData, error: tokenError } = await supabase
+            .from('share_token')
+            .select('result_id')
+            .eq('token', token)
+            .single()
+            .timeout(5000);
+        
+        if (tokenError || !tokenData) throw new Error('Ссылка устарела или недействительна');
+        
+        // 2. Получение результатов
+        const { data: resultData, error: resultError } = await supabase
+            .from('test_results')
+            .select('*')
+            .eq('id', tokenData.result_id)
+            .single();
+        
+        if (resultError || !resultData) throw new Error('Результаты не найдены');
+        
+        console.log('Успешно загружено:', resultData);
+        displayResults(resultData);
+        
+    } catch (error) {
+        console.error('Ошибка:', {
+            token,
+            error: error.message,
+            supabaseError: tokenError || resultError
+        });
+        
+        const errorEl = document.getElementById('error');
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = `
+            ${error.message}<br>
+            <small>${token ? `Код: ${token}` : ''}</small>
+        `;
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
         
         function displayResults(data) {
             document.getElementById('loading').style.display = 'none';
