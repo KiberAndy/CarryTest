@@ -599,50 +599,111 @@ checkForSharedResults();
         </div>
         
         <button class="save-button" id="save-btn">Сохранить результаты</button>
-        <button class="share-button" id="share-btn">Поделиться результатами</button>
-		<script>
-		// Назначаем обработчик для кнопки "Поделиться"
-		shareBtn.addEventListener('click', async () => {
-    try {
-        shareBtn.disabled = true;
-        shareBtn.textContent = 'Создание ссылки...';
-        
-        // Сохраняем результаты и получаем токен
-        const savedData = await saveResults();
-        
-        if (!savedData) throw new Error('Не удалось сохранить результаты');
-        
-        // Формируем правильную ссылку на view.html
-        const baseUrl = 'https://kiberandy.github.io/CarryTest/';
-        const shareLink = `${baseUrl}view.html?share=${savedData.share_token}`;
-        
-        // Показываем ссылку пользователю
-        shareLinkInput.value = shareLink;
-        shareLinkContainer.style.display = 'block';
-        shareBtn.textContent = 'Поделиться результатами';
-        shareBtn.disabled = false;
-        
-        // Прокручиваем к ссылке
-        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
-        alert('Не удалось создать ссылку для общего доступа');
+<!-- Кнопка и блок для ссылки -->
+<button class="share-button" id="share-btn">Поделиться результатами</button>
+
+<div class="share-link-container" id="share-link-container" style="display: none;">
+    <p>Ваши результаты доступны по ссылке:</p>
+    <div>
+        <input type="text" id="share-link" class="share-link" readonly>
+        <button class="copy-btn" id="copy-btn">Копировать</button>
+    </div>
+</div>
+
+<script>
+// Обработчик для кнопки (добавляем после загрузки DOM)
+document.addEventListener('DOMContentLoaded', () => {
+    const shareBtn = document.getElementById('share-btn');
+    const shareLink = document.getElementById('share-link');
+    const shareLinkContainer = document.getElementById('share-link-container');
+    const copyBtn = document.getElementById('copy-btn');
+
+    // 1. Функция генерации "нерекламной" ссылки
+    function generateCleanLink(token) {
+        return `https://carrytest.netlify.app/view?result=${token}`;
     }
+
+    // 2. Обработчик кнопки "Поделиться"
+    shareBtn.addEventListener('click', async () => {
+        try {
+            // Блокируем кнопку на время обработки
+            shareBtn.disabled = true;
+            shareBtn.innerHTML = '<span class="spinner"></span> Генерация ссылки...';
+            
+            // Сохраняем результаты
+            const result = await saveTestResults();
+            if (!result || !result.share_token) {
+                throw new Error('Не удалось сохранить результаты');
+            }
+            
+            // Создаем "чистую" ссылку
+            const cleanLink = generateCleanLink(result.share_token);
+            
+            // Показываем ссылку
+            shareLink.value = cleanLink;
+            shareLinkContainer.style.display = 'block';
+            
+            // Восстанавливаем кнопку
+            shareBtn.disabled = false;
+            shareBtn.textContent = 'Поделиться результатами';
+            
+            // Плавная прокрутка
+            setTimeout(() => {
+                shareLinkContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }, 100);
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            shareBtn.disabled = false;
+            shareBtn.textContent = 'Поделиться результатами';
+            alert('Попробуйте ещё раз или обновите страницу');
+        }
+    });
+
+    // 3. Копирование ссылки
+    copyBtn.addEventListener('click', () => {
+        shareLink.select();
+        document.execCommand('copy');
+        
+        // Визуальный фидбек
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Скопировано!';
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+        }, 2000);
+    });
 });
 </script>
-        <button class="reset-button" onclick="resetTest()">Пройти тест заново</button>
-        
-        <div class="share-link-container" id="share-link-container">
-            <p>Ссылка для просмотра результатов:</p>
-            <div>
-                <input type="text" id="share-link" class="share-link" readonly>
-                <button class="copy-btn" id="copy-btn">Копировать</button>
-            </div>
-        </div>
-    </div>
+
+<style>
+/* Стиль для индикатора загрузки */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* "Невинный" стиль для ссылки */
+.share-link {
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    color: #333;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+</style>
 
     <script>
         const questions = [
