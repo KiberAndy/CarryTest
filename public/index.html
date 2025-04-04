@@ -724,38 +724,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Обработчик кнопки "Поделиться"
-document.getElementById('share-btn').addEventListener('click', async () => {
+	document.getElementById('share-btn').addEventListener('click', async () => {
     const shareBtn = document.getElementById('share-btn');
     const shareLink = document.getElementById('share-link');
     const shareLinkContainer = document.getElementById('share-link-container');
     
     try {
-        // 1. Проверка завершения теста
-        const testData = JSON.parse(localStorage.getItem('testData'));
-        if (!testData || !testData.completed) {
-            throw new Error('Сначала завершите тест');
+        // 1. Жёсткая проверка данных
+        const testData = JSON.parse(localStorage.getItem('testResults'));
+        if (!testData?.completed) {  // Проверяем явный флаг
+            throw new Error('Завершите тест перед отправкой');
         }
 
         // 2. Блокировка кнопки
         shareBtn.disabled = true;
         shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
 
-        // 3. Отправка данных
+        // 3. Отправка на сервер
         const response = await fetch('/.netlify/functions/saveResults', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(testData)
         });
 
-        if (!response.ok) throw new Error('Ошибка сервера');
+        if (!response.ok) throw new Error('Ошибка сервера: ' + response.status);
+        
+        // 4. Получение токена
         const { share_token } = await response.json();
+        if (!share_token) throw new Error('Нет токена в ответе');
 
-        // 4. Генерация правильной ссылки
+        // 5. Формирование правильной ссылки
         const resultLink = `https://${window.location.hostname}/view.html?result=${share_token}`;
         shareLink.value = resultLink;
         shareLinkContainer.style.display = 'block';
 
-        // 5. Копирование и прокрутка
+        // 6. Копирование
         await navigator.clipboard.writeText(resultLink);
         setTimeout(() => shareLinkContainer.scrollIntoView({ behavior: 'smooth' }), 100);
 
