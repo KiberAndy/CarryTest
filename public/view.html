@@ -199,10 +199,96 @@
 <meta name="msapplication-TileColor" content="#1e1e2e">
 
 <!-- Указание авторства (если используете иконки Flaticon) -->
-<div class="flaticon-credit">
-  <a href="https://www.flaticon.com/" title="Flaticon">Иконки</a> от 
-  <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a>
+<div class="credits">
+  <span class="credits__text">Иконки от</span>
+  <a href="https://www.flaticon.com/authors/freepik" 
+     class="credits__link"
+     target="_blank" 
+     rel="noopener"
+     title="Freepik">
+    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    Freepik
+  </a>
+  <span class="credits__divider">|</span>
+  <a href="https://www.flaticon.com" 
+     class="credits__link"
+     target="_blank" 
+     rel="noopener"
+     title="Flaticon">
+    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v8m-4-4h8"/>
+    </svg>
+    Flaticon
+  </a>
 </div>
+
+<style>
+.credits {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  padding: 8px 12px;
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+.credits:hover {
+  background: rgba(40, 40, 40, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.credits__text {
+  font-weight: 400;
+}
+
+.credits__link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.credits__link:hover {
+  color: #58a6ff;
+}
+
+.credits__icon {
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+
+.credits__divider {
+  opacity: 0.3;
+  margin: 0 2px;
+}
+
+/* Добавьте это для мягкой анимации иконок */
+.credits__icon {
+  transition: transform 0.3s ease, stroke 0.3s ease;
+}
+.credits__link:hover .credits__icon {
+  transform: scale(1.1);
+  stroke: #58a6ff;
+}
+</style>
 	
 </head>
 <body>
