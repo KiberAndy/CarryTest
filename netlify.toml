@@ -1,48 +1,33 @@
 [build]
-  command = "echo 'Skip build'"
-  publish = "public"
-  functions = "functions"
+  command = "echo 'Skip'"  # Пропускаем сборку (если не нужно)
+  publish = "public"        # Папка с фронтендом
+  functions = "functions"   # Папка для serverless-функций
 
-[build.environment]
-  NODE_VERSION = "22.14.0"
-
+# Оптимизация функций (добавляем)
 [functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@supabase/supabase-js"]
+  node_bundler = "esbuild"  # Ускоряет деплой функций
+  external_node_modules = ["@supabase/supabase-js"]  # Исключает лишние зависимости
 
-# Основные перенаправления
+# Перенаправления для SPA (ваш существующий код)
 [[redirects]]
   from = "/*"
-  to = "/public/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/"
-  to = "/public/index.html"  # Явное указание index.html
-  status = 200
-
-[[redirects]]
-  from = "/index.html"
-  to = "/public/index.html"  # Дублирующее правило для index
+  to = "/index.html"
   status = 200
 
 [[redirects]]
   from = "/view.html"
-  to = "/public/view.html"
+  to = "/view.html"
   status = 200
 
-# Заголовки
-[[headers]]
-  for = "/public/*"
-  [headers.values]
-    Cache-Control = "public, max-age=3600"
-    Access-Control-Allow-Origin = "*"
-
+# Важно: разрешаем CORS для функций (добавляем)
 [[headers]]
   for = "/functions/*"
   [headers.values]
-    Access-Control-Allow-Origin = "https://carrytest.netlify.app"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Origin = "https://carrytest.netlify.app"  # Разрешаем доступ только с carrytest.netlify.app
+    Access-Control-Allow-Methods = "GET, POST"
     Access-Control-Allow-Headers = "Authorization, Content-Type"
-    Access-Control-Max-Age = "86400"
+    Access-Control-Allow-Credentials = "true"  # Если требуется передавать куки или другие данные с запросом
+
+# Устанавливаем версию Node.js
+[build.environment]
+  NODE_VERSION = "22.14.0"
