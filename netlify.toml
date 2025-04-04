@@ -1,9 +1,22 @@
 [build]
-  command = "echo 'Build skipped'"
-  publish = "public"  # Важно: указываем папку public
-  functions = "functions"
+  command = "echo 'Build skipped'"  # Пропускаем сборку (если не нужно)
+  publish = "public"                # Папка с фронтендом
+  functions = "functions"           # Папка для serverless-функций
 
+# Оптимизация функций (добавляем)
+[functions]
+  node_bundler = "esbuild"          # Ускоряет деплой функций
+  external_node_modules = ["@supabase/supabase-js"]  # Исключает лишние зависимости
+
+# Перенаправления для SPA (ваш существующий код)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Важно: разрешаем CORS для функций (добавляем)
+[[headers]]
+  for = "/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST"
