@@ -13,11 +13,20 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  condition = "!is_file"
 
 [[redirects]]
   from = "/view.html"
   to = "/view.html"
   status = 200
+  condition = "!is_file"
+
+# Явное разрешение favicon (на всякий случай)
+[[redirects]]
+  from = "/favicon.ico"
+  to = "/favicon.ico"
+  status = 200
+  force = true
 
 # Важно: разрешаем CORS для функций (добавляем)
 [[headers]]
