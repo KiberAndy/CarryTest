@@ -723,44 +723,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `${window.location.origin}/view.html?result=${token}`;
     }
 
-    // Обработчик кнопки "Поделиться"
-	document.getElementById('share-btn').addEventListener('click', async () => {
-    const shareBtn = document.getElementById('share-btn');
+// Обработчик кнопки "Поделиться"
+document.getElementById('share-btn').addEventListener('click', async function() {
+    const shareBtn = this;
     const shareLink = document.getElementById('share-link');
     const shareLinkContainer = document.getElementById('share-link-container');
     
     try {
-        // 1. Жёсткая проверка данных
-        const testData = JSON.parse(localStorage.getItem('testResults'));
-        if (!testData?.completed) {  // Проверяем явный флаг
-            throw new Error('Завершите тест перед отправкой');
+        // 1. Проверяем завершение теста
+        const testData = JSON.parse(localStorage.getItem('playerCompatibilityAnswers'));
+        if (!testData || Object.keys(testData).length < questions.length) {
+            throw new Error('Сначала завершите тест');
         }
 
-        // 2. Блокировка кнопки
+        // 2. Блокируем кнопку
         shareBtn.disabled = true;
         shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
 
-        // 3. Отправка на сервер
+        // 3. Подготавливаем данные для сохранения
+        calculateResults(); // Пересчитываем результаты
+        const saveData = {
+            answers: testData,
+            scores: scores,
+            completed: true,
+            timestamp: new Date().toISOString()
+        };
+
+        // 4. Отправляем на сервер
         const response = await fetch('/.netlify/functions/saveResults', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(testData)
+            body: JSON.stringify(saveData)
         });
 
-        if (!response.ok) throw new Error('Ошибка сервера: ' + response.status);
-        
-        // 4. Получение токена
-        const { share_token } = await response.json();
-        if (!share_token) throw new Error('Нет токена в ответе');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Ошибка сервера');
+        }
 
-        // 5. Формирование правильной ссылки
+        // 5. Получаем токен
+        const { share_token } = await response.json();
+        if (!share_token) throw new Error('Не удалось создать ссылку');
+
+        // 6. Формируем правильную ссылку
         const resultLink = `https://${window.location.hostname}/view.html?result=${share_token}`;
         shareLink.value = resultLink;
         shareLinkContainer.style.display = 'block';
 
-        // 6. Копирование
+        // 7. Копируем в буфер обмена
         await navigator.clipboard.writeText(resultLink);
-        setTimeout(() => shareLinkContainer.scrollIntoView({ behavior: 'smooth' }), 100);
+        
+        // 8. Прокручиваем к ссылке
+        setTimeout(() => {
+            shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
 
     } catch (error) {
         console.error('Ошибка:', error);

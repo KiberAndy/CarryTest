@@ -176,7 +176,7 @@
     <script>
         // Получаем токен из URL
 const urlParams = new URLSearchParams(window.location.search);
-const shareToken = urlParams.get('result'); // Изменили 'token' на 'result'
+const resultToken = urlParams.get('result'); // Используем result вместо share
 
 if (!shareToken) {
     document.getElementById('loading').style.display = 'none';
