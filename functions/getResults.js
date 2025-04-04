@@ -1,32 +1,29 @@
 const { createClient } = require('@supabase/supabase-js');
 
 exports.handler = async (event) => {
-  const { token } = event.queryStringParameters;
+    try {
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        );
 
-  // Используем переменные с префиксом NEXT_PUBLIC_
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,    // Из настроек Netlify
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY // Из настроек Netlify
-  );
+        const data = JSON.parse(event.body);
+        const share_token = Math.random().toString(36).substring(2, 10);
 
-  try {
-    const { data, error } = await supabase
-      .from('test_results')
-      .select('*')
-      .eq('share_token', token)
-      .single();
+        const { error } = await supabase
+            .from('test_results')
+            .insert([{ ...data, share_token }]);
 
-    if (error) throw error;
+        if (error) throw error;
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' }
-    };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Failed to load results" }),
-    };
-  }
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ share_token })
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message })
+        };
+    }
 };
