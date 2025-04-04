@@ -126,13 +126,6 @@
             100% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
         }
     </style>
-    <!-- Подключаем Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script>
-        const supabaseUrl = 'https://ackonvzvfkoyoshnvngv.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja29udnp2ZmtveW9zaG52bmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MzExMDgsImV4cCI6MjA1OTEwNzEwOH0.cNFvzgbY9ft9TiXwsjbgWHgZ_FHNDuitv0b8duSeo24';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    </script>
 </head>
 <body>
     <h1>Результаты теста на совместимость игроков</h1>
@@ -175,63 +168,70 @@
 
     <script>
         // Получаем токен из URL
-const urlParams = new URLSearchParams(window.location.search);
-const resultToken = urlParams.get('result'); // Используем result вместо share
-
-if (!shareToken) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'Ссылка на результаты недействительна';
-} else {
-    loadResults(shareToken);
-}
+        const urlParams = new URLSearchParams(window.location.search);
+        const shareToken = urlParams.get('share') || urlParams.get('result');
         
-        async function loadResults(token) {
-    try {
-        if (!token || token.length < 6) throw new Error('Некорректная ссылка');
+        // Инициализация Supabase
+        async function initSupabase() {
+            try {
+                // Загружаем конфиг из Netlify Function
+                const response = await fetch('/.netlify/functions/env');
+                if (!response.ok) throw new Error('Не удалось загрузить конфиг');
+                
+                const env = await response.json();
+                if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+                    throw new Error('Не настроены переменные Supabase');
+                }
+                
+                // Подключаем Supabase
+                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+                window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+                
+                console.log('Supabase инициализирован');
+                return true;
+            } catch (error) {
+                console.error('Ошибка инициализации Supabase:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+                return false;
+            }
+        }
         
-        console.log('Загрузка результатов для токена:', token);
+        // Проверяем токен и загружаем результаты
+        async function checkAndLoadResults() {
+            if (!shareToken) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+                return;
+            }
+            
+            const supabaseReady = await initSupabase();
+            if (!supabaseReady) return;
+            
+            try {
+                // Ищем результаты по токену
+                const { data, error } = await supabase
+                    .from('test_results')
+                    .select('*')
+                    .eq('share_token', shareToken)
+                    .single();
+                
+                if (error || !data) throw error || new Error('Результаты не найдены');
+                
+                console.log('Результаты загружены:', data);
+                displayResults(data);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки результатов:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
+            }
+        }
         
-        // 1. Поиск токена
-        const { data: tokenData, error: tokenError } = await supabase
-            .from('share_token')
-            .select('result_id')
-            .eq('token', token)
-            .single()
-            .timeout(5000);
-        
-        if (tokenError || !tokenData) throw new Error('Ссылка устарела или недействительна');
-        
-        // 2. Получение результатов
-        const { data: resultData, error: resultError } = await supabase
-            .from('test_results')
-            .select('*')
-            .eq('id', tokenData.result_id)
-            .single();
-        
-        if (resultError || !resultData) throw new Error('Результаты не найдены');
-        
-        console.log('Успешно загружено:', resultData);
-        displayResults(resultData);
-        
-    } catch (error) {
-        console.error('Ошибка:', {
-            token,
-            error: error.message,
-            supabaseError: tokenError || resultError
-        });
-        
-        const errorEl = document.getElementById('error');
-        errorEl.style.display = 'block';
-        errorEl.innerHTML = `
-            ${error.message}<br>
-            <small>${token ? `Код: ${token}` : ''}</small>
-        `;
-    } finally {
-        document.getElementById('loading').style.display = 'none';
-    }
-}
-        
+        // Отображаем результаты
         function displayResults(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('result').style.display = 'block';
@@ -348,9 +348,10 @@ if (!shareToken) {
             // Показываем только основные характеристики
             const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];
             const traitsContainer = document.getElementById('traits-container');
+            traitsContainer.innerHTML = '';
             
             mainTraits.forEach(trait => {
-                if (!scores[trait]) return;
+                if (scores[trait] === undefined) return;
                 
                 const traitDiv = document.createElement('div');
                 traitDiv.className = 'trait';
@@ -378,6 +379,9 @@ if (!shareToken) {
                 traitsContainer.appendChild(traitDiv);
             });
         }
+        
+        // Запускаем загрузку при открытии страницы
+        document.addEventListener('DOMContentLoaded', checkAndLoadResults);
     </script>
 </body>
 </html>
