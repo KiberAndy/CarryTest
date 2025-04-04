@@ -328,57 +328,58 @@
 <!-- Supabase JS клиент -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // 1. Загрузка ключей из Netlify Function
+  // 1. Инициализация Supabase через env
+  let supabase;
+  
   fetch('/.netlify/functions/env')
-    .then(response => {
-      if (!response.ok) throw new Error('Ошибка загрузки конфигурации');
-      return response.json();
-    })
+    .then(response => response.json())
     .then(env => {
-      // 2. Инициализация Supabase
-      window.supabase = supabase.createClient(
-        env.SUPABASE_URL,
-        env.SUPABASE_KEY,
-        {
-          auth: { persistSession: true }
-        }
-      );
-
-      // 3. Проверка подключения к вашей таблице
-      return supabase.from('test_results')
-        .select('id', { count: 'exact', head: true });
+      supabase = supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
+        db: { schema: 'public' },
+        auth: { persistSession: true }
+      });
+      console.log('Supabase инициализирован');
     })
-    .then(({ count }) => {
-      console.log('Supabase подключён. Записей в таблице:', count);
-    })
-    .catch(error => {
-      console.error('Ошибка:', error);
-      alert('Приложение не может загрузиться');
+    .catch(err => {
+      console.error('Ошибка загрузки конфига:', err);
+      alert('Ошибка загрузки приложения');
     });
 
-  // 4. Функции для работы с таблицей (как в предыдущем примере)
-  function generateToken() {
-    return Math.random().toString(36).substring(2, 10) + 
-           Math.random().toString(36).substring(2, 10);
-  }
+  // 2. Генератор ID
+  const generateId = (prefix = '') => prefix + Math.random().toString(36).substr(2, 9);
 
-  async function saveResults(answers, scores) {
-    if (!window.supabase) throw new Error('Supabase не инициализирован');
+  // 3. Сохранение результатов (используйте в своем коде)
+  window.saveTestResults = async (answers, scores) => {
+    if (!supabase) throw new Error('Supabase не инициализирован');
     
     const { data, error } = await supabase
       .from('test_results')
       .insert([{
-        answers: answers,
-        scores: scores,
-        session_id: 'session-' + generateToken(),
-        share_token: generateToken(),
+        answers,
+        scores,
+        session_id: generateId('session-'),
+        share_token: generateId('token-'),
         created_at: new Date().toISOString()
       }])
       .select();
 
     if (error) throw error;
     return data[0];
-  }
+  };
+
+  // 4. Тестовая функция для консоли
+  window.testSupabase = async () => {
+    try {
+      const result = await saveTestResults(
+        { q1: 5, q2: "Тест" }, 
+        { total: 85, level: "high" }
+      );
+      console.log('✅ Результат сохранен:', result);
+    } catch (error) {
+      console.error('❌ Ошибка:', error);
+    }
+  };
+
 
 
 
