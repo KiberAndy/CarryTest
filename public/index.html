@@ -611,14 +611,18 @@ checkForSharedResults();
 </div>
 
 <script>
-// Конфигурация из переменных окружения
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-
-// Проверка наличия переменных (для отладки)
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Supabase credentials not found in process.env");
+// Вместо них используйте прямое подключение к вашей Netlify-функции:
+async function loadResults(token) {
+  try {
+    const response = await fetch(`/.netlify/functions/getResults?token=${token}`);
+    if (!response.ok) throw new Error('Ошибка сети');
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка загрузки:', error);
+    return null;
+  }
 }
+
 
 // Инициализация Supabase
 async function initSupabaseClient() {
