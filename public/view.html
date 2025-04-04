@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Просмотр результатов теста</title>
+    <title>Результаты теста на совместимость игроков</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -120,6 +120,59 @@
             margin: 50px 0;
         }
         
+        .date {
+            text-align: right;
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        ol {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #444;
+        }
+        
+        li:last-child {
+            border-bottom: none;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #666;
+            cursor: help;
+            color: #ffcc00;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
         @keyframes pulse {
             0% { text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
             50% { text-shadow: 0 0 20px rgba(40, 167, 69, 0.8); }
@@ -139,6 +192,8 @@
     </div>
     
     <div id="result" style="display: none;">
+        <div class="date" id="result-date"></div>
+        
         <div class="profile-section">
             <h2>Профиль игрока</h2>
             
@@ -164,6 +219,11 @@
             <h3>Советы по взаимодействию:</h3>
             <p id="interaction-tips"></p>
         </div>
+        
+        <div class="profile-section" id="answers-section">
+            <h3>Ответы:</h3>
+            <ol id="answers-list"></ol>
+        </div>
     </div>
 
     <script>
@@ -171,6 +231,190 @@
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('share') || urlParams.get('result');
         
+        // Вопросы теста (должны соответствовать вопросам в index.html)
+        const questions = [
+            {
+                question: "Как ты реагируешь на проигрыш?",
+                options: [
+                    "Спокойно анализирую ошибки",
+                    "Лёгкое недовольство",
+                    "Сильно расстраиваюсь",
+                    "Злюсь и обвиняю команду"
+                ]
+            },
+            {
+                question: "Ты предпочитаешь играть:",
+                options: [
+                    "Всегда на команду",
+                    "В основном на команду",
+                    "Чаще на себя",
+                    "Только на себя"
+                ]
+            },
+            {
+                question: "Как часто ты общаешься в голосовом чате?",
+                options: [
+                    "Очень активно",
+                    "В меру",
+                    "Редко",
+                    "Вообще не общаюсь"
+                ]
+            },
+            {
+                question: "Как ты относишься к ошибкам напарников?",
+                options: [
+                    "Спокойно, все ошибаются",
+                    "Могу сделать замечание",
+                    "Злюсь, но молчу",
+                    "Ругаюсь и обвиняю"
+                ]
+            },
+            {
+                question: "Как ты обучаешься в играх?",
+                options: [
+                    "Быстро разбираюсь и использую на практике",
+                    "Учусь, но не сразу",
+                    "Долго адаптируюсь",
+                    "Не хочу учиться"
+                ]
+            },
+            {
+                question: "Какую роль в команде предпочитаешь?",
+                options: [
+                    "Поддержка (помогаю команде)",
+                    "Лидер (организую игру)",
+                    "Атакующий (иду на прорыв)",
+                    "Одиночка (играю сам по себе)"
+                ]
+            },
+            {
+                question: "Как долго ты можешь играть без перерыва?",
+                options: [
+                    "Очень долго (5+ часов)",
+                    "Долго (3-4 часа)",
+                    "Не очень долго (1-2 часа)",
+                    "Быстро устаю (менее часа)"
+                ]
+            },
+            {
+                question: "Как ты реагируешь на <span class='tooltip'>токсичных игроков<span class='tooltiptext'>Грубят, оскорбляют, намеренно мешают игре</span></span>?",
+                options: [
+                    "Игнорирую",
+                    "Отвечаю спокойно",
+                    "Начинаю спорить",
+                    "Разжигаю конфликт"
+                ]
+            },
+            {
+                question: "Как ты относишься к <span class='tooltip'>игре по стратегии<span class='tooltiptext'>Когда команда заранее планирует тактику и строго её придерживается</span></span>?",
+                options: [
+                    "Обожаю чёткие планы",
+                    "Нравится, но не всегда",
+                    "Мешает импровизации",
+                    "Вообще не люблю тактики"
+                ]
+            },
+            {
+                question: "Как ведёшь себя в <span class='tooltip'>критических<span class='tooltiptext'>Сложных, напряжённых моментах игры (например, когда команда проигрывает или остаётся в меньшинстве)</span></span> ситуациях?",
+                options: [
+                    "Собран и хладнокровен",
+                    "Слегка нервничаю",
+                    "Паникую",
+                    "Бросаю игру"
+                ]
+            },
+            {
+                question: "Как ты относишься к новичкам в команде?",
+                options: [
+                    "Помогаю и объясняю",
+                    "Терплю, но с замечаниями",
+                    "Игнорирую",
+                    "Раздражаюсь"
+                ]
+            },
+            {
+                question: "Как ты выбираешь героя/класс?",
+                options: [
+                    "Выбираю по нуждам команды",
+                    "Выбираю любимого героя",
+                    "Беру того, кто сильнее",
+                    "Всегда играю одной ролью"
+                ]
+            },
+            {
+                question: "Что делаешь после нескольких поражений подряд?",
+                options: [
+                    "Продолжаю играть спокойно",
+                    "Разбираю ошибки",
+                    "Злюсь, но играю",
+                    "Бросаю игру"
+                ]
+            },
+            {
+                question: "Как ты играешь с <span class='tooltip'>незнакомцами<span class='tooltiptext'>Случайные игроки в твоей команде (не друзья)</span></span>?",
+                options: [
+                    "Легко нахожу общий язык",
+                    "Пробую сотрудничать",
+                    "Не доверяю",
+                    "Раздражают"
+                ]
+            },
+            {
+                question: "Как реагируешь на игру против более сильных соперников?",
+                options: [
+                    "Вызов! Это интересно!",
+                    "Немного напрягаюсь, но стараюсь",
+                    "Чувлю раздражение",
+                    "Быстро сдаюсь"
+                ]
+            },
+            {
+                question: "Как относишься к читерам?",
+                options: [
+                    "Жалуюсь и блокирую",
+                    "Игнорирую",
+                    "Пробую адаптироваться",
+                    "Читерю в ответ"
+                ]
+            },
+            {
+                question: "Как ведёшь себя в споре с командой?",
+                options: [
+                    "Обсуждаю аргументированно",
+                    "Могу вспылить, но быстро остываю",
+                    "Часто спорю",
+                    "Настаиваю на своём и злюсь"
+                ]
+            },
+            {
+                question: "Насколько ты <span class='tooltip'>чувствительный<span class='tooltiptext'>Как сильно ты эмоционально реагируешь на критику, троллинг или неудачи в игре</span></span>?",
+                options: [
+                    "Очень спокойный, меня сложно вывести из себя",
+                    "В основном спокоен, но иногда могу расстроиться",
+                    "Довольно эмоциональный, часто переживаю из-за игры",
+                    "Чрезвычайно чувствительный, любая критика сильно задевает"
+                ]
+            },
+            {
+                question: "Что для тебя важнее в игре?",
+                options: [
+                    "Командная победа",
+                    "Личный успех",
+                    "Приятное времяпрепровождение",
+                    "Оценки и рейтинги"
+                ]
+            },
+            {
+                question: "Часто ли ты отвлекаешься во время игры?",
+                options: [
+                    "Редко, полностью сосредоточен",
+                    "Иногда, но не мешает игре",
+                    "Часто, теряю концентрацию",
+                    "Постоянно отвлекаюсь"
+                ]
+            }
+        ];
+
         // Инициализация Supabase
         async function initSupabase() {
             try {
@@ -236,7 +480,13 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('result').style.display = 'block';
             
+            // Устанавливаем дату
+            const date = new Date(data.created_at || new Date());
+            document.getElementById('result-date').textContent = 
+                `${date.toLocaleDateString()}, ${date.toLocaleTimeString()}`;
+            
             const scores = data.scores;
+            const answers = data.answers;
             
             // Рассчитываем общую совместимость
             const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
@@ -278,7 +528,7 @@
                 levelColor = "#fd7e14";
             } else {
                 compatibilityText = "Проблемный игрок";
-                description = "К сожалению, поведение этого игрока в игре может создавать проблемы для команды. Возможно, ему стоит пересмотреть своё отношение к игре и взаимодействию с напарниками.";
+                description = "К сожалению, поведение этого игрока в игре может создавать проблемы для команда. Возможно, ему стоит пересмотреть своё отношение к игре и взаимодействию с напарниками.";
                 levelColor = "#dc3545";
             }
             
@@ -291,6 +541,9 @@
             
             // Отображаем характеристики
             showTraits(scores);
+            
+            // Отображаем ответы
+            showAnswers(answers);
         }
         
         function generateInteractionTips(scores) {
@@ -377,6 +630,22 @@
                 traitDiv.appendChild(barDiv);
                 
                 traitsContainer.appendChild(traitDiv);
+            });
+        }
+        
+        function showAnswers(answers) {
+            const answersList = document.getElementById('answers-list');
+            answersList.innerHTML = '';
+            
+            questions.forEach((q, index) => {
+                if (!answers[index]) return;
+                
+                const answerIndex = answers[index].optionIndex;
+                const answerText = q.options[answerIndex];
+                
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${q.question}</strong><br>Ответ: ${answerText}`;
+                answersList.appendChild(li);
             });
         }
         
