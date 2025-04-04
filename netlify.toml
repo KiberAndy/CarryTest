@@ -1,5 +1,5 @@
 [build]
-  command = "cd functions && npm install"  # Пропускаем сборку (если не нужно)
+  command = "echo 'Skip'"  # Пропускаем сборку (если не нужно)
   publish = "public"                # Папка с фронтендом
   functions = "functions"           # Папка для serverless-функций
 
