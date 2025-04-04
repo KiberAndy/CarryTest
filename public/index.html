@@ -724,63 +724,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Обработчик кнопки "Поделиться"
-    shareBtn.addEventListener('click', async () => {
-        try {
-            // 1. Проверяем наличие данных теста
-            const testData = localStorage.getItem('testResults');
-            if (!testData) {
-                throw new Error('Сначала завершите тест');
-            }
-
-            // 2. Блокируем UI
-            shareBtn.disabled = true;
-            shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
-            
-            // 3. Отправляем данные через Netlify Function
-            const response = await fetch('/.netlify/functions/saveResults', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: testData
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Ошибка сервера');
-            }
-
-            const { share_token } = await response.json();
-            if (!share_token) throw new Error('Не удалось создать ссылку');
-
-            // 4. Показываем ссылку
-            const resultLink = generateCleanLink(share_token);
-            shareLink.value = resultLink;
-            shareLinkContainer.style.display = 'block';
-
-            // 5. Автоматическое копирование
-            await navigator.clipboard.writeText(resultLink);
-            copyBtn.textContent = 'Скопировано!';
-            setTimeout(() => {
-                copyBtn.textContent = 'Копировать';
-            }, 2000);
-
-            // 6. Плавная прокрутка
-            setTimeout(() => {
-                shareLinkContainer.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }, 100);
-
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert(error.message || 'Ошибка при создании ссылки');
-        } finally {
-            shareBtn.disabled = false;
-            shareBtn.textContent = 'Поделиться результатами';
+document.getElementById('share-btn').addEventListener('click', async () => {
+    const shareBtn = document.getElementById('share-btn');
+    const shareLink = document.getElementById('share-link');
+    const shareLinkContainer = document.getElementById('share-link-container');
+    
+    try {
+        // 1. Проверка завершения теста
+        const testData = JSON.parse(localStorage.getItem('testData'));
+        if (!testData || !testData.completed) {
+            throw new Error('Сначала завершите тест');
         }
-    });
+
+        // 2. Блокировка кнопки
+        shareBtn.disabled = true;
+        shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
+
+        // 3. Отправка данных
+        const response = await fetch('/.netlify/functions/saveResults', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(testData)
+        });
+
+        if (!response.ok) throw new Error('Ошибка сервера');
+        const { share_token } = await response.json();
+
+        // 4. Генерация правильной ссылки
+        const resultLink = `https://${window.location.hostname}/view.html?result=${share_token}`;
+        shareLink.value = resultLink;
+        shareLinkContainer.style.display = 'block';
+
+        // 5. Копирование и прокрутка
+        await navigator.clipboard.writeText(resultLink);
+        setTimeout(() => shareLinkContainer.scrollIntoView({ behavior: 'smooth' }), 100);
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert(error.message);
+    } finally {
+        shareBtn.disabled = false;
+        shareBtn.textContent = 'Поделиться результатами';
+    }
+});
 
     // Обработчик кнопки "Копировать"
     copyBtn.addEventListener('click', () => {
