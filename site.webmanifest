@@ -1,6 +1,7 @@
 {
-  "name": "Тест на совместимость игроков",
+  "name": "CarryTest",
   "short_name": "CarryTest",
+  "description": "Тест на совместимость игроков",
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",
@@ -15,5 +16,7 @@
   ],
   "theme_color": "#1e1e2e",
   "background_color": "#1e1e2e",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
 }
