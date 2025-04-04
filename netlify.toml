@@ -1,5 +1,5 @@
 [build]
-  command = "echo 'Build skipped'"  # Пропускаем сборку (если не нужно)
+  command = "cd netlify/functions && npm install"  # Пропускаем сборку (если не нужно)
   publish = "public"                # Папка с фронтендом
   functions = "functions"           # Папка для serverless-функций
 
