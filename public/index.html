@@ -611,75 +611,194 @@ checkForSharedResults();
 </div>
 
 <script>
-// Обработчик для кнопки (добавляем после загрузки DOM)
-document.addEventListener('DOMContentLoaded', () => {
+// Конфигурация из переменных окружения
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || process.env.SUPABASE_KEY;
+
+// Инициализация Supabase
+async function initSupabaseClient() {
+    try {
+        // Динамическая загрузка библиотеки если не загружена
+        if (!window.supabase) {
+            await loadScript('https://unpkg.com/@supabase/supabase-js@2');
+        }
+        
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            throw new Error('Supabase credentials not configured');
+        }
+
+        return supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch (error) {
+        console.error('Supabase init error:', error);
+        return null;
+    }
+}
+
+// Универсальная функция загрузки скриптов
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+// Сохранение результатов в Supabase с fallback
+async function saveTestResults() {
+    if (!localStorage.getItem('testCompleted')) {
+        throw new Error('Test not completed');
+    }
+
+    const testData = {
+        score: localStorage.getItem('testScore'),
+        answers: JSON.parse(localStorage.getItem('testAnswers') || '{}'),
+        timestamp: new Date().toISOString()
+    };
+
+    const shareToken = crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+
+    try {
+        const supabase = await initSupabaseClient();
+        if (supabase) {
+            const { data, error } = await supabase
+                .from('test_results')
+                .insert([{
+                    share_token: shareToken,
+                    result_data: testData
+                }])
+                .select();
+
+            if (error) throw error;
+            return { share_token: shareToken, id: data[0].id };
+        }
+    } catch (supabaseError) {
+        console.warn('Supabase save failed, using localStorage fallback');
+    }
+
+    // Fallback на localStorage
+    localStorage.setItem(`share_${shareToken}`, JSON.stringify(testData));
+    return { share_token: shareToken, is_fallback: true };
+}
+
+// Генерация "чистой" ссылки
+function generateCleanLink(token) {
+    const baseUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/view' 
+        : 'https://yourdomain.com/view';
+    return `${baseUrl}?id=${token}`;
+}
+
+// Основной код выполнения
+document.addEventListener('DOMContentLoaded', async () => {
     const shareBtn = document.getElementById('share-btn');
     const shareLink = document.getElementById('share-link');
     const shareLinkContainer = document.getElementById('share-link-container');
     const copyBtn = document.getElementById('copy-btn');
 
-    // 1. Функция генерации "нерекламной" ссылки
-    function generateCleanLink(token) {
-        return `https://carrytest.netlify.app/view?result=${token}`;
-    }
+    if (!shareBtn || !shareLink || !copyBtn) return;
 
-    // 2. Обработчик кнопки "Поделиться"
     shareBtn.addEventListener('click', async () => {
         try {
-            // Блокируем кнопку на время обработки
+            // Блокировка UI на время обработки
             shareBtn.disabled = true;
-            shareBtn.innerHTML = '<span class="spinner"></span> Генерация ссылки...';
-            
-            // Сохраняем результаты
+            shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
+
             const result = await saveTestResults();
-            if (!result || !result.share_token) {
-                throw new Error('Не удалось сохранить результаты');
+            if (!result?.share_token) {
+                throw new Error('Failed to generate share token');
             }
-            
-            // Создаем "чистую" ссылку
+
             const cleanLink = generateCleanLink(result.share_token);
-            
-            // Показываем ссылку
             shareLink.value = cleanLink;
             shareLinkContainer.style.display = 'block';
-            
-            // Восстанавливаем кнопку
-            shareBtn.disabled = false;
-            shareBtn.textContent = 'Поделиться результатами';
-            
-            // Плавная прокрутка
+
+            // Анимация и восстановление UI
             setTimeout(() => {
-                shareLinkContainer.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }, 100);
-            
+                shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+                shareBtn.disabled = false;
+                shareBtn.textContent = 'Поделиться результатами';
+            }, 150);
+
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Share error:', error);
             shareBtn.disabled = false;
             shareBtn.textContent = 'Поделиться результатами';
-            alert('Попробуйте ещё раз или обновите страницу');
+            alert('Ошибка: ' + (error.message || 'Попробуйте позже'));
         }
     });
 
-    // 3. Копирование ссылки
     copyBtn.addEventListener('click', () => {
         shareLink.select();
-        document.execCommand('copy');
-        
-        // Визуальный фидбек
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = 'Скопировано!';
-        setTimeout(() => {
-            copyBtn.textContent = originalText;
-        }, 2000);
+        navigator.clipboard.writeText(shareLink.value)
+            .then(() => {
+                copyBtn.textContent = 'Скопировано!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Копировать';
+                }, 2000);
+            })
+            .catch(() => {
+                // Fallback для старых браузеров
+                document.execCommand('copy');
+                copyBtn.textContent = 'Скопировано!';
+                setTimeout(() => copyBtn.textContent = 'Копировать', 2000);
+            });
     });
 });
 </script>
 
 <style>
-/* Стиль для индикатора загрузки */
+.share-button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.share-button:hover {
+    background: #45a049;
+}
+
+.share-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.share-link-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.share-link {
+    width: 70%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    margin-right: 10px;
+}
+
+.copy-btn {
+    padding: 8px 15px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.copy-btn:hover {
+    background: #0b7dda;
+}
+
 .spinner {
     display: inline-block;
     width: 1em;
@@ -688,20 +807,24 @@ document.addEventListener('DOMContentLoaded', () => {
     border-radius: 50%;
     border-top-color: #fff;
     animation: spin 1s ease-in-out infinite;
+    vertical-align: middle;
+    margin-right: 5px;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
-/* "Невинный" стиль для ссылки */
-.share-link {
-    background: #f8f8f8;
-    border: 1px solid #e0e0e0;
-    color: #333;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-family: monospace;
+@media (prefers-color-scheme: dark) {
+    .share-link-container {
+        background: #333;
+        border-color: #444;
+    }
+    .share-link {
+        background: #222;
+        color: #eee;
+        border-color: #555;
+    }
 }
 </style>
 
