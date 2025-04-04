@@ -20,3 +20,7 @@
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST"
+	
+# Устанавливаем версию Node.js
+[build.environment]
+  NODE_VERSION = "22.x"
