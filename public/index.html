@@ -488,33 +488,48 @@ function generateShareToken() {
 
 // Функция "Поделиться результатами"
 async function shareResults() {
-    shareBtn.disabled = true;
-    shareBtn.textContent = 'Создание ссылки...';
+  shareBtn.disabled = true;
+  shareBtn.textContent = 'Создание ссылки...';
+  
+  try {
+    calculateResults();
+    const postData = {
+      answers: answers,
+      scores: scores
+    };
+
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData)
+    });
+
+    if (!response.ok) throw new Error('Ошибка сервера');
     
-    try {
-        // Сохраняем результаты и получаем токен
-        const savedData = await saveResults();
-        
-        if (!savedData) throw new Error('Не удалось сохранить результаты');
-        
-        // Формируем ссылку
-        const shareLink = `${window.location.origin}${window.location.pathname}?share=${savedData.share_token}`;
-        
-        // Показываем ссылку
-        shareLinkInput.value = shareLink;
-        shareLinkContainer.style.display = 'block';
-        shareBtn.textContent = 'Поделиться результатами';
-        shareBtn.disabled = false;
-        
-        // Прокручиваем к ссылке
-        shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
-        alert('Не удалось создать ссылку для общего доступа');
+    const { share_token, reused } = await response.json();
+    
+    const resultLink = `${window.location.origin}/view.html?result=${share_token}`;
+    shareLinkInput.value = resultLink;
+    shareLinkContainer.style.display = 'block';
+    
+    if (reused) {
+      shareLinkContainer.innerHTML += `
+        <p style="color: #aaa; margin-top: 10px;">
+          Найдены идентичные результаты, использована существующая ссылка
+        </p>
+      `;
     }
+    
+    await navigator.clipboard.writeText(resultLink);
+    shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert(error.message);
+  } finally {
+    shareBtn.disabled = false;
+    shareBtn.textContent = 'Поделиться результатами';
+  }
 }
 
 // Загрузка общих результатов
