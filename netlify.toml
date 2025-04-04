@@ -1,5 +1,5 @@
 [build]
-  command = "cd CarryTest/functions && npm init -y && npm install"  # Пропускаем сборку (если не нужно)
+  command = "cd functions && npm init -y && npm install"  # Пропускаем сборку (если не нужно)
   publish = "public"                # Папка с фронтендом
   functions = "functions"           # Папка для serverless-функций
 
