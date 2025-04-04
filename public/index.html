@@ -712,40 +712,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     const shareLinkContainer = document.getElementById('share-link-container');
     const copyBtn = document.getElementById('copy-btn');
 
-    if (!shareBtn || !shareLink || !copyBtn) return;
-
-shareBtn.addEventListener('click', async () => {
-    try {
-        shareBtn.disabled = true;
-        shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
-
-        const result = await saveTestResults();
-        if (!result?.share_token) {
-            throw new Error('Не удалось создать ссылку');
-        }
-
-        // Используем новую функцию генерации
-        const resultLink = generateCleanLink(result.share_token);
-        shareLink.value = resultLink;
-        shareLinkContainer.style.display = 'block';
-
-        // Копирование в буфер обмена
-        navigator.clipboard.writeText(resultLink).then(() => {
-            copyBtn.textContent = 'Скопировано!';
-            setTimeout(() => copyBtn.textContent = 'Копировать', 2000);
-        });
-
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
-        alert('Ошибка при создании ссылки');
+    // Проверка элементов
+    if (!shareBtn || !shareLink || !copyBtn || !shareLinkContainer) {
+        console.error('Не найдены необходимые элементы');
+        return;
     }
-});
 
+    // Функция генерации ссылки
+    function generateCleanLink(token) {
+        return `${window.location.origin}/view.html?result=${token}`;
+    }
+
+    // Обработчик кнопки "Поделиться"
+    shareBtn.addEventListener('click', async () => {
+        try {
+            // 1. Проверяем наличие данных теста
+            const testData = localStorage.getItem('testResults');
+            if (!testData) {
+                throw new Error('Сначала завершите тест');
+            }
+
+            // 2. Блокируем UI
+            shareBtn.disabled = true;
+            shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
+            
+            // 3. Отправляем данные через Netlify Function
+            const response = await fetch('/.netlify/functions/saveResults', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: testData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Ошибка сервера');
+            }
+
+            const { share_token } = await response.json();
+            if (!share_token) throw new Error('Не удалось создать ссылку');
+
+            // 4. Показываем ссылку
+            const resultLink = generateCleanLink(share_token);
+            shareLink.value = resultLink;
+            shareLinkContainer.style.display = 'block';
+
+            // 5. Автоматическое копирование
+            await navigator.clipboard.writeText(resultLink);
+            copyBtn.textContent = 'Скопировано!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Копировать';
+            }, 2000);
+
+            // 6. Плавная прокрутка
+            setTimeout(() => {
+                shareLinkContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert(error.message || 'Ошибка при создании ссылки');
+        } finally {
+            shareBtn.disabled = false;
+            shareBtn.textContent = 'Поделиться результатами';
+        }
+    });
+
+    // Обработчик кнопки "Копировать"
     copyBtn.addEventListener('click', () => {
         shareLink.select();
         navigator.clipboard.writeText(shareLink.value)
