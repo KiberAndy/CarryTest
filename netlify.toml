@@ -23,4 +23,4 @@
 	
 # Устанавливаем версию Node.js
 [build.environment]
-  NODE_VERSION = "22.x"
+  NODE_VERSION = "22.14.0"
