@@ -725,66 +725,62 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Обработчик кнопки "Поделиться"
 document.getElementById('share-btn').addEventListener('click', async function() {
-    const shareBtn = this;
-    const shareLink = document.getElementById('share-link');
-    const shareLinkContainer = document.getElementById('share-link-container');
-    
-    try {
-        // 1. Проверяем завершение теста
-        const testData = JSON.parse(localStorage.getItem('playerCompatibilityAnswers'));
-        if (!testData || Object.keys(testData).length < questions.length) {
-            throw new Error('Сначала завершите тест');
-        }
+  const shareBtn = this;
+  const shareLink = document.getElementById('share-link');
+  const shareLinkContainer = document.getElementById('share-link-container');
 
-        // 2. Блокируем кнопку
-        shareBtn.disabled = true;
-        shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
-
-        // 3. Подготавливаем данные для сохранения
-        calculateResults(); // Пересчитываем результаты
-        const saveData = {
-            answers: testData,
-            scores: scores,
-            completed: true,
-            timestamp: new Date().toISOString()
-        };
-
-        // 4. Отправляем на сервер
-        const response = await fetch('/.netlify/functions/saveResults', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(saveData)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка сервера');
-        }
-
-        // 5. Получаем токен
-        const { share_token } = await response.json();
-        if (!share_token) throw new Error('Не удалось создать ссылку');
-
-        // 6. Формируем правильную ссылку
-        const resultLink = `https://${window.location.hostname}/view.html?result=${share_token}`;
-        shareLink.value = resultLink;
-        shareLinkContainer.style.display = 'block';
-
-        // 7. Копируем в буфер обмена
-        await navigator.clipboard.writeText(resultLink);
-        
-        // 8. Прокручиваем к ссылке
-        setTimeout(() => {
-            shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert(error.message);
-    } finally {
-        shareBtn.disabled = false;
-        shareBtn.textContent = 'Поделиться результатами';
+  try {
+    // Проверка завершения теста
+    const answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers'));
+    if (!answers || Object.keys(answers).length !== questions.length) {
+      throw new Error('Завершите все вопросы теста');
     }
+
+    // Подготовка данных
+    calculateResults();
+    const postData = {
+      answers: answers,
+      scores: scores,
+      timestamp: new Date().toISOString()
+    };
+
+    // Блокировка кнопки
+    shareBtn.disabled = true;
+    shareBtn.innerHTML = '<span class="spinner"></span> Генерация...';
+
+    // Отправка данных
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData)
+    });
+
+    // Обработка ошибок HTTP
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.error || `Ошибка сервера: ${response.status}`);
+    }
+
+    // Получение токена
+    const { share_token } = await response.json();
+    if (!share_token) throw new Error('Не удалось создать ссылку');
+
+    // Формирование ссылки
+    const resultLink = `${window.location.origin}/view.html?result=${share_token}`;
+    shareLink.value = resultLink;
+    shareLinkContainer.style.display = 'block';
+
+    // Копирование и прокрутка
+    await navigator.clipboard.writeText(resultLink);
+    setTimeout(() => shareLinkContainer.scrollIntoView({ behavior: 'smooth' }), 100);
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert(error.message);
+  } finally {
+    shareBtn.disabled = false;
+    shareBtn.textContent = 'Поделиться результатами';
+  }
 });
 
     // Обработчик кнопки "Копировать"
