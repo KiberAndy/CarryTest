@@ -1,5 +1,3 @@
-const { createClient } = require('@supabase/supabase-js');
-
 exports.handler = async (event) => {
     try {
         const supabase = createClient(
@@ -7,18 +5,25 @@ exports.handler = async (event) => {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         );
 
-        const testData = JSON.parse(event.body);
-		
-		        // Дополнительная проверка
-        if (!testData.completed) {
+        const data = JSON.parse(event.body);
+        
+        // Проверяем завершение теста
+        if (!data.completed) {
             return { statusCode: 400, body: JSON.stringify({ error: 'Тест не завершён' }) };
         }
-		
-        const share_token = crypto.randomUUID().split('-')[0]; // Более надежный токен
 
+        // Генерируем токен
+        const share_token = crypto.randomUUID().split('-')[0];
+
+        // Сохраняем в Supabase
         const { error } = await supabase
             .from('test_results')
-            .insert([{ ...testData, share_token }]);
+            .insert([{ 
+                answers: data.answers,
+                scores: data.scores,
+                share_token,
+                created_at: data.timestamp
+            }]);
 
         if (error) throw error;
         return { statusCode: 200, body: JSON.stringify({ share_token }) };
