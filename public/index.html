@@ -1855,6 +1855,7 @@ shareBtn.addEventListener('click', async function() {
       input.select();
       copySuccess = document.execCommand('copy');
       document.body.removeChild(input);
+	  await new Promise(resolve => setTimeout(resolve, 10000));
     }
 
     if (!copySuccess) throw new Error('Не удалось скопировать');
@@ -1862,7 +1863,6 @@ shareBtn.addEventListener('click', async function() {
     // 6. Успешное завершение
 	btn.classList.add('copied'); // Эффект
     btn.textContent = '✓ Ссылка скопирована!';
-    await new Promise(resolve => setTimeout(resolve, 10000));
     
   } catch (error) {
     console.error('Ошибка:', error);
