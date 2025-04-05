@@ -943,6 +943,12 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Адаптируем тень под нажатие */
 }
 
+#share-btn:disabled {
+  cursor: not-allowed;
+  /* Сохраняет hover-эффекты, но блокирует клики */
+  pointer-events: none;
+}
+
 #share-btn.processing::after {
   content: '';
   position: absolute;
@@ -1812,38 +1818,40 @@ shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
   
-  // Блокируем кнопку с сохранением анимации
+  // 1. Блокировка кнопки (мгновенно)
   btn.disabled = true;
+  
+  // 2. Стадия "Генерация..." (с анимацией)
   btn.classList.add('processing');
   btn.textContent = 'Генерация...';
-  
+
   try {
-    // Ваш код генерации ссылки...
+    // 3. Имитация генерации (ваш реальный код)
+    await new Promise(resolve => setTimeout(resolve, 500)); // Задержка для примера
     calculateResults();
     const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
       ((h << 5) - h) + char.charCodeAt(0), 0);
     const shareLink = `${location.origin}/view.html?result=${Math.abs(hash).toString(36).substr(0,8)}`;
     
-    // Копирование в буфер...
+    // 4. Копирование в буфер
     await navigator.clipboard.writeText(shareLink);
     
-    // Показываем галочку
+    // 5. Стадия "Ссылка скопирована!" (галочка + текст)
     btn.classList.remove('processing');
-    btn.classList.add('copied');
-    btn.textContent = ' ✓ Ссылка скопирована!'; // Добавляем текст с галочкой
+    btn.textContent = '✓ Ссылка скопирована!';
     
-    // Восстанавливаем через 2 секунды
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.textContent = originalText;
-      btn.disabled = false;
-    }, 2000);
+    // 6. Задержка перед разблокировкой (2000мс)
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.classList.remove('processing', 'copied');
+    btn.textContent = 'Ошибка!';
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  } finally {
+    // 7. Финал: возврат исходного состояния и разблокировка
+    btn.classList.remove('processing');
     btn.textContent = originalText;
-    btn.style.pointerEvents = 'auto';
+    btn.disabled = false; // Разблокировка ТОЛЬКО здесь
   }
 });
 
