@@ -933,13 +933,14 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 /* Анимация подтверждения на кнопке */
 #share-btn {
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s ease; /* Сохраняем вашу оригинальную анимацию */
   position: relative;
-  overflow: hidden;
 }
 
-#share-btn:disabled {
-  cursor: not-allowed;
+#share-btn.processing {
+  /* Ваши оригинальные стили для hover остаются */
+  transform: translateY(1px); /* Легкое нажатие */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Адаптируем тень под нажатие */
 }
 
 #share-btn.processing::after {
@@ -947,32 +948,33 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
   border: 2px solid rgba(255,255,255,0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-#share-btn.processing::after {
-  opacity: 1;
 }
 
 #share-btn.copied {
+  /* Сохраняем все оригинальные hover-стили */
   background-color: #28a745;
-  padding-left: 15px;
-  padding-right: 15px;
+  /* Убираем трансформации, чтобы не конфликтовало с вашей анимацией */
+  transform: none !important;
 }
 
 #share-btn.copied::before {
   content: '✓';
-  display: inline-block;
-  margin-right: 10px;
-  animation: fadeIn 0.4s ease;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2em;
+  opacity: 0;
+  animation: 
+    fadeIn 0.3s ease forwards,
+    fadeOut 0.3s ease 1.7s forwards;
 }
 
 @keyframes spin {
@@ -980,14 +982,11 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 }
 
 @keyframes fadeIn {
-  from { 
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateX(0);
-  }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
 }
 
 
@@ -1816,71 +1815,40 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 shareBtn.addEventListener('click', async function() {
   const btn = this;
   
-  // Плавная блокировка
+  // Блокируем кнопку с сохранением анимации
   btn.style.pointerEvents = 'none';
   btn.classList.add('processing');
   
-  // Сохраняем оригинальные стили
-  const originalBg = btn.style.backgroundColor;
+  // Сохраняем оригинальный текст
   const originalText = btn.textContent;
-  
-  // Плавное изменение текста
-  btn.textContent = 'Генерация...';
+  btn.textContent = ''; // Очищаем текст
   
   try {
-    // 1. Генерация ссылки (ваш существующий код)
+    // Ваш код генерации ссылки...
     calculateResults();
-    const answersString = JSON.stringify(answers);
-    const hash = Array.from(answersString).reduce((hash, char) => {
-      return ((hash << 5) - hash) + char.charCodeAt(0);
-    }, 0);
-    const shareToken = Math.abs(hash).toString(36).substring(0, 8);
-    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
-
-    // 2. Показываем ссылку (если есть контейнер)
-    if (shareLinkInput && shareLinkContainer) {
-      shareLinkInput.value = shareLink;
-      shareLinkContainer.style.display = 'block';
-    }
-
-    // 3. Копируем в буфер
+    const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
+      ((h << 5) - h) + char.charCodeAt(0), 0);
+    const shareLink = `${location.origin}/view.html?result=${Math.abs(hash).toString(36).substr(0,8)}`;
+    
+    // Копирование в буфер...
     await navigator.clipboard.writeText(shareLink);
     
-    // 4. Плавное применение стиля "скопировано"
+    // Показываем галочку
     btn.classList.remove('processing');
     btn.classList.add('copied');
-    btn.textContent = originalText;
     
-    // 5. Прокрутка к ссылке (если нужно)
+    // Восстанавливаем через 2 секунды
     setTimeout(() => {
-      if (shareLinkContainer) {
-        shareLinkContainer.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'nearest'
-        });
-      }
-    }, 100);
-
-    // 6. Плавное восстановление через 2 секунды
-    await new Promise(resolve => setTimeout(resolve, 2000));
+      btn.classList.remove('copied');
+      btn.textContent = originalText;
+      btn.style.pointerEvents = 'auto';
+    }, 2000);
     
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка!';
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-  } finally {
-    // Плавное восстановление кнопки
-    btn.classList.remove('copied', 'processing');
-    
-    // Возвращаем оригинальный текст
+    btn.classList.remove('processing', 'copied');
     btn.textContent = originalText;
-    
-    // Задержка перед разблокировкой для завершения анимации
-    setTimeout(() => {
-      btn.style.pointerEvents = 'auto';
-      btn.style.backgroundColor = originalBg;
-    }, 300);
+    btn.style.pointerEvents = 'auto';
   }
 });
 
