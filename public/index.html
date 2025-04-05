@@ -966,15 +966,9 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 #share-btn.copied::before {
   content: '✓';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.2em;
-  opacity: 0;
-  animation: 
-    fadeIn 0.3s ease forwards,
-    fadeOut 0.3s ease 1.7s forwards;
+  display: inline-block;
+  margin-right: 8px;
+  animation: fadeIn 0.3s ease;
 }
 
 @keyframes spin {
@@ -982,7 +976,8 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 }
 
 @keyframes fadeIn {
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes fadeOut {
@@ -1814,10 +1809,12 @@ document.getElementById('share-btn').addEventListener('click', async function() 
         // Функция для генерации ссылки для общего доступа
 shareBtn.addEventListener('click', async function() {
   const btn = this;
+  const originalText = btn.textContent;
   
   // Блокируем кнопку с сохранением анимации
-  btn.style.pointerEvents = 'none';
+  btn.disabled = true;
   btn.classList.add('processing');
+  btn.textContent = 'Генерация...';
   
   // Сохраняем оригинальный текст
   const originalText = btn.textContent;
@@ -1836,12 +1833,13 @@ shareBtn.addEventListener('click', async function() {
     // Показываем галочку
     btn.classList.remove('processing');
     btn.classList.add('copied');
+    btn.textContent = ' ✓ Ссылка скопирована!'; // Добавляем текст с галочкой
     
     // Восстанавливаем через 2 секунды
     setTimeout(() => {
       btn.classList.remove('copied');
       btn.textContent = originalText;
-      btn.style.pointerEvents = 'auto';
+      btn.disabled = false;
     }, 2000);
     
   } catch (error) {
