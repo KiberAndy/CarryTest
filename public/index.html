@@ -1796,12 +1796,21 @@ document.getElementById('share-btn').addEventListener('click', async function() 
         });
 
         // Функция для генерации ссылки для общего доступа
+		
+// 1. Функция валидации (добавьте в начало)
+function isValidLink(link) {
+  try {
+    new URL(link);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
 shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
-  
-  // 1. Фокусируем страницу перед копированием
-  window.focus();
   
   // 2. Блокировка кнопки
   btn.disabled = true;
@@ -1810,34 +1819,58 @@ shareBtn.addEventListener('click', async function() {
   try {
     // 3. Генерация ссылки
     calculateResults();
-    const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
-      ((h << 5) - h) + char.charCodeAt(0), 0);
-    const shareLink = `${location.origin}/view.html?result=${Math.abs(hash).toString(36).substr(0,8)}`;
-	
-	// 3. Критическая задержка (1 секунда)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 4. Копирование с проверкой фокуса
-    if (!document.hasFocus()) {
-      throw new Error('Переключитесь обратно на вкладку');
+    const answersString = JSON.stringify(answers);
+    let hash = 0;
+    for (let i = 0; i < answersString.length; i++) {
+      const char = answersString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-    await navigator.clipboard.writeText(shareLink);
+    const shareToken = Math.abs(hash).toString(36).substring(0, 8);
+    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
+	
+	    // Валидация
+    if (!isValidLink(shareLink)) {
+      throw new Error("Некорректная ссылка");
+    }
     
-    // 5. Успешное завершение
+    // 4. Проверка фокуса с задержкой
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!document.hasFocus()) {
+      throw new Error('Вернитесь на вкладку');
+    }
+    
+    // 5. Копирование
+    let copySuccess = false;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      copySuccess = true;
+    } catch (error) {
+      console.warn("Clipboard API failed, using fallback...");
+      const input = document.createElement('input');
+      input.value = shareLink;
+      document.body.appendChild(input);
+      input.select();
+      copySuccess = document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+
+    if (!copySuccess) throw new Error('Не удалось скопировать');
+	
+    // 6. Успешное завершение
     btn.textContent = '✓ Ссылка скопирована!';
     await new Promise(resolve => setTimeout(resolve, 2000));
-    btn.textContent = originalText;
     
   } catch (error) {
     console.error('Ошибка:', error);
     btn.textContent = 'Ошибка: ' + (error.message.includes('focused') 
-      ? 'Вернитесь на вкладку' 
-      : 'Не удалось скопировать');
+      ? '✗ Вернитесь на вкладку' 
+      : '✗ Не удалось скопировать');
     await new Promise(resolve => setTimeout(resolve, 2000));
     btn.textContent = originalText;
   } finally {
-    // 6. Разблокировка
-    setTimeout(() => btn.disabled = false, 1000);
+    // 7. Разблокировка
+    setTimeout(() => btn.disabled = false, 0);
   }
 });
 
