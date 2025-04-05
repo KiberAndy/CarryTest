@@ -958,17 +958,18 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 }
 
 #share-btn.copied {
-  /* Сохраняем все оригинальные hover-стили */
   background-color: #28a745;
-  /* Убираем трансформации, чтобы не конфликтовало с вашей анимацией */
-  transform: none !important;
+  animation: none !important; /* Отключаем конфликтные анимации */
 }
 
 #share-btn.copied::before {
-  content: '✓';
-  display: inline-block;
-  margin-right: 8px;
-  animation: fadeIn 0.3s ease;
+  display: none; /* Убираем вторую галочку */
+}
+
+#share-btn.copied:hover {
+  /* Сохраняем ваш оригинальный hover-эффект */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 @keyframes spin {
@@ -1815,8 +1816,6 @@ shareBtn.addEventListener('click', async function() {
   btn.disabled = true;
   btn.classList.add('processing');
   btn.textContent = 'Генерация...';
-  
-
   
   try {
     // Ваш код генерации ссылки...
