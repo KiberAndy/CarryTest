@@ -1809,7 +1809,7 @@ shareBtn.addEventListener('click', async function() {
 
   try {
     // 3. Имитация генерации (ваш реальный код)
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Задержка для примера
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Задержка для примера
     calculateResults();
     const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
       ((h << 5) - h) + char.charCodeAt(0), 0);
