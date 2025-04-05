@@ -1869,7 +1869,7 @@ shareBtn.addEventListener('click', async function() {
     btn.textContent = 'Ошибка: ' + (error.message.includes('focused') 
       ? '✗ Вернитесь на вкладку' 
       : '✗ Не удалось скопировать');
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     btn.textContent = originalText;
   } finally {
     // 7. Разблокировка
