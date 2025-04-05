@@ -1870,10 +1870,10 @@ shareBtn.addEventListener('click', async function() {
       ? '✗ Вернитесь на вкладку' 
       : '✗ Не удалось скопировать');
     await new Promise(resolve => setTimeout(resolve, 2000));
+	btn.classList.remove('copied'); // Убираем эффект
     btn.textContent = originalText;
   } finally {
     // 7. Разблокировка
-	btn.classList.remove('copied'); // Убираем эффект
     setTimeout(() => btn.disabled = false, 0);
   }
 });
