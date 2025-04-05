@@ -1862,7 +1862,7 @@ shareBtn.addEventListener('click', async function() {
     // 6. Успешное завершение
 	btn.classList.add('copied'); // Эффект
     btn.textContent = '✓ Ссылка скопирована!';
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 10000));
     
   } catch (error) {
     console.error('Ошибка:', error);
@@ -1870,11 +1870,11 @@ shareBtn.addEventListener('click', async function() {
       ? '✗ Вернитесь на вкладку' 
       : '✗ Не удалось скопировать');
     await new Promise(resolve => setTimeout(resolve, 2000));
-	btn.classList.remove('copied'); // Убираем эффект
     btn.textContent = originalText;
   } finally {
     // 7. Разблокировка
     setTimeout(() => btn.disabled = false, 0);
+	btn.classList.remove('copied'); // Убираем эффект
   }
 });
 
