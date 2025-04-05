@@ -950,8 +950,10 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 }
 
 #share-btn.copied {
-  background-color: #28a745;
-  animation: none !important; /* Отключаем конфликтные анимации */
+  background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+  color: #111;
+  font-weight: bold;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
 #share-btn.copied::before {
@@ -1859,7 +1861,7 @@ shareBtn.addEventListener('click', async function() {
 	
     // 6. Успешное завершение
     btn.textContent = '✓ Ссылка скопирована!';
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
   } catch (error) {
     console.error('Ошибка:', error);
