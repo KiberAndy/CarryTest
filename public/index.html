@@ -726,12 +726,15 @@ checkForSharedResults();
         
         <button class="save-button" id="save-btn">Сохранить результаты</button>
 <!-- Кнопка и блок для ссылки -->
-<button id="share-btn">Поделиться результатами</button>
-<div id="share-link-container">
-  <input type="text" id="share-link" readonly>
+<button class="share-button" id="share-btn">Поделиться результатами</button>
+
+<div class="share-link-container" id="share-link-container" style="display: none;">
+    <p>Ваши результаты доступны по ссылке:</p>
+    <div>
+        <input type="text" id="share-link" class="share-link" readonly>
+        <button class="copy-btn" id="copy-btn">Копировать</button>
+    </div>
 </div>
-
-
 
 <script>
 // Вместо них используйте прямое подключение к вашей Netlify-функции:
