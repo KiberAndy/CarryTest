@@ -931,6 +931,7 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 <style>
 
+/* Стиль для уведомления о копировании */
 .copy-notification {
   position: fixed;
   bottom: 80px;
@@ -949,8 +950,8 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   gap: 8px;
   border: 1px solid rgba(255,255,255,0.1);
   backdrop-filter: blur(5px);
-  animation: slideIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1), 
-             fadeOut 0.5s cubic-bezier(0.55, 0.09, 0.68, 0.53) 2s forwards;
+  animation: notificationSlideIn 0.3s ease-out, 
+             notificationFadeOut 0.5s ease-in 2s forwards;
 }
 
 .copy-notification::before {
@@ -958,34 +959,58 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   font-size: 18px;
 }
 
-@keyframes slideIn {
+@keyframes notificationSlideIn {
   from { 
-    transform: translateX(30px); 
-    opacity: 0; 
+    transform: translateY(20px);
+    opacity: 0;
   }
   to { 
-    transform: translateX(0); 
-    opacity: 1; 
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-@keyframes fadeOut {
+@keyframes notificationFadeOut {
   to { 
     opacity: 0;
     transform: translateY(-10px);
   }
 }
 
-/* Для мобильных устройств */
 @media (max-width: 600px) {
   .copy-notification {
     bottom: 70px;
     right: 10px;
     left: 10px;
-    text-align: center;
-    justify-content: center;
   }
 }
+
+/* Стиль для кнопки во время загрузки */
+#share-btn.processing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255,255,255,0.2), 
+    transparent);
+  animation: loadingShimmer 1.5s infinite;
+}
+
+@keyframes loadingShimmer {
+  100% {
+    left: 100%;
+  }
+}
+
+
+
+
+
+
 
 .share-button {
     background: #4CAF50;
@@ -1805,51 +1830,56 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 shareBtn.addEventListener('click', async function() {
-  if (this.classList.contains('copied')) return;
-  
-  // Рассчитываем результаты перед генерацией ссылки
-  calculateResults();
-  
-  // Создаем уникальный идентификатор на основе ответов
-  const answersString = JSON.stringify(answers);
-  let hash = 0;
-  for (let i = 0; i < answersString.length; i++) {
-    const char = answersString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Преобразуем в 32bit integer
-  }
-  
-  const shareToken = Math.abs(hash).toString(36).substring(0, 8);
-  const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareToken}`;
-  
-  // Показываем ссылку
-  shareLinkInput.value = shareLink;
-  shareLinkContainer.style.display = 'block';
-  
+  // Блокируем кнопку
+  const btn = this;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add('processing');
+  btn.textContent = 'Генерация...';
+
   try {
+    // 1. Генерация ссылки
+    calculateResults();
+    const answersString = JSON.stringify(answers);
+    const hash = Array.from(answersString).reduce((hash, char) => {
+      return ((hash << 5) - hash) + char.charCodeAt(0);
+    }, 0);
+    const shareToken = Math.abs(hash).toString(36).substring(0, 8);
+    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
+
+    // 2. Отображаем ссылку
+    shareLinkInput.value = shareLink;
+    shareLinkContainer.style.display = 'block';
+
+    // 3. Копируем в буфер
     await navigator.clipboard.writeText(shareLink);
-    
-    // Анимация подтверждения
-    const originalText = shareBtn.textContent;
-    shareBtn.textContent = '✓ Скопировано!';
-    shareBtn.classList.add('copied');
-    
-    // Возвращаем исходное состояние через 2 секунды
+
+    // 4. Показываем уведомление
+    const notification = document.createElement('div');
+    notification.className = 'copy-notification';
+    notification.textContent = '✓ Ссылка скопирована!';
+    document.body.appendChild(notification);
+
+    // Автоудаление уведомления
+    setTimeout(() => notification.remove(), 2500);
+
+    // Прокрутка к ссылке
+    setTimeout(() => shareLinkContainer.scrollIntoView({ behavior: 'smooth' }), 100);
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    btn.textContent = 'Ошибка!';
+    setTimeout(() => btn.textContent = originalText, 2000);
+    return;
+
+  } finally {
+    // Восстанавливаем кнопку
     setTimeout(() => {
-      shareBtn.textContent = originalText;
-      shareBtn.classList.remove('copied');
-    }, 2000);
-    
-  } catch (err) {
-    console.error('Ошибка копирования:', err);
-    shareBtn.textContent = 'Ошибка :(';
-    setTimeout(() => {
-      shareBtn.textContent = 'Поделиться результатами';
-    }, 2000);
+      btn.disabled = false;
+      btn.classList.remove('processing');
+      btn.textContent = originalText;
+    }, 500);
   }
-  
-  // Прокручиваем страницу к ссылке
-  shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
 });
 
         // Функция для копирования ссылки
