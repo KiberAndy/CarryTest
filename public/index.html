@@ -1800,40 +1800,41 @@ shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
   
-  // 1. Блокировка кнопки и начало генерации
+  // 1. Фокусируем страницу перед копированием
+  window.focus();
+  
+  // 2. Блокировка кнопки
   btn.disabled = true;
   btn.textContent = 'Генерация...';
 
   try {
-    // 2. Ваш код генерации (оставить без изменений)
+    // 3. Генерация ссылки
     calculateResults();
     const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
       ((h << 5) - h) + char.charCodeAt(0), 0);
     const shareLink = `${location.origin}/view.html?result=${Math.abs(hash).toString(36).substr(0,8)}`;
     
-    // 3. Копирование в буфер
+    // 4. Копирование с проверкой фокуса
+    if (!document.hasFocus()) {
+      throw new Error('Переключитесь обратно на вкладку');
+    }
     await navigator.clipboard.writeText(shareLink);
     
-    // 4. Показываем "Ссылка скопирована!" (кнопка остается заблокированной)
+    // 5. Успешное завершение
     btn.textContent = '✓ Ссылка скопирована!';
-    
-    // 5. Ждем 2 секунды
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    
-    // 6. Возвращаем исходный текст (кнопка пока еще заблокирована)
-    btn.textContent = originalText;
-    
-    // 7. Ждем еще 1 секунду
     await new Promise(resolve => setTimeout(resolve, 2000));
+    btn.textContent = originalText;
     
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка!';
+    btn.textContent = 'Ошибка: ' + (error.message.includes('focused') 
+      ? 'Вернитесь на вкладку' 
+      : 'Не удалось скопировать';
     await new Promise(resolve => setTimeout(resolve, 2000));
     btn.textContent = originalText;
   } finally {
-    // 8. Разблокируем кнопку (через секунды после копирования)
-    btn.disabled = false;
+    // 6. Разблокировка
+    setTimeout(() => btn.disabled = false, 1000);
   }
 });
 
