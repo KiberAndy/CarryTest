@@ -1829,7 +1829,7 @@ shareBtn.addEventListener('click', async function() {
     console.error('Ошибка:', error);
     btn.textContent = 'Ошибка: ' + (error.message.includes('focused') 
       ? 'Вернитесь на вкладку' 
-      : 'Не удалось скопировать';
+      : 'Не удалось скопировать');
     await new Promise(resolve => setTimeout(resolve, 2000));
     btn.textContent = originalText;
   } finally {
