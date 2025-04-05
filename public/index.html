@@ -1813,6 +1813,9 @@ shareBtn.addEventListener('click', async function() {
     const hash = Array.from(JSON.stringify(answers)).reduce((h, char) => 
       ((h << 5) - h) + char.charCodeAt(0), 0);
     const shareLink = `${location.origin}/view.html?result=${Math.abs(hash).toString(36).substr(0,8)}`;
+	
+	// Критическая задержка (300 мс)
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     // 4. Копирование с проверкой фокуса
     if (!document.hasFocus()) {
