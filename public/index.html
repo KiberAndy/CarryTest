@@ -1818,13 +1818,13 @@ shareBtn.addEventListener('click', async function() {
     btn.textContent = '✓ Ссылка скопирована!';
     
     // 5. Ждем 2 секунды
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
     // 6. Возвращаем исходный текст (кнопка пока еще заблокирована)
     btn.textContent = originalText;
     
     // 7. Ждем еще 1 секунду
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
   } catch (error) {
     console.error('Ошибка:', error);
@@ -1832,7 +1832,7 @@ shareBtn.addEventListener('click', async function() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     btn.textContent = originalText;
   } finally {
-    // 8. Разблокируем кнопку (через 3 секунды после копирования)
+    // 8. Разблокируем кнопку (через секунды после копирования)
     btn.disabled = false;
   }
 });
