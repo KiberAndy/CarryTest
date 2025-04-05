@@ -1887,14 +1887,16 @@ shareBtn.addEventListener('click', async function() {
     
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка: ' + (error.message.includes('focused') 
-      ? '✗ Вернитесь на вкладку' 
-      : '✗ Не удалось скопировать');
+    btn.textContent = 'Ошибка: ' + (
+      error.message.includes('focused')
+        ? '✗ Вернитесь на вкладку'
+        : '✗ Не удалось скопировать'
+    );
+
     await new Promise(resolve => setTimeout(resolve, 2000));
-  } finally {
-    // Сбрасываем состояние (текст + эффекты)
     btn.textContent = originalText;
-    btn.disabled = false; // Разблокируем сразу
+    btn.disabled = false;
+    btn.classList.remove('copied', 'fade-out'); // На всякий
   }
 });
 
