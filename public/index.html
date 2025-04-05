@@ -931,6 +931,19 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 <style>
 
+
+/* Анимация плавная на кнопке */
+.copied {
+  background-color: gold;
+  transition: background-color 0.3s ease;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+
 /* Анимация подтверждения на кнопке */
 #share-btn {
   transition: all 0.3s ease; /* Сохраняем вашу оригинальную анимацию */
@@ -1855,7 +1868,6 @@ shareBtn.addEventListener('click', async function() {
       input.select();
       copySuccess = document.execCommand('copy');
       document.body.removeChild(input);
-	  await new Promise(resolve => setTimeout(resolve, 10000));
     }
 
     if (!copySuccess) throw new Error('Не удалось скопировать');
@@ -1863,6 +1875,15 @@ shareBtn.addEventListener('click', async function() {
     // 6. Успешное завершение
 	btn.classList.add('copied'); // Эффект
     btn.textContent = '✓ Ссылка скопирована!';
+
+    // Плавное исчезновение за 1 секунду до сброса
+    await new Promise(resolve => setTimeout(resolve, 9000));
+    btn.classList.add('fade-out');
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    btn.classList.remove('copied', 'fade-out');
+    btn.textContent = originalText;
+    btn.disabled = false;
     
   } catch (error) {
     console.error('Ошибка:', error);
@@ -1873,7 +1894,6 @@ shareBtn.addEventListener('click', async function() {
   } finally {
     // Сбрасываем состояние (текст + эффекты)
     btn.textContent = originalText;
-    btn.classList.remove('copied');
     btn.disabled = false; // Разблокируем сразу
   }
 });
