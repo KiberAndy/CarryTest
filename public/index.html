@@ -1825,106 +1825,82 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 		
-async function isValidLink(link) {
-  try {
-    new URL(link);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function generateShareToken(dataString) {
-  let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let shareToken = '';
-  hash = Math.abs(hash);
-
-  for (let i = 0; i < 7; i++) {
-    const charIndex = (hash + i * 31) % chars.length;
-    shareToken += chars[charIndex];
-  }
-
-  return shareToken;
-}
-
-shareBtn.addEventListener('click', async function() {
+// 🖱 Обработчик клика по кнопке
+shareBtn.addEventListener('click', async function () {
   const btn = this;
   const originalText = btn.textContent;
   const originalClasses = btn.className;
-  const originalDisabled = btn.disabled;
 
   try {
     btn.disabled = true;
     btn.textContent = 'Генерация...';
 
-    // 🕐 Ждём завершения рассчёта
-    await calculateResults();
+    await calculateResults(); // 🧠 Дождались расчёта
 
-    const answersString = JSON.stringify(answers);
-    const shareToken = generateShareToken(answersString);
-    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
+    const dataString = stableStringify(answers);  // Преобразуем ответы в стабильный строковый формат
+    const shareToken = generateShareToken(dataString);  // Генерируем токен
+    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;  // Формируем ссылку
 
-    if (!isValidLink(shareLink)) throw new Error("Некорректная ссылка");
-
-    // 📋 Копируем в буфер
-    let copySuccess = false;
+    // 📋 Попытка копирования
     try {
       await navigator.clipboard.writeText(shareLink);
-      copySuccess = true;
     } catch {
       const input = document.createElement('input');
       input.value = shareLink;
       document.body.appendChild(input);
       input.select();
-      copySuccess = document.execCommand('copy');
+      document.execCommand('copy');
       document.body.removeChild(input);
     }
 
-    if (!copySuccess) throw new Error('Не удалось скопировать');
+    // 💌 Отправляем токен на сервер
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, scores, shareToken })
+    });
 
-    btn.textContent = '✓ Ссылка скопирована!';
+    if (!response.ok) {
+      throw new Error(`Ошибка сервера: ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    btn.textContent = '✓ Скопировано!';
     btn.classList.add('copied');
 
+    // ⏳ Ждём, пока пользователь не уйдёт
     await new Promise(resolve => {
-      const timer = setTimeout(resolve, 9000);
-      const visibilityHandler = () => {
+      const timer = setTimeout(resolve, 8000);
+      document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
           clearTimeout(timer);
           resolve();
         }
-      };
-      document.addEventListener('visibilitychange', visibilityHandler, { once: true });
+      }, { once: true });
     });
 
-    btn.style.transition = 'opacity 1s ease-out';
+    btn.style.transition = 'opacity 0.8s ease-out';
     btn.style.opacity = '0';
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(res => setTimeout(res, 800));
 
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка: ' + (
-      error.message.includes('focused')
-        ? '✗ Вернитесь на вкладку'
-        : '✗ Не удалось скопировать'
-    );
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
+    btn.textContent = '✗ Не удалось';
+    await new Promise(res => setTimeout(res, 2000));
   } finally {
     btn.textContent = originalText;
     btn.className = originalClasses;
-    btn.disabled = originalDisabled;
+    btn.disabled = false;
     btn.style.opacity = '';
     btn.style.transition = '';
-    btn.classList.remove('copied', 'fade-out');
+    btn.classList.remove('copied');
   }
 });
+
 
 
         // Функция для копирования ссылки
