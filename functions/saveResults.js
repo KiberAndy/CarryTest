@@ -46,8 +46,8 @@ exports.handler = async (event) => {
 
     // 3. Поиск существующей записи
     const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_KEY
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     const { data: existing } = await supabase
