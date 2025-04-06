@@ -864,49 +864,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Обработчик кнопки "Поделиться"
 document.getElementById('share-btn').addEventListener('click', async function() {
     const btn = this;
-    const originalHtml = btn.innerHTML;
+    const originalText = btn.textContent;
     
     try {
-        // 1. Подготовительная анимация
+        // 1. Подготовка - показываем загрузку
         btn.disabled = true;
-        btn.classList.add('processing');
-        btn.innerHTML = '<span>⏳ Генерация ссылки...</span>';
-
-        // 2. Логика копирования (ваш существующий код)
+        btn.textContent = "⏳ Создание ссылки...";
+        
+        // 2. Ваша логика копирования
         calculateResults();
-        const postData = { answers, scores, timestamp: new Date().toISOString() };
+        const postData = {
+            answers: answers,
+            scores: scores,
+            timestamp: new Date().toISOString()
+        };
+        
         const response = await fetch('/.netlify/functions/saveResults', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(postData)
         });
+        
         if (!response.ok) throw new Error('Ошибка сервера');
+        
         const { share_token } = await response.json();
         await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-
-        // 3. Анимация успешного копирования
+        
+        // 3. Показываем успех
         btn.classList.add('copied');
+        btn.textContent = "Ссылка скопирована!";
         btn.disabled = false;
-        btn.innerHTML = '<span>✓ Ссылка скопирована!</span>';
-
-        // 4. Плавный возврат через 10 секунд
+        
+        // 4. Возвращаем исходное состояние через 10 секунд
         setTimeout(() => {
-            btn.style.transition = 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)';
             btn.classList.remove('copied');
-            
             setTimeout(() => {
-                btn.classList.remove('processing');
-                btn.innerHTML = originalHtml;
-                btn.style.transition = ''; // Сбрасываем кастомный transition
-            }, 600); // Длительность анимации возврата
+                btn.textContent = originalText;
+            }, 400); // Ждём завершения анимации
         }, 10000);
-
+        
     } catch (error) {
         console.error('Ошибка:', error);
-        btn.innerHTML = '<span>❌ Ошибка</span>';
+        btn.textContent = "❌ Ошибка";
         setTimeout(() => {
-            btn.classList.remove('processing', 'copied');
-            btn.innerHTML = originalHtml;
+            btn.textContent = originalText;
             btn.disabled = false;
         }, 2000);
     }
@@ -935,22 +936,22 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 <style>
 
         /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
+/* Основные стили кнопки */
 #share-btn {
     position: relative;
     overflow: hidden;
     transition: 
         background-color 0.4s ease,
-        padding 0.4s ease,
-        box-shadow 0.4s ease;
-    will-change: transform; /* Оптимизация для анимации */
+        padding-right 0.4s ease;
 }
 
+/* Состояние "скопировано" */
 #share-btn.copied {
     background-color: #4CAF50 !important;
     padding-right: 45px;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
+/* Псевдоэлемент для галочки */
 #share-btn.copied::after {
     content: "✓";
     position: absolute;
@@ -960,36 +961,21 @@ document.getElementById('share-btn').addEventListener('click', async function() 
     font-size: 20px;
     opacity: 0;
     animation: 
-        checkAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+        checkFadeIn 0.5s ease forwards,
         checkPulse 2s 0.5s infinite;
 }
 
-@keyframes checkAppear {
-    0% { opacity: 0; transform: translateY(-50%) scale(0.5); }
-    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+/* Анимация появления галочки */
+@keyframes checkFadeIn {
+    from { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
 }
 
+/* Пульсация галочки */
 @keyframes checkPulse {
     0% { transform: translateY(-50%) scale(1); }
     50% { transform: translateY(-50%) scale(1.1); }
     100% { transform: translateY(-50%) scale(1); }
-}
-
-#share-btn span {
-    display: inline-block;
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-#share-btn.copied span {
-    transform: translateX(-10px);
-}
-
-/* Плавное возвращение к исходному состоянию */
-#share-btn:not(.copied) {
-    transition: 
-        background-color 0.6s ease,
-        padding 0.6s ease,
-        box-shadow 0.6s ease;
 }
 
 
