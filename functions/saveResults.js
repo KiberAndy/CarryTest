@@ -12,24 +12,27 @@ function stableStringify(obj) {
   return JSON.stringify(obj);
 }
 
-// 🔑 Генератор токена на основе стабильной сериализации
-function generateShareToken(dataString) {
+// 🔑 Генератор рандомного токена
+function generateRandomToken(baseString) {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let randomToken = '';
+  
+  // Генерация случайного токена длиной 7 символов на основе хеша
   let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
+  for (let i = 0; i < baseString.length; i++) {
+    const char = baseString.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash |= 0;
+    hash = hash & hash; // Преобразование в 32-битное число
   }
 
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let token = '';
-  hash = Math.abs(hash);
+  // Генерация случайной части токена на основе хеша
+  hash = Math.abs(hash); // Преобразуем хеш в положительное число
 
   for (let i = 0; i < 7; i++) {
-    token += chars[(hash + i * 31) % chars.length];
+    randomToken += chars[(hash + i * 31) % chars.length];
   }
 
-  return token;
+  return randomToken;
 }
 
 exports.handler = async (event) => {
@@ -64,19 +67,17 @@ exports.handler = async (event) => {
     console.log('Parsed answers:', answers);
     console.log('Parsed scores:', scores);
 
-    // Стабильная сериализация данных для генерации токена
+    // Стабильная сериализация данных для поиска
     const dataString = stableStringify({ answers, scores });
-    const shareToken = generateShareToken(dataString);
-    console.log('Generated stable share token:', shareToken);
 
-    // Создаем хеш ответов для поиска
-    const answersHash = generateShareToken(dataString); // Используем тот же хеш для поиска
+    // Генерация токена на основе сериализованных данных (стабильный токен для одинаковых данных)
+    const shareToken = generateRandomToken(dataString);
 
     // Проверяем существование таких результатов
     const { data: existingResult, error: lookupError } = await supabase
       .from('test_results')
       .select('id, share_token')
-      .eq('answers_hash', answersHash)
+      .eq('answers_hash', shareToken)
       .maybeSingle();
 
     if (lookupError) {
@@ -97,13 +98,13 @@ exports.handler = async (event) => {
       };
     }
 
-    // Если не нашли - создаем новую запись
+    // Если не нашли - создаем новую запись с токеном
     const { data, error } = await supabase
       .from('test_results')
       .insert([{
         answers,
         scores,
-        answers_hash: answersHash,
+        answers_hash: shareToken,
         share_token: shareToken,
         created_at: new Date().toISOString()
       }])
