@@ -1,140 +1,114 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// 🔒 Стабильный stringify — для одинаковых токенов при одинаковых данных
+// 🔄 Стабильный JSON.stringify (одинаковый для одинаковых данных)
 function stableStringify(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return JSON.stringify(obj);
+  }
   if (Array.isArray(obj)) {
     return `[${obj.map(stableStringify).join(',')}]`;
-  } else if (obj && typeof obj === 'object') {
-    return `{${Object.keys(obj).sort().map(key =>
-      `"${key}":${stableStringify(obj[key])}`
-    ).join(',')}}`;
   }
-  return JSON.stringify(obj);
+  const sortedKeys = Object.keys(obj).sort();
+  const keyValuePairs = sortedKeys.map(key => 
+    `"${key}":${stableStringify(obj[key])}`
+  );
+  return `{${keyValuePairs.join(',')}}`;
 }
 
-// 🔑 Генератор токена с рандомизацией
+// 🎲 Генератор случайных токенов (но стабильных для одинаковых данных)
 function generateRandomToken(baseString) {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let randomToken = '';
-  
-  // Генерация случайного токена длиной 7 символов на основе хеша
   let hash = 0;
+
+  // 1. Создаем хеш на основе данных (для стабильности)
   for (let i = 0; i < baseString.length; i++) {
     const char = baseString.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Преобразование в 32-битное число
+    hash |= 0; // Преобразуем в 32-битное целое
   }
 
-  // Генерация случайной части токена на основе хеша и случайных данных
-  hash = Math.abs(hash); // Преобразуем хеш в положительное число
-
-  // Генерация случайной части на основе hash и добавление случайных символов
+  // 2. Добавляем случайность, но так, чтобы одинаковые данные давали одинаковый токен
+  const rnd = Math.abs(hash) % 1000000;
+  let token = '';
+  
   for (let i = 0; i < 7; i++) {
-    randomToken += chars[(hash + i * 31 + Math.floor(Math.random() * 100)) % chars.length];
+    const index = (rnd + i * 31) % chars.length;
+    token += chars[index];
   }
 
-  return randomToken;
+  return token;
 }
 
 exports.handler = async (event) => {
-  // Логирование метода запроса
-  console.log('HTTP Method:', event.httpMethod);
-
-  // Проверка метода запроса
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Только POST-запросы разрешены' })
-    };
+    return { statusCode: 405, body: JSON.stringify({ error: 'Только POST!' }) };
   }
 
   try {
-    // Логирование тела запроса
-    console.log('Received body:', event.body);
-
-    // Инициализация Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Парсинг тела запроса
     const { answers, scores } = JSON.parse(event.body);
-
     if (!answers || !scores) {
-      throw new Error('Неверный формат данных: отсутствуют answers или scores');
+      throw new Error('Нет answers или scores!');
     }
 
-    // Логирование парсенных данных
-    console.log('Parsed answers:', answers);
-    console.log('Parsed scores:', scores);
-
-    // Стабильная сериализация данных для поиска
+    // 1. Создаем стабильную строку из данных (для поиска дубликатов)
     const dataString = stableStringify({ answers, scores });
-
-    // Генерация токена на основе сериализованных данных (стабильный токен для одинаковых данных)
+    
+    // 2. Генерируем токен (рандомный, но стабильный для одинаковых данных)
     const shareToken = generateRandomToken(dataString);
 
-    // Проверяем существование таких результатов
-    const { data: existingResult, error: lookupError } = await supabase
+    // 3. Ищем в Supabase, есть ли уже такой результат
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const { data: existing, error: lookupError } = await supabase
       .from('test_results')
-      .select('id, share_token')
+      .select('share_token')
       .eq('answers_hash', shareToken)
       .maybeSingle();
 
-    if (lookupError) {
-      console.error('Error while looking up result:', lookupError);
-      throw lookupError;
-    }
+    if (lookupError) throw lookupError;
 
-    // Если нашли - возвращаем существующий токен
-    if (existingResult) {
-      console.log('Found existing result:', existingResult);
+    // 4. Если нашли дубликат → возвращаем старую ссылку
+    if (existing) {
       return {
         statusCode: 200,
-        body: JSON.stringify({
-          share_token: existingResult.share_token,
-          id: existingResult.id,
-          reused: true
+        body: JSON.stringify({ 
+          share_token: existing.share_token,
+          reused: true 
         })
       };
     }
 
-    // Если не нашли - создаем новую запись с токеном
-    const { data, error } = await supabase
+    // 5. Если нет → сохраняем в базу и возвращаем новую ссылку
+    const { data: newResult, error: insertError } = await supabase
       .from('test_results')
       .insert([{
         answers,
         scores,
-        answers_hash: shareToken,
-        share_token: shareToken,
+        answers_hash: shareToken, // <- сохраняем хеш для поиска дубликатов
+        share_token: shareToken,  // <- сам токен (b0NvyPh, 4q45ty и т. д.)
         created_at: new Date().toISOString()
       }])
       .select();
 
-    if (error) {
-      console.error('Error while inserting result:', error);
-      throw error;
-    }
-
-    console.log('New result inserted:', data[0]);
+    if (insertError) throw insertError;
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
+      body: JSON.stringify({ 
         share_token: shareToken,
-        id: data[0].id,
-        reused: false
+        reused: false 
       })
     };
 
   } catch (error) {
-    console.error('Server Error:', error);
-
     return {
       statusCode: 500,
-      body: JSON.stringify({
+      body: JSON.stringify({ 
         error: 'Ошибка сервера',
-        details: error.message
+        details: error.message 
       })
     };
   }
