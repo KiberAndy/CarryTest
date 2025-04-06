@@ -1840,83 +1840,49 @@ let isLinkGenerated = false; // Флаг для проверки, была ли 
 
 shareBtn.addEventListener('click', async function() {
   const btn = this;
-  const originalText = btn.textContent;
-  const originalClasses = btn.className;
-  const originalDisabled = btn.disabled;
-
-  // Если ссылка уже была сгенерирована, прекращаем выполнение
-  if (isLinkGenerated) {
-    return;
-  }
-
   try {
     btn.disabled = true;
     btn.textContent = 'Генерация...';
 
-    // 🕐 Ждём завершения рассчёта
-    await calculateResults();
-
-    const answersString = JSON.stringify(answers);
-    const shareToken = generateShareToken(answersString);
-    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
-
-    // Отметим, что ссылка была сгенерирована
-    isLinkGenerated = true;
-
-    // 📋 Копируем в буфер
-    let copySuccess = false;
-    try {
-      // Копируем ссылку, которая была сгенерирована
-      await navigator.clipboard.writeText(shareLink);
-      copySuccess = true;
-    } catch {
-      const input = document.createElement('input');
-      input.value = shareLink;
-      document.body.appendChild(input);
-      input.select();
-      copySuccess = document.execCommand('copy');
-      document.body.removeChild(input);
-    }
-
-    if (!copySuccess) throw new Error('Не удалось скопировать');
-
-    btn.textContent = '✓ Ссылка скопирована!';
-    btn.classList.add('copied');
-
-    // Очистим временные изменения после 9 секунд
-    await new Promise(resolve => {
-      const timer = setTimeout(resolve, 9000);
-      const visibilityHandler = () => {
-        if (document.visibilityState === 'hidden') {
-          clearTimeout(timer);
-          resolve();
-        }
-      };
-      document.addEventListener('visibilitychange', visibilityHandler, { once: true });
+    // 1. Рассчитываем результаты
+    calculateResults();
+    
+    // 2. Отправляем данные на сервер
+    const postData = {
+      answers: answers,
+      scores: scores,
+      timestamp: new Date().toISOString()
+    };
+    
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData)
     });
-
-    // Применим анимацию скрытия кнопки
-    btn.style.transition = 'opacity 1s ease-out';
-    btn.style.opacity = '0';
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
+    
+    if (!response.ok) throw new Error('Ошибка сервера');
+    
+    const { share_token } = await response.json();
+    const shareLink = `${window.location.origin}/view.html?result=${share_token}`;
+    
+    // 3. Копируем ссылку
+    await navigator.clipboard.writeText(shareLink);
+    
+    // 4. Показываем уведомление
+    btn.textContent = '✓ Ссылка скопирована!';
+    
+    // 5. Показываем ссылку в интерфейсе (если нужно)
+    shareLinkInput.value = shareLink;
+    shareLinkContainer.style.display = 'block';
+    
   } catch (error) {
     console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка: ' + (
-      error.message.includes('focused')
-        ? '✗ Вернитесь на вкладку'
-        : '✗ Не удалось скопировать'
-    );
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
+    btn.textContent = 'Ошибка, попробуйте ещё раз';
   } finally {
-    // Восстанавливаем исходное состояние кнопки
-    btn.textContent = originalText;
-    btn.className = originalClasses;
-    btn.disabled = originalDisabled;
-    btn.style.opacity = '';
-    btn.style.transition = '';
-    btn.classList.remove('copied', 'fade-out');
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Поделиться результатами';
+    }, 2000);
   }
 });
 
