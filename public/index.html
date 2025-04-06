@@ -867,27 +867,47 @@ document.getElementById('share-btn').addEventListener('click', async function() 
     const originalText = btn.innerHTML;
     
     try {
-        // Блокируем кнопку
+        // 1. Блокируем кнопку и показываем индикатор загрузки
         btn.disabled = true;
         btn.classList.add('processing');
-        
-        // Показываем статус загрузки
-        btn.innerHTML = `
-            <span style="position:relative;">
-                <span style="display:inline-block; transition: transform 0.3s; transform: translateY(0);">
-                    ⏳ Создание ссылки...
-                </span>
-            </span>
-        `;
+        btn.innerHTML = '<span>⏳ Создание ссылки...</span>';
 
-        // Здесь логика генерации и копирования ссылки
-        const resultLink = await generateAndCopyLink(); // Ваша функция
+        // 2. Рассчитываем результаты (если еще не сделано)
+        calculateResults();
         
-        // Успешное копирование - запускаем анимацию
+        // 3. Подготавливаем данные для сохранения
+        const postData = {
+            answers: answers,
+            scores: scores,
+            timestamp: new Date().toISOString()
+        };
+
+        // 4. Отправляем данные на сервер
+        const response = await fetch('/.netlify/functions/saveResults', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postData)
+        });
+
+        if (!response.ok) throw new Error('Ошибка сервера');
+        
+        // 5. Получаем токен для ссылки
+        const { share_token } = await response.json();
+        const resultLink = `${window.location.origin}/view.html?result=${share_token}`;
+        
+        // 6. Копируем ссылку в буфер обмена
+        await navigator.clipboard.writeText(resultLink);
+        
+        // 7. Показываем ссылку в интерфейсе
+        document.getElementById('share-link').value = resultLink;
+        document.getElementById('share-link-container').style.display = 'block';
+        
+        // 8. Включаем анимацию успешного копирования
         btn.classList.add('copied');
         btn.disabled = false;
+        btn.innerHTML = '<span>✓ Ссылка скопирована!</span>';
         
-        // Возвращаем исходный текст через 10 секунд
+        // 9. Возвращаем исходный текст через 10 секунд
         setTimeout(() => {
             btn.classList.remove('copied', 'processing');
             btn.innerHTML = originalText;
@@ -895,7 +915,7 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
     } catch (error) {
         console.error('Ошибка:', error);
-        btn.innerHTML = '❌ Ошибка!';
+        btn.innerHTML = '<span>❌ Ошибка!</span>';
         setTimeout(() => {
             btn.classList.remove('processing');
             btn.innerHTML = originalText;
