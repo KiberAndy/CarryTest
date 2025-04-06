@@ -1,4 +1,3 @@
-// netlify/functions/saveResults.js
 const { createClient } = require('@supabase/supabase-js');
 
 // Функция для создания хеша ответов (должна быть идентичной на клиенте и сервере)
@@ -14,6 +13,9 @@ function hashAnswers(answers) {
 }
 
 exports.handler = async (event) => {
+  // Логирование метода запроса
+  console.log('HTTP Method:', event.httpMethod);
+
   // Проверка метода запроса
   if (event.httpMethod !== 'POST') {
     return {
@@ -23,26 +25,44 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Логирование тела запроса
+    console.log('Received body:', event.body);
+
     // Инициализация Supabase
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Парсинг тела запроса
-    const { answers, scores, shareToken } = JSON.parse(event.body);
-    if (!answers || !scores || !shareToken) {
-      throw new Error('Неверный формат данных: отсутствуют answers, scores или shareToken');
+    const { answers, scores } = JSON.parse(event.body);
+
+    if (!answers || !scores) {
+      throw new Error('Неверный формат данных: отсутствуют answers или scores');
     }
 
-    // Проверка существования токена в базе данных
+    // Логирование парсенных данных
+    console.log('Parsed answers:', answers);
+    console.log('Parsed scores:', scores);
+
+    // Создаем хеш ответов (будет использован как share_token)
+    const answersHash = hashAnswers(answers);
+    console.log('Generated answers hash:', answersHash);
+
+    // Проверяем существование таких результатов
     const { data: existingResult, error: lookupError } = await supabase
       .from('test_results')
       .select('id, share_token')
-      .eq('share_token', shareToken)
+      .eq('answers_hash', answersHash)
       .maybeSingle();
+
+    if (lookupError) {
+      console.error('Error while looking up result:', lookupError);
+      throw lookupError;
+    }
 
     // Если нашли - возвращаем существующий токен
     if (existingResult) {
+      console.log('Found existing result:', existingResult);
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -59,23 +79,31 @@ exports.handler = async (event) => {
       .insert([{
         answers,
         scores,
-        share_token: shareToken,
+        answers_hash: answersHash,
+        share_token: answersHash,
         created_at: new Date().toISOString()
       }])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error while inserting result:', error);
+      throw error;
+    }
+
+    console.log('New result inserted:', data[0]);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        share_token: shareToken,
+        share_token: answersHash,
         id: data[0].id,
         reused: false
       })
     };
 
   } catch (error) {
+    console.error('Server Error:', error);
+
     return {
       statusCode: 500,
       body: JSON.stringify({
