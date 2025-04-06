@@ -1825,6 +1825,21 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 		
+// Функция для стабильной сериализации объекта
+function stableStringify(obj) {
+  const seen = new Set();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
+		
 // 🖱 Обработчик клика по кнопке
 shareBtn.addEventListener('click', async function () {
   const btn = this;
