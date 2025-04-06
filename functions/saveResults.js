@@ -1,15 +1,36 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Функция для создания хеша ответов (должна быть идентичной на клиенте и сервере)
-function hashAnswers(answers) {
-  const str = JSON.stringify(answers);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+// 🔒 Стабильный stringify — для одинаковых токенов при одинаковых данных
+function stableStringify(obj) {
+  if (Array.isArray(obj)) {
+    return `[${obj.map(stableStringify).join(',')}]`;
+  } else if (obj && typeof obj === 'object') {
+    return `{${Object.keys(obj).sort().map(key => 
+      `"${key}":${stableStringify(obj[key])}`
+    ).join(',')}}`;
   }
-  return Math.abs(hash).toString(36).slice(0, 8);  // Возвращаем хеш
+  return JSON.stringify(obj);
+}
+
+// 🔑 Генератор токена из 62 символов, длиной 7
+function generateShareToken(dataString) {
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    const char = dataString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let token = '';
+  hash = Math.abs(hash);
+
+  for (let i = 0; i < 7; i++) {
+    token += chars[(hash + i * 31) % chars.length];
+  }
+
+  return token;
 }
 
 exports.handler = async (event) => {
