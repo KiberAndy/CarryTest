@@ -973,6 +973,7 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   color: #111;
   font-weight: bold;
   text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+  transition: all 0.3s ease;
 }
 
 #share-btn.copied::before {
@@ -990,9 +991,15 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes fadeOut {
-  to { opacity: 0; }
+.fade-out {
+  animation: fadeOut 1s forwards;
 }
+
+@keyframes fadeOut {
+  to { 
+    opacity: 0;
+    transform: translateY(-5px);
+  }
 
 
 
@@ -1818,62 +1825,45 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 		
-// 1. Функция валидации (добавьте в начало)
-function isValidLink(link) {
-  try {
-    new URL(link);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-
 shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
   
-  // 2. Блокировка кнопки
-  btn.disabled = true;
-  btn.textContent = 'Генерация...';
-
+  // Сохраняем состояние кнопки
+  const originalClasses = btn.className;
+  const originalDisabled = btn.disabled;
+  
   try {
-    // 3. Генерация ссылки
-calculateResults();
-const answersString = JSON.stringify(answers);
-let hash = 0;
-
-// Хешируем строку ответов
-for (let i = 0; i < answersString.length; i++) {
-  const char = answersString.charCodeAt(i);
-  hash = ((hash << 5) - hash) + char;
-  hash = hash | 0; // Обрезаем до 32-битного числа
-}
-
-// Генерируем ровно 7 символов (0-9, a-z, A-Z)
-const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-let shareToken = '';
-hash = Math.abs(hash);
-
-for (let i = 0; i < 7; i++) {  // Жёстко задано 7 итераций
-  const charIndex = (hash + i * 31) % chars.length; // Улучшенный миксер
-  shareToken += chars[charIndex];
-}
-
-const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
-	
-	    // Валидация
+    btn.disabled = true;
+    btn.textContent = 'Генерация...';
+    
+    // Генерация ссылки
+    calculateResults();
+    const answersString = JSON.stringify(answers);
+    let hash = 0;
+    
+    for (let i = 0; i < answersString.length; i++) {
+      const char = answersString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash | 0;
+    }
+    
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let shareToken = '';
+    hash = Math.abs(hash);
+    
+    for (let i = 0; i < 7; i++) {
+      const charIndex = (hash + i * 31) % chars.length;
+      shareToken += chars[charIndex];
+    }
+    
+    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
+    
     if (!isValidLink(shareLink)) {
       throw new Error("Некорректная ссылка");
     }
     
-    // 4. Проверка фокуса с задержкой
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (!document.hasFocus()) {
-      throw new Error('Вернитесь на вкладку');
-    }
-    
-    // 5. Копирование
+    // Копирование в буфер обмена
     let copySuccess = false;
     try {
       await navigator.clipboard.writeText(shareLink);
@@ -1887,39 +1877,51 @@ const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
       copySuccess = document.execCommand('copy');
       document.body.removeChild(input);
     }
-
+    
     if (!copySuccess) throw new Error('Не удалось скопировать');
-	
-    // 6. Успешное завершение
+    
+    // Успешное копирование
     btn.textContent = '✓ Ссылка скопирована!';
-	btn.classList.add('copied'); // Эффект
-
-    // Ждём 9 секунд (перед исчезновением)
-    await new Promise(resolve => setTimeout(resolve, 9000));
-
-    // Запускаем исчезновение
-    btn.classList.add('fade-out');
-
-    // Ждём анимацию исчезновения (1 секунда)
+    btn.classList.add('copied');
+    
+    // Ждем 9 секунд
+    await new Promise(resolve => {
+      const timer = setTimeout(() => {
+        resolve();
+      }, 9000);
+      
+      // Обработчик для отмены при скрытии страницы
+      const visibilityHandler = () => {
+        if (document.visibilityState === 'hidden') {
+          clearTimeout(timer);
+          resolve();
+        }
+      };
+      
+      document.addEventListener('visibilitychange', visibilityHandler);
+    });
+    
+    // Плавное исчезновение
+    btn.style.transition = 'opacity 1s ease-out';
+    btn.style.opacity = '0';
     await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Сбросим текст, стили, включим кнопку
-    btn.textContent = originalText;
-    btn.classList.remove('copied', 'fade-out');
-    btn.disabled = false;
-
+    
   } catch (error) {
     console.error('Ошибка:', error);
     btn.textContent = 'Ошибка: ' + (
-      error.message.includes('focused')
-        ? '✗ Вернитесь на вкладку'
+      error.message.includes('focused') 
+        ? '✗ Вернитесь на вкладку' 
         : '✗ Не удалось скопировать'
     );
-
     await new Promise(resolve => setTimeout(resolve, 2000));
+  } finally {
+    // Восстанавливаем исходное состояние
     btn.textContent = originalText;
+    btn.className = originalClasses;
+    btn.disabled = originalDisabled;
+    btn.style.opacity = '';
+    btn.style.transition = '';
     btn.classList.remove('copied', 'fade-out');
-    btn.disabled = false;
   }
 });
 
