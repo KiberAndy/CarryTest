@@ -1825,6 +1825,16 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 		
+		// Функция проверки валидности URL
+function isValidLink(link) {
+  try {
+    new URL(link);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+		
 shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
