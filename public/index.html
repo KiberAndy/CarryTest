@@ -753,7 +753,6 @@ async function loadResults(token) {
   }
 }
 
-
 // Инициализация Supabase
 async function initSupabaseClient() {
     try {
@@ -839,65 +838,58 @@ function generateCleanLink(token) {
 document.addEventListener('DOMContentLoaded', async () => {
     const shareBtn = document.getElementById('share-btn');
 
-
-    // Функция генерации ссылки
-    function generateCleanLink(token) {
-        return `${window.location.origin}/view.html?result=${token}`;
-    }
-
-// Обработчик кнопки "Поделиться"
-document.getElementById('share-btn').addEventListener('click', async function() {
-    const btn = this;
-    const originalText = btn.textContent;
-    
-    try {
-        // 1. Подготовка - показываем загрузку
-        btn.disabled = true;
-        btn.textContent = "⏳ Создание ссылки...";
+    // Обработчик кнопки "Поделиться"
+    shareBtn.addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.textContent;
         
-        // 2. Ваша логика копирования
-        calculateResults();
-        const postData = {
-            answers: answers,
-            scores: scores,
-            timestamp: new Date().toISOString()
-        };
-        
-        const response = await fetch('/.netlify/functions/saveResults', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(postData)
-        });
-        
-        if (!response.ok) throw new Error('Ошибка сервера');
-        
-        const { share_token } = await response.json();
-        await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-        
-        // 3. Показываем успех
-        btn.classList.add('copied');
-        btn.textContent = "Ссылка скопирована!";
-        btn.disabled = false;
-        
-        // 4. Возвращаем исходное состояние через 10 секунд
-        setTimeout(() => {
-            btn.classList.remove('copied');
+        try {
+            // 1. Подготовка - показываем загрузку
+            btn.disabled = true;
+            btn.textContent = "⏳ Создание ссылки...";
+            
+            // 2. Ваша логика копирования
+            calculateResults();
+            const postData = {
+                answers: answers,
+                scores: scores,
+                timestamp: new Date().toISOString()
+            };
+            
+            const response = await fetch('/.netlify/functions/saveResults', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            });
+            
+            if (!response.ok) throw new Error('Ошибка сервера');
+            
+            const { share_token } = await response.json();
+            await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+            
+            // 3. Показываем успех
+            btn.classList.add('copied');
+            btn.textContent = "Ссылка скопирована!";
+            btn.disabled = false;
+            
+            // 4. Возвращаем исходное состояние через 10 секунд
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 400);
+            }, 10000);
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            btn.textContent = "❌ Ошибка";
             setTimeout(() => {
                 btn.textContent = originalText;
-            }, 400); // Ждём завершения анимации
-        }, 10000);
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        btn.textContent = "❌ Ошибка";
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.disabled = false;
-        }, 2000);
-    }
-});
-
-
+                btn.disabled = false;
+            }, 2000);
+        }
+    });
+}); // <-- Эта скобка закрывает DOMContentLoaded
 </script>
 
 <style>
@@ -1857,21 +1849,6 @@ let isLinkGenerated = false; // Флаг для проверки, была ли 
 
 
 
-
-
-
-        // Функция для копирования ссылки
-        copyBtn.addEventListener('click', function() {
-            shareLinkInput.select();
-            document.execCommand('copy');
-            
-            // Меняем текст кнопки на короткое время
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = 'Скопировано!';
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-            }, 2000);
-        });
 
         // Проверяем URL на наличие параметра share
         function checkForSharedResults() {
