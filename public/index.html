@@ -701,9 +701,7 @@ checkForSharedResults();
     
     <button id="submit-btn" disabled>Получить результат</button>
 	
-	<button id="shareBtn">
-		<span class="btn-text">Скопировать ссылку</span>
-	</button>
+
 
     
     <div id="result">
@@ -738,7 +736,9 @@ checkForSharedResults();
         
         <button class="save-button" id="save-btn">Сохранить результаты</button>
 <!-- Кнопка и блок для ссылки -->
-<button class="share-button" id="share-btn">Поделиться результатами</button>
+<button class="share-button" id="share-btn">
+    <span class="btn-text">Поделиться результатами</span>
+</button>
 
 <div class="share-link-container" id="share-link-container" style="display: none;">
     <p>Ваши результаты доступны по ссылке:</p>
@@ -1787,7 +1787,7 @@ document.getElementById('share-btn').addEventListener('click', async function() 
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'мои_результаты_совместимости.html';
+            a.download = 'Тест на совместимость игроков.html';
             
             // Добавляем ссылку на страницу и эмулируем клик
             document.body.appendChild(a);
