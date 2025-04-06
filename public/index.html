@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+
+
+
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
@@ -944,12 +950,6 @@ document.getElementById('share-btn').addEventListener('click', async function() 
   transition: background-color 0.3s ease;
 }
 
-.fade-out {
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-
-
 /* Анимация подтверждения на кнопке */
 #share-btn {
   transition: all 0.3s ease; /* Сохраняем вашу оригинальную анимацию */
@@ -1839,16 +1839,28 @@ shareBtn.addEventListener('click', async function() {
 
   try {
     // 3. Генерация ссылки
-    calculateResults();
-    const answersString = JSON.stringify(answers);
-    let hash = 0;
-    for (let i = 0; i < answersString.length; i++) {
-      const char = answersString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    const shareToken = Math.abs(hash).toString(36).substring(0, 8);
-    const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
+calculateResults();
+const answersString = JSON.stringify(answers);
+let hash = 0;
+
+// Хешируем строку ответов
+for (let i = 0; i < answersString.length; i++) {
+  const char = answersString.charCodeAt(i);
+  hash = ((hash << 5) - hash) + char;
+  hash = hash | 0; // Обрезаем до 32-битного числа
+}
+
+// Генерируем токен из 7 символов (0-9, a-z, A-Z)
+const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+let shareToken = '';
+hash = Math.abs(hash);
+
+for (let i = 0; i < 7; i++) {
+  const randomIndex = (hash + i) % chars.length; // Детерминированно, но зависит от hash
+  shareToken += chars[randomIndex];
+}
+
+const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
 	
 	    // Валидация
     if (!isValidLink(shareLink)) {
