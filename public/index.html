@@ -943,6 +943,102 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 <style>
 
+        /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
+        .btn-copy-feedback {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-copy-feedback::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%, -50%);
+            transform-origin: 50% 50%;
+        }
+        
+        .btn-copy-feedback:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+        
+        .btn-text {
+            display: inline-block;
+            transition: all 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            display: inline-block;
+            vertical-align: middle;
+            transform: scale(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .checkmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #4CAF50;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        .checkmark__check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #4CAF50;
+            fill: none;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+        }
+        
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .copied .checkmark {
+            transform: scale(1);
+        }
+        
+        .copied .btn-text {
+            transform: translateX(10px);
+        }
+        
+        /* Анимация возврата к исходному состоянию */
+        @keyframes fadeOutShift {
+            to {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+        }
+        
+        .fade-out {
+            animation: fadeOutShift 0.5s forwards;
+        }
 
 /* Анимация плавная на кнопке */
 .copied {
@@ -1825,6 +1921,8 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
         // Функция для генерации ссылки для общего доступа
 		
+		
+		
 // Функция для проверки валидности ссылки
 function isValidLink(link) {
   try {
@@ -1838,53 +1936,78 @@ function isValidLink(link) {
 		
 let isLinkGenerated = false; // Флаг для проверки, была ли ссылка уже сгенерирована
 
-shareBtn.addEventListener('click', async function() {
-  const btn = this;
-  try {
-    btn.disabled = true;
-    btn.textContent = 'Генерация...';
-
-    // 1. Рассчитываем результаты
-    calculateResults();
-    
-    // 2. Отправляем данные на сервер
-    const postData = {
-      answers: answers,
-      scores: scores,
-      timestamp: new Date().toISOString()
-    };
-    
-    const response = await fetch('/.netlify/functions/saveResults', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(postData)
-    });
-    
-    if (!response.ok) throw new Error('Ошибка сервера');
-    
-    const { share_token } = await response.json();
-    const shareLink = `${window.location.origin}/view.html?result=${share_token}`;
-    
-    // 3. Копируем ссылку
-    await navigator.clipboard.writeText(shareLink);
-    
-    // 4. Показываем уведомление
-    btn.textContent = '✓ Ссылка скопирована!';
-    
-    // 5. Показываем ссылку в интерфейсе (если нужно)
-    shareLinkInput.value = shareLink;
-    shareLinkContainer.style.display = 'block';
-    
-  } catch (error) {
-    console.error('Ошибка:', error);
-    btn.textContent = 'Ошибка, попробуйте ещё раз';
-  } finally {
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Поделиться результатами';
-    }, 2000);
-  }
-});
+        shareBtn.addEventListener('click', async function() {
+            const btn = this;
+            try {
+                // 1. Добавляем классы для анимации
+                btn.classList.add('btn-copy-feedback', 'processing');
+                btn.disabled = true;
+                
+                // 2. Меняем текст с анимацией
+                btn.innerHTML = `
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                    <span class="btn-text">Ссылка скопирована!</span>
+                `;
+                
+                // 3. Запускаем анимацию галочки
+                setTimeout(() => {
+                    btn.classList.add('copied');
+                }, 10);
+                
+                // 4. Рассчитываем результаты (если еще не сделано)
+                calculateResults();
+                
+                // 5. Отправляем данные на сервер
+                const postData = {
+                    answers: answers,
+                    scores: scores,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const response = await fetch('/.netlify/functions/saveResults', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(postData)
+                });
+                
+                if (!response.ok) throw new Error('Ошибка сервера');
+                
+                const { share_token } = await response.json();
+                const shareLink = `${window.location.origin}/view.html?result=${share_token}`;
+                
+                // 6. Копируем ссылку в буфер обмена
+                await navigator.clipboard.writeText(shareLink);
+                
+                // 7. Показываем ссылку в интерфейсе
+                shareLinkInput.value = shareLink;
+                shareLinkContainer.style.display = 'block';
+                shareLinkContainer.scrollIntoView({ behavior: 'smooth' });
+                
+                // 8. Ждем 10 секунд перед возвратом к исходному состоянию
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.classList.add('fade-out');
+                    
+                    setTimeout(() => {
+                        btn.classList.remove('fade-out', 'btn-copy-feedback', 'processing');
+                        btn.innerHTML = '<span class="btn-text">Поделиться результатами</span>';
+                        btn.disabled = false;
+                    }, 500);
+                }, 10000);
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                btn.classList.remove('processing');
+                btn.innerHTML = '<span class="btn-text">Ошибка, попробуйте ещё раз</span>';
+                setTimeout(() => {
+                    btn.innerHTML = '<span class="btn-text">Поделиться результатами</span>';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
 
 
 
