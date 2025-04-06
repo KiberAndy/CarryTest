@@ -1836,11 +1836,18 @@ function isValidLink(link) {
 }
 
 		
+let isLinkGenerated = false; // Флаг для проверки, была ли ссылка уже сгенерирована
+
 shareBtn.addEventListener('click', async function() {
   const btn = this;
   const originalText = btn.textContent;
   const originalClasses = btn.className;
   const originalDisabled = btn.disabled;
+
+  // Если ссылка уже была сгенерирована, прекращаем выполнение
+  if (isLinkGenerated) {
+    return;
+  }
 
   try {
     btn.disabled = true;
@@ -1853,7 +1860,8 @@ shareBtn.addEventListener('click', async function() {
     const shareToken = generateShareToken(answersString);
     const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
 
-    if (!isValidLink(shareLink)) throw new Error("Некорректная ссылка");
+    // Отметим, что ссылка была сгенерирована
+    isLinkGenerated = true;
 
     // 📋 Копируем в буфер
     let copySuccess = false;
@@ -1874,6 +1882,7 @@ shareBtn.addEventListener('click', async function() {
     btn.textContent = '✓ Ссылка скопирована!';
     btn.classList.add('copied');
 
+    // Очистим временные изменения после 9 секунд
     await new Promise(resolve => {
       const timer = setTimeout(resolve, 9000);
       const visibilityHandler = () => {
@@ -1885,6 +1894,7 @@ shareBtn.addEventListener('click', async function() {
       document.addEventListener('visibilitychange', visibilityHandler, { once: true });
     });
 
+    // Применим анимацию скрытия кнопки
     btn.style.transition = 'opacity 1s ease-out';
     btn.style.opacity = '0';
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1899,6 +1909,7 @@ shareBtn.addEventListener('click', async function() {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
   } finally {
+    // Восстанавливаем исходное состояние кнопки
     btn.textContent = originalText;
     btn.className = originalClasses;
     btn.disabled = originalDisabled;
@@ -1907,6 +1918,7 @@ shareBtn.addEventListener('click', async function() {
     btn.classList.remove('copied', 'fade-out');
   }
 });
+
 
 
 
