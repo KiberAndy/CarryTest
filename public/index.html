@@ -995,68 +995,6 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 
 
 
-/* Анимация плавная на кнопке */
-.copied {
-  background-color: gold;
-  transition: background-color 0.3s ease;
-}
-
-/* Анимация подтверждения на кнопке */
-#share-btn {
-  transition: all 0.3s ease; /* Сохраняем вашу оригинальную анимацию */
-  position: relative;
-}
-
-#share-btn.processing {
-  /* Ваши оригинальные стили для hover остаются */
-  transform: translateY(1px); /* Легкое нажатие */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Адаптируем тень под нажатие */
-}
-
-#share-btn:disabled {
-  cursor: not-allowed;
-  /* Сохраняет hover-эффекты, но блокирует клики */
-  pointer-events: none;
-}
-
-#share-btn.copied {
-  background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
-  color: #111;
-  font-weight: bold;
-  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
-  transition: all 0.3s ease;
-}
-
-#share-btn.copied::before {
-  display: none; /* Убираем вторую галочку */
-}
-
-#share-btn.copied:hover {
-  /* Сохраняем ваш оригинальный hover-эффект */
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-5px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.fade-out {
-  animation: fadeOut 1s forwards;
-}
-
-@keyframes fadeOut {
-  to { 
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-
-
-
-
-
-
 
 .share-button {
     background: #4CAF50;
