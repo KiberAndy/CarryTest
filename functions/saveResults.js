@@ -1,34 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// 🔒 Стабильный stringify — для одинаковых токенов при одинаковых данных
-function stableStringify(obj) {
-  if (Array.isArray(obj)) {
-    return `[${obj.map(stableStringify).join(',')}]`;
-  } else if (obj && typeof obj === 'object') {
-    return `{${Object.keys(obj).sort().map(key => 
-      `"${key}":${stableStringify(obj[key])}`
-    ).join(',')}}`;
-  }
-  return JSON.stringify(obj);
-}
-
-// 🔑 Генератор токена из 62 символов, длиной 7
-function generateShareToken(dataString) {
-  let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-
+// 🔒 Генерация случайного токена из 62 символов, длиной 7
+function generateRandomToken() {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let token = '';
-  hash = Math.abs(hash);
-
   for (let i = 0; i < 7; i++) {
-    token += chars[(hash + i * 31) % chars.length];
+    token += chars[Math.floor(Math.random() * chars.length)];
   }
-
   return token;
 }
 
@@ -64,10 +42,12 @@ exports.handler = async (event) => {
     console.log('Parsed answers:', answers);
     console.log('Parsed scores:', scores);
 
-    // Создаем хеш ответов (будет использован как share_token)
-    const answersString = stableStringify(answers); // Преобразуем answers в стабильную строку
-    const answersHash = generateShareToken(answersString); // Генерируем токен
-    console.log('Generated answers hash:', answersHash);
+    // Генерация случайного токена
+    const shareToken = generateRandomToken();
+    console.log('Generated random share token:', shareToken);
+
+    // Создаем хеш ответов для поиска
+    const answersHash = generateRandomToken(); // Здесь мы используем случайный токен вместо хеша
 
     // Проверяем существование таких результатов
     const { data: existingResult, error: lookupError } = await supabase
@@ -101,7 +81,7 @@ exports.handler = async (event) => {
         answers,
         scores,
         answers_hash: answersHash,
-        share_token: answersHash,
+        share_token: shareToken,
         created_at: new Date().toISOString()
       }])
       .select();
@@ -116,7 +96,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        share_token: answersHash,
+        share_token: shareToken,
         id: data[0].id,
         reused: false
       })
