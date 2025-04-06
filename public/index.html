@@ -738,13 +738,7 @@ checkForSharedResults();
 <!-- Кнопка и блок для ссылки -->
 <button class="share-button" id="share-btn">Поделиться результатами</button>
 
-<div class="share-link-container" id="share-link-container" style="display: none;">
-    <p>Ваши результаты доступны по ссылке:</p>
-    <div>
-        <input type="text" id="share-link" class="share-link" readonly>
-        <button class="copy-btn" id="copy-btn">Копировать</button>
-    </div>
-</div>
+
 
 <script>
 // Вместо них используйте прямое подключение к вашей Netlify-функции:
@@ -844,15 +838,7 @@ function generateCleanLink(token) {
 // Основной код выполнения
 document.addEventListener('DOMContentLoaded', async () => {
     const shareBtn = document.getElementById('share-btn');
-    const shareLink = document.getElementById('share-link');
-    const shareLinkContainer = document.getElementById('share-link-container');
-    const copyBtn = document.getElementById('copy-btn');
 
-    // Проверка элементов
-    if (!shareBtn || !shareLink || !copyBtn || !shareLinkContainer) {
-        console.error('Не найдены необходимые элементы');
-        return;
-    }
 
     // Функция генерации ссылки
     function generateCleanLink(token) {
@@ -911,24 +897,7 @@ document.getElementById('share-btn').addEventListener('click', async function() 
     }
 });
 
-    // Обработчик кнопки "Копировать"
-    copyBtn.addEventListener('click', () => {
-        shareLink.select();
-        navigator.clipboard.writeText(shareLink.value)
-            .then(() => {
-                copyBtn.textContent = 'Скопировано!';
-                setTimeout(() => {
-                    copyBtn.textContent = 'Копировать';
-                }, 2000);
-            })
-            .catch(() => {
-                // Fallback для старых браузеров
-                document.execCommand('copy');
-                copyBtn.textContent = 'Скопировано!';
-                setTimeout(() => copyBtn.textContent = 'Копировать', 2000);
-            });
-    });
-});
+
 </script>
 
 <style>
