@@ -1850,14 +1850,14 @@ for (let i = 0; i < answersString.length; i++) {
   hash = hash | 0; // Обрезаем до 32-битного числа
 }
 
-// Генерируем токен из 7 символов (0-9, a-z, A-Z)
+// Генерируем ровно 7 символов (0-9, a-z, A-Z)
 const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 let shareToken = '';
 hash = Math.abs(hash);
 
-for (let i = 0; i < 7; i++) {
-  const randomIndex = (hash + i) % chars.length; // Детерминированно, но зависит от hash
-  shareToken += chars[randomIndex];
+for (let i = 0; i < 7; i++) {  // Жёстко задано 7 итераций
+  const charIndex = (hash + i * 31) % chars.length; // Улучшенный миксер
+  shareToken += chars[charIndex];
 }
 
 const shareLink = `${window.location.origin}/view.html?result=${shareToken}`;
