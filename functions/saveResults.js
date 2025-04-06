@@ -1,6 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Функция для создания хеша ответов (должна быть идентичной на клиенте и сервере)
 // 🔒 Стабильный stringify — для одинаковых токенов при одинаковых данных
 function stableStringify(obj) {
   if (Array.isArray(obj)) {
@@ -66,7 +65,8 @@ exports.handler = async (event) => {
     console.log('Parsed scores:', scores);
 
     // Создаем хеш ответов (будет использован как share_token)
-    const answersHash = hashAnswers(answers);
+    const answersString = stableStringify(answers); // Преобразуем answers в стабильную строку
+    const answersHash = generateShareToken(answersString); // Генерируем токен
     console.log('Generated answers hash:', answersHash);
 
     // Проверяем существование таких результатов
