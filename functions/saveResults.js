@@ -1,76 +1,61 @@
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto'); // Используем встроенный модуль для хеширования
 
-// 🔄 Стабильный JSON.stringify (одинаковый для одинаковых данных)
+// 1. Стабильная сериализация данных
 function stableStringify(obj) {
-  if (obj === null || typeof obj !== 'object') {
-    return JSON.stringify(obj);
-  }
-  if (Array.isArray(obj)) {
-    return `[${obj.map(stableStringify).join(',')}]`;
-  }
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
+  
   const sortedKeys = Object.keys(obj).sort();
-  const keyValuePairs = sortedKeys.map(key => 
+  return `{${sortedKeys.map(key => 
     `"${key}":${stableStringify(obj[key])}`
-  );
-  return `{${keyValuePairs.join(',')}}`;
+  ).join(',')}}`;
 }
 
-// 🎲 Генератор случайных токенов (но стабильных для одинаковых данных)
-function generateRandomToken(baseString) {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let hash = 0;
-
-  // 1. Создаем хеш на основе данных (для стабильности)
-  for (let i = 0; i < baseString.length; i++) {
-    const char = baseString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; // Преобразуем в 32-битное целое
-  }
-
-  // 2. Добавляем случайность, но так, чтобы одинаковые данные давали одинаковый токен
-  const rnd = Math.abs(hash) % 1000000;
-  let token = '';
+// 2. Генерация случайного, но стабильного токена
+function generateStableRandomToken(dataString, length = 7) {
+  // Создаем хеш SHA-256 от данных
+  const hash = crypto.createHash('sha256')
+    .update(dataString)
+    .digest('hex'); // 64 символа
   
-  for (let i = 0; i < 7; i++) {
-    const index = (rnd + i * 31) % chars.length;
-    token += chars[index];
-  }
+  // Преобразуем хеш в base62 (0-9a-zA-Z)
+  const base62 = Buffer.from(hash, 'hex')
+    .toString('base64')
+    .replace(/[+/=]/g, '') // Убираем не-URL-safe символы
+    .slice(0, length)
+    .replace(/^\d/, 'a'); // Гарантируем, что токен не начинается с цифры
 
-  return token;
+  return base62;
 }
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Только POST!' }) };
+    return { statusCode: 405, body: 'Only POST' };
   }
 
   try {
     const { answers, scores } = JSON.parse(event.body);
-    if (!answers || !scores) {
-      throw new Error('Нет answers или scores!');
-    }
+    if (!answers || !scores) throw new Error('Missing data');
 
-    // 1. Создаем стабильную строку из данных (для поиска дубликатов)
+    // 1. Стабильная сериализация
     const dataString = stableStringify({ answers, scores });
     
-    // 2. Генерируем токен (рандомный, но стабильный для одинаковых данных)
-    const shareToken = generateRandomToken(dataString);
+    // 2. Генерация токена (стабильный для одинаковых данных)
+    const shareToken = generateStableRandomToken(dataString);
 
-    // 3. Ищем в Supabase, есть ли уже такой результат
+    // 3. Поиск существующей записи
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
     );
 
-    const { data: existing, error: lookupError } = await supabase
+    const { data: existing } = await supabase
       .from('test_results')
       .select('share_token')
       .eq('answers_hash', shareToken)
       .maybeSingle();
 
-    if (lookupError) throw lookupError;
-
-    // 4. Если нашли дубликат → возвращаем старую ссылку
     if (existing) {
       return {
         statusCode: 200,
@@ -81,19 +66,17 @@ exports.handler = async (event) => {
       };
     }
 
-    // 5. Если нет → сохраняем в базу и возвращаем новую ссылку
-    const { data: newResult, error: insertError } = await supabase
+    // 4. Сохранение новой записи
+    const { data: newRecord } = await supabase
       .from('test_results')
       .insert([{
         answers,
         scores,
-        answers_hash: shareToken, // <- сохраняем хеш для поиска дубликатов
-        share_token: shareToken,  // <- сам токен (b0NvyPh, 4q45ty и т. д.)
+        answers_hash: shareToken, // Хеш как ID
+        share_token: shareToken,
         created_at: new Date().toISOString()
       }])
       .select();
-
-    if (insertError) throw insertError;
 
     return {
       statusCode: 200,
@@ -106,10 +89,7 @@ exports.handler = async (event) => {
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Ошибка сервера',
-        details: error.message 
-      })
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
