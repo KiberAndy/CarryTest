@@ -864,61 +864,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Обработчик кнопки "Поделиться"
 document.getElementById('share-btn').addEventListener('click', async function() {
     const btn = this;
-    const originalText = btn.innerHTML;
+    const originalHtml = btn.innerHTML;
     
     try {
-        // 1. Блокируем кнопку и показываем индикатор загрузки
+        // 1. Подготовительная анимация
         btn.disabled = true;
         btn.classList.add('processing');
-        btn.innerHTML = '<span>⏳ Создание ссылки...</span>';
+        btn.innerHTML = '<span>⏳ Генерация ссылки...</span>';
 
-        // 2. Рассчитываем результаты (если еще не сделано)
+        // 2. Логика копирования (ваш существующий код)
         calculateResults();
-        
-        // 3. Подготавливаем данные для сохранения
-        const postData = {
-            answers: answers,
-            scores: scores,
-            timestamp: new Date().toISOString()
-        };
-
-        // 4. Отправляем данные на сервер
+        const postData = { answers, scores, timestamp: new Date().toISOString() };
         const response = await fetch('/.netlify/functions/saveResults', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(postData)
         });
-
         if (!response.ok) throw new Error('Ошибка сервера');
-        
-        // 5. Получаем токен для ссылки
         const { share_token } = await response.json();
-        const resultLink = `${window.location.origin}/view.html?result=${share_token}`;
-        
-        // 6. Копируем ссылку в буфер обмена
-        await navigator.clipboard.writeText(resultLink);
-        
-        // 7. Показываем ссылку в интерфейсе
-        document.getElementById('share-link').value = resultLink;
-        document.getElementById('share-link-container').style.display = 'block';
-        
-        // 8. Включаем анимацию успешного копирования
+        await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+
+        // 3. Анимация успешного копирования
         btn.classList.add('copied');
         btn.disabled = false;
         btn.innerHTML = '<span>✓ Ссылка скопирована!</span>';
-        
-        // 9. Возвращаем исходный текст через 10 секунд
+
+        // 4. Плавный возврат через 10 секунд
         setTimeout(() => {
-            btn.classList.remove('copied', 'processing');
-            btn.innerHTML = originalText;
+            btn.style.transition = 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)';
+            btn.classList.remove('copied');
+            
+            setTimeout(() => {
+                btn.classList.remove('processing');
+                btn.innerHTML = originalHtml;
+                btn.style.transition = ''; // Сбрасываем кастомный transition
+            }, 600); // Длительность анимации возврата
         }, 10000);
 
     } catch (error) {
         console.error('Ошибка:', error);
-        btn.innerHTML = '<span>❌ Ошибка!</span>';
+        btn.innerHTML = '<span>❌ Ошибка</span>';
         setTimeout(() => {
-            btn.classList.remove('processing');
-            btn.innerHTML = originalText;
+            btn.classList.remove('processing', 'copied');
+            btn.innerHTML = originalHtml;
             btn.disabled = false;
         }, 2000);
     }
@@ -950,12 +938,17 @@ document.getElementById('share-btn').addEventListener('click', async function() 
 #share-btn {
     position: relative;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: 
+        background-color 0.4s ease,
+        padding 0.4s ease,
+        box-shadow 0.4s ease;
+    will-change: transform; /* Оптимизация для анимации */
 }
 
 #share-btn.copied {
-    background: #4CAF50 !important;
+    background-color: #4CAF50 !important;
     padding-right: 45px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 #share-btn.copied::after {
@@ -964,54 +957,39 @@ document.getElementById('share-btn').addEventListener('click', async function() 
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 24px;
+    font-size: 20px;
     opacity: 0;
-    animation: checkAppear 0.6s ease-out forwards;
+    animation: 
+        checkAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+        checkPulse 2s 0.5s infinite;
 }
 
 @keyframes checkAppear {
-    0% {
-        opacity: 0;
-        transform: translateY(-50%) scale(0);
-    }
-    50% {
-        opacity: 1;
-        transform: translateY(-50%) scale(1.2);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(-50%) scale(1);
-    }
+    0% { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1); }
 }
 
-@keyframes textShift {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-20px); }
+@keyframes checkPulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
 }
 
 #share-btn span {
     display: inline-block;
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 #share-btn.copied span {
-    animation: textShift 0.4s forwards;
+    transform: translateX(-10px);
 }
 
-#share-btn::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255,255,255,0.1);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-#share-btn:active::before {
-    opacity: 1;
+/* Плавное возвращение к исходному состоянию */
+#share-btn:not(.copied) {
+    transition: 
+        background-color 0.6s ease,
+        padding 0.6s ease,
+        box-shadow 0.6s ease;
 }
 
 
