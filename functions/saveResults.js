@@ -1,12 +1,34 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// 🔒 Генерация случайного токена из 62 символов, длиной 7
-function generateRandomToken() {
+// 🔒 Стабильный stringify — для одинаковых токенов при одинаковых данных
+function stableStringify(obj) {
+  if (Array.isArray(obj)) {
+    return `[${obj.map(stableStringify).join(',')}]`;
+  } else if (obj && typeof obj === 'object') {
+    return `{${Object.keys(obj).sort().map(key =>
+      `"${key}":${stableStringify(obj[key])}`
+    ).join(',')}}`;
+  }
+  return JSON.stringify(obj);
+}
+
+// 🔑 Генератор токена на основе стабильной сериализации
+function generateShareToken(dataString) {
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    const char = dataString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let token = '';
+  hash = Math.abs(hash);
+
   for (let i = 0; i < 7; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
+    token += chars[(hash + i * 31) % chars.length];
   }
+
   return token;
 }
 
@@ -42,12 +64,13 @@ exports.handler = async (event) => {
     console.log('Parsed answers:', answers);
     console.log('Parsed scores:', scores);
 
-    // Генерация случайного токена
-    const shareToken = generateRandomToken();
-    console.log('Generated random share token:', shareToken);
+    // Стабильная сериализация данных для генерации токена
+    const dataString = stableStringify({ answers, scores });
+    const shareToken = generateShareToken(dataString);
+    console.log('Generated stable share token:', shareToken);
 
     // Создаем хеш ответов для поиска
-    const answersHash = generateRandomToken(); // Здесь мы используем случайный токен вместо хеша
+    const answersHash = generateShareToken(dataString); // Используем тот же хеш для поиска
 
     // Проверяем существование таких результатов
     const { data: existingResult, error: lookupError } = await supabase
