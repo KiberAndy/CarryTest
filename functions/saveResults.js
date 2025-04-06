@@ -29,19 +29,16 @@ exports.handler = async (event) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Парсинг тела запроса
-    const { answers, scores } = JSON.parse(event.body);
-    if (!answers || !scores) {
-      throw new Error('Неверный формат данных: отсутствуют answers или scores');
+    const { answers, scores, shareToken } = JSON.parse(event.body);
+    if (!answers || !scores || !shareToken) {
+      throw new Error('Неверный формат данных: отсутствуют answers, scores или shareToken');
     }
 
-    // Создаем хеш ответов (будет использован как share_token)
-    const answersHash = hashAnswers(answers);
-
-    // Проверяем существование таких результатов
+    // Проверка существования токена в базе данных
     const { data: existingResult, error: lookupError } = await supabase
       .from('test_results')
       .select('id, share_token')
-      .eq('answers_hash', answersHash)
+      .eq('share_token', shareToken)
       .maybeSingle();
 
     // Если нашли - возвращаем существующий токен
@@ -62,8 +59,7 @@ exports.handler = async (event) => {
       .insert([{
         answers,
         scores,
-        answers_hash: answersHash,
-        share_token: answersHash,
+        share_token: shareToken,
         created_at: new Date().toISOString()
       }])
       .select();
@@ -73,7 +69,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        share_token: answersHash,
+        share_token: shareToken,
         id: data[0].id,
         reused: false
       })
