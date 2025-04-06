@@ -9,7 +9,7 @@ function hashAnswers(answers) {
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer
   }
-  return Math.abs(hash).toString(36).slice(0, 8);
+  return Math.abs(hash).toString(36).slice(0, 8);  // Возвращаем хеш
 }
 
 exports.handler = async (event) => {
