@@ -12,7 +12,7 @@ function stableStringify(obj) {
   return JSON.stringify(obj);
 }
 
-// 🔑 Генератор рандомного токена
+// 🔑 Генератор токена с рандомизацией
 function generateRandomToken(baseString) {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let randomToken = '';
@@ -25,11 +25,12 @@ function generateRandomToken(baseString) {
     hash = hash & hash; // Преобразование в 32-битное число
   }
 
-  // Генерация случайной части токена на основе хеша
+  // Генерация случайной части токена на основе хеша и случайных данных
   hash = Math.abs(hash); // Преобразуем хеш в положительное число
 
+  // Генерация случайной части на основе hash и добавление случайных символов
   for (let i = 0; i < 7; i++) {
-    randomToken += chars[(hash + i * 31) % chars.length];
+    randomToken += chars[(hash + i * 31 + Math.floor(Math.random() * 100)) % chars.length];
   }
 
   return randomToken;
