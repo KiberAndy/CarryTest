@@ -1758,24 +1758,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
-
-
-        // Проверяем URL на наличие параметра share
-        function checkForSharedResults() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareToken = urlParams.get('share');
-            
-            if (shareToken) {
-                // Здесь можно добавить логику для загрузки общих результатов
-                // В демо-версии просто показываем сообщение
-                alert('Функция просмотра общих результатов в демо-версии не реализована. В полной версии здесь будут отображаться результаты другого игрока.');
-            }
-        }
-
-        // Проверяем при загрузке страницы
-        checkForSharedResults();
-
         // Функция для авто-заполнения + скролл вниз
         function autoFillTest() {
           const questions = document.querySelectorAll('.question');
