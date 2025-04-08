@@ -10,6 +10,248 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
+    <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
+    <style>
+        /* Основные стили */
+        :root {
+            --primary-accent: #6e45e2;
+            --secondary-accent: #88d3ce;
+            --dark-bg: #0f0e17;
+            --text-primary: #fefefe;
+            --text-secondary: #b8b8b8;
+            --glow-color: rgba(110, 69, 226, 0.4);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Контейнер */
+        .quiz-header-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            padding: 2rem 1rem; /* Уменьшено для меньших размеров */
+            isolation: isolate;
+            margin-top: 50px; /* Добавляем отступ сверху */
+            margin-left: auto;
+            margin-right: auto; /* Центрируем контейнер по горизонтали */
+        }
+
+        /* Фоновые элементы */
+        .hero-glow {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            background: radial-gradient(circle at center, var(--glow-color) 0%, transparent 60%);
+            z-index: -1;
+            opacity: 0;
+            animation: fadeIn 1.5s ease-out 0.5s forwards;
+        }
+
+        /* Основной блок заголовка */
+        .quiz-header {
+            position: relative;
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            border-radius: 24px;
+            background: rgba(15, 14, 23, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                        inset 0 4px 24px -6px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: floatUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+        }
+
+        .quiz-header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, 
+                rgba(110, 69, 226, 0.4) 0%, 
+                rgba(136, 211, 206, 0.2) 50%, 
+                rgba(110, 69, 226, 0.4) 100%);
+            z-index: -1;
+            border-radius: inherit;
+            animation: rotateGradient 12s linear infinite;
+        }
+
+        /* Заголовок */
+        .title-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .quiz-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 2.2rem; /* Уменьшено для нужного размера */
+            line-height: 1;
+            margin: 0;
+            letter-spacing: -1.5px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title-gradient {
+            background: linear-gradient(90deg, #6e45e2 0%, #88d3ce 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 4px 16px rgba(110, 69, 226, 0.3);
+            animation: textGlow 3s ease-in-out infinite alternate;
+        }
+
+        .title-stroke {
+            color: transparent;
+            -webkit-text-stroke: 1px var(--secondary-accent);
+            text-stroke: 1px var(--secondary-accent);
+            position: relative;
+            z-index: 1;
+            margin-top: -2px;
+        }
+
+        /* Декоративные элементы */
+        .title-decoration {
+            position: absolute;
+            top: -15px;
+            left: -20px;
+            right: -20px;
+            bottom: -15px;
+            pointer-events: none;
+        }
+
+        .pixel-corners {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--secondary-accent);
+            opacity: 0.3;
+        }
+
+        .pixel-corners::before,
+        .pixel-corners::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--secondary-accent);
+        }
+
+        .pixel-corners::before {
+            top: -8px;
+            left: -8px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .pixel-corners::after {
+            bottom: -8px;
+            right: -8px;
+            border-left: none;
+            border-top: none;
+        }
+
+        /* Подзаголовок */
+        .quiz-subtitle {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+            font-size: 1rem; /* Уменьшено для компактности */
+            line-height: 1.6;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .subtitle-highlight {
+            color: var(--text-primary);
+            font-weight: 500;
+            position: relative;
+            display: inline-block;
+        }
+
+        .subtitle-highlight::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--secondary-accent) 50%, transparent 100%);
+            animation: underlinePulse 3s infinite;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            to { opacity: 0.6; }
+        }
+
+        @keyframes floatUp {
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes rotateGradient {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes textGlow {
+            to { text-shadow: 0 4px 24px rgba(110, 69, 226, 0.6); }
+        }
+
+        @keyframes underlinePulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .quiz-title {
+                font-size: 1.8rem; /* Меньше для мобильных */
+            }
+            
+            .quiz-subtitle {
+                font-size: 0.9rem; /* Для мобильных */
+            }
+            
+            .quiz-header {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+
+        /* Частицы */
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+    </style>
+	
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -329,201 +571,6 @@
             }
         }
     </style>
-	
-	<style>
-
-        /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
-/* Основные стили кнопки */
-#share-btn {
-    position: relative;
-    overflow: hidden;
-    transition: 
-        background-color 0.4s ease,
-        padding-right 0.4s ease;
-}
-
-/* Состояние "скопировано" */
-#share-btn.copied {
-    background-color: #4CAF50 !important;
-    padding-right: 45px;
-}
-
-/* Псевдоэлемент для галочки */
-#share-btn.copied::after {
-    content: "✓";
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    opacity: 0;
-    animation: 
-        checkFadeIn 0.5s ease forwards,
-        checkPulse 2s 0.5s infinite;
-}
-
-/* Анимация появления галочки */
-@keyframes checkFadeIn {
-    from { opacity: 0; transform: translateY(-50%) scale(0.5); }
-    to { opacity: 1; transform: translateY(-50%) scale(1); }
-}
-
-/* Пульсация галочки */
-@keyframes checkPulse {
-    0% { transform: translateY(-50%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.1); }
-    100% { transform: translateY(-50%) scale(1); }
-}
-
-
-
-
-
-.share-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
-}
-
-.share-button:hover {
-    background: #45a049;
-}
-
-.share-button:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-}
-
-.share-link-container {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-    border: 1px solid #eee;
-}
-
-.share-link {
-    width: 70%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-    margin-right: 10px;
-}
-
-.copy-btn {
-    padding: 8px 15px;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.copy-btn:hover {
-    background: #0b7dda;
-}
-
-.spinner {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@media (prefers-color-scheme: dark) {
-    .share-link-container {
-        background: #333;
-        border-color: #444;
-    }
-    .share-link {
-        background: #222;
-        color: #eee;
-        border-color: #555;
-    }
-}
-</style>
-
-<style>
-.credits {
-  position: fixed;
-  top: 16px;        /* Изменили с bottom на top */
-  left: 16px;       /* Изменили с right на left */
-  display: flex;
-  align-items: center;
-  gap: 4px;         /* Уменьшили промежуток между элементами */
-  font-family: 'Segoe UI', -apple-system, sans-serif;
-  font-size: 12px;   /* Уменьшили размер текста */
-  line-height: 1;
-  padding: 6px 10px; /* Слегка уменьшили отступы */
-  background: rgba(30, 30, 30, 0.7);
-  backdrop-filter: blur(4px);
-  border-radius: 18px; /* Чуть меньше скругление */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.3s ease;
-}
-
-/* Остальные стили оставляем без изменений */
-.credits:hover {
-  background: rgba(40, 40, 40, 0.9);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.credits__text {
-  font-weight: 400;
-}
-
-.credits__link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: inherit;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.credits__link:hover {
-  color: #58a6ff;
-}
-
-.credits__icon {
-  flex-shrink: 0;
-  stroke-width: 2;
-}
-
-.credits__divider {
-  opacity: 0.3;
-  margin: 0 2px;
-}
-
-.credits__icon {
-  transition: transform 0.3s ease, stroke 0.3s ease;
-}
-
-.credits__link:hover .credits__icon {
-  transform: scale(1.1);
-  stroke: #58a6ff;
-}
-</style>
-	
 <!--	<script type="module" src="main.js"></script>	-->
 
 <!-- Supabase JS клиент -->
@@ -789,12 +836,216 @@ checkForSharedResults();
   </a>
 </div>
 
+<style>
+.credits {
+  position: fixed;
+  top: 16px;        /* Изменили с bottom на top */
+  left: 16px;       /* Изменили с right на left */
+  display: flex;
+  align-items: center;
+  gap: 4px;         /* Уменьшили промежуток между элементами */
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  font-size: 12px;   /* Уменьшили размер текста */
+  line-height: 1;
+  padding: 6px 10px; /* Слегка уменьшили отступы */
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 18px; /* Чуть меньше скругление */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
 
+/* Остальные стили оставляем без изменений */
+.credits:hover {
+  background: rgba(40, 40, 40, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.credits__text {
+  font-weight: 400;
+}
+
+.credits__link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.credits__link:hover {
+  color: #58a6ff;
+}
+
+.credits__icon {
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+
+.credits__divider {
+  opacity: 0.3;
+  margin: 0 2px;
+}
+
+.credits__icon {
+  transition: transform 0.3s ease, stroke 0.3s ease;
+}
+
+.credits__link:hover .credits__icon {
+  transform: scale(1.1);
+  stroke: #58a6ff;
+}
+</style>
 
 </head>
 <body>
-    <h1>Тест на совместимость игроков</h1>
-    <p>Ответь на вопросы, чтобы определить твой игровой стиль и совместимость с другими игроками.</p>
+
+
+
+    <div class="quiz-header-container">
+        <!-- Значок сверху -->
+        <div class="icon"></div>
+        
+        <!-- Фоновые частицы -->
+        <div id="particles-js"></div>
+        
+        <!-- Фоновое свечение -->
+        <div class="hero-glow"></div>
+        
+        <!-- Основной блок -->
+        <header class="quiz-header">
+            <div class="title-wrapper">
+                <h1 class="quiz-title">
+                    <span class="title-gradient">Тест на совместимость</span>
+                    <span class="title-stroke">игроков</span>
+                </h1>
+                
+                <!-- Декоративные элементы -->
+                <div class="title-decoration">
+                    <div class="pixel-corners"></div>
+                </div>
+            </div>
+            
+            <p class="quiz-subtitle">
+                <span class="subtitle-text">Ответь на вопросы, чтобы определить твой игровой стиль</span>
+                <span class="subtitle-highlight">и совместимость с другими игроками.</span>
+            </p>
+        </header>
+    </div>
+	
+	
+	
+	    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализация частиц
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS('particles-js', {
+                    "particles": {
+                        "number": {
+                            "value": 60,
+                            "density": {
+                                "enable": true,
+                                "value_area": 800
+                            }
+                        },
+                        "color": {
+                            "value": "#88d3ce"
+                        },
+                        "shape": {
+                            "type": "circle",
+                            "stroke": {
+                                "width": 0,
+                                "color": "#000000"
+                            }
+                        },
+                        "opacity": {
+                            "value": 0.3,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 1,
+                                "opacity_min": 0.1,
+                                "sync": false
+                            }
+                        },
+                        "size": {
+                            "value": 3,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 2,
+                                "size_min": 1,
+                                "sync": false
+                            }
+                        },
+                        "line_linked": {
+                            "enable": true,
+                            "distance": 150,
+                            "color": "#6e45e2",
+                            "opacity": 0.2,
+                            "width": 1
+                        },
+                        "move": {
+                            "enable": true,
+                            "speed": 1,
+                            "direction": "none",
+                            "random": true,
+                            "straight": false,
+                            "out_mode": "out",
+                            "bounce": false
+                        }
+                    },
+                    "interactivity": {
+                        "detect_on": "canvas",
+                        "events": {
+                            "onhover": {
+                                "enable": true,
+                                "mode": "grab"
+                            },
+                            "onclick": {
+                                "enable": true,
+                                "mode": "push"
+                            },
+                            "resize": true
+                        },
+                        "modes": {
+                            "grab": {
+                                "distance": 140,
+                                "line_linked": {
+                                    "opacity": 0.5
+                                }
+                            },
+                            "push": {
+                                "particles_nb": 4
+                            }
+                        }
+                    },
+                    "retina_detect": true
+                });
+            }
+            
+            // 3D эффект при наведении
+            const title = document.querySelector('.quiz-title');
+            title.addEventListener('mousemove', (e) => {
+                const x = e.clientX / window.innerWidth;
+                const y = e.clientY / window.innerHeight;
+                title.style.transform = `perspective(1000px) rotateY(${(x - 0.5) * 10}deg) rotateX(${(0.5 - y) * 10}deg)`;
+            });
+            
+            title.addEventListener('mouseleave', () => {
+                title.style.transform = 'perspective(1000px) rotateY(0) rotateX(0)';
+            });
+        });
+    </script>
+	
+	
+	
     
     <div id="quiz-container">
         <!-- Вопросы будут добавляться динамически -->
@@ -997,7 +1248,133 @@ document.addEventListener('DOMContentLoaded', async () => {
 }); // <-- Эта скобка закрывает DOMContentLoaded
 </script>
 
+<style>
 
+        /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
+/* Основные стили кнопки */
+#share-btn {
+    position: relative;
+    overflow: hidden;
+    transition: 
+        background-color 0.4s ease,
+        padding-right 0.4s ease;
+}
+
+/* Состояние "скопировано" */
+#share-btn.copied {
+    background-color: #4CAF50 !important;
+    padding-right: 45px;
+}
+
+/* Псевдоэлемент для галочки */
+#share-btn.copied::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    opacity: 0;
+    animation: 
+        checkFadeIn 0.5s ease forwards,
+        checkPulse 2s 0.5s infinite;
+}
+
+/* Анимация появления галочки */
+@keyframes checkFadeIn {
+    from { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+/* Пульсация галочки */
+@keyframes checkPulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+
+
+
+
+.share-button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.share-button:hover {
+    background: #45a049;
+}
+
+.share-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.share-link-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.share-link {
+    width: 70%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    margin-right: 10px;
+}
+
+.copy-btn {
+    padding: 8px 15px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.copy-btn:hover {
+    background: #0b7dda;
+}
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+    .share-link-container {
+        background: #333;
+        border-color: #444;
+    }
+    .share-link {
+        background: #222;
+        color: #eee;
+        border-color: #555;
+    }
+}
+</style>
 
     <script>
         const questions = [
