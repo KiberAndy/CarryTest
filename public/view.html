@@ -527,65 +527,67 @@
             }
         ];
 
+// Инициализация Supabase
+async function initSupabase() {
+    try {
+        // Подключаем Supabase
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+
+        // Получаем Supabase URL и ключ из переменных окружения Netlify
+        const SUPABASE_URL = process.env.SUPABASE_URL;  // Это будет доступно через Netlify env
+        const SUPABASE_KEY = process.env.SUPABASE_KEY;  // Это будет доступно через Netlify env
+
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            throw new Error('Не настроены переменные Supabase');
+        }
+
         // Инициализация Supabase
-        async function initSupabase() {
-            try {
-                // Загружаем конфиг из Netlify Function
-                const response = await fetch('/.netlify/functions/env');
-                if (!response.ok) throw new Error('Не удалось загрузить конфиг');
-                
-                const env = await response.json();
-                if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
-                    throw new Error('Не настроены переменные Supabase');
-                }
-                
-                // Подключаем Supabase
-                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-                window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-                
-                console.log('Supabase инициализирован');
-                return true;
-            } catch (error) {
-                console.error('Ошибка инициализации Supabase:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
-                return false;
-            }
-        }
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        console.log('Supabase инициализирован');
+        return true;
+    } catch (error) {
+        console.error('Ошибка инициализации Supabase:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+        return false;
+    }
+}
+
+// Проверяем токен и загружаем результаты
+async function checkAndLoadResults() {
+    if (!shareToken) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+        return;
+    }
+    
+    const supabaseReady = await initSupabase();
+    if (!supabaseReady) return;
+    
+    try {
+        // Ищем результаты по токену
+        const { data, error } = await supabase
+            .from('test_results')
+            .select('*')
+            .eq('share_token', shareToken)
+            .single();
         
-        // Проверяем токен и загружаем результаты
-        async function checkAndLoadResults() {
-            if (!shareToken) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
-                return;
-            }
-            
-            const supabaseReady = await initSupabase();
-            if (!supabaseReady) return;
-            
-            try {
-                // Ищем результаты по токену
-                const { data, error } = await supabase
-                    .from('test_results')
-                    .select('*')
-                    .eq('share_token', shareToken)
-                    .single();
-                
-                if (error || !data) throw error || new Error('Результаты не найдены');
-                
-                console.log('Результаты загружены:', data);
-                displayResults(data);
-                
-            } catch (error) {
-                console.error('Ошибка загрузки результатов:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
-            }
-        }
+        if (error || !data) throw error || new Error('Результаты не найдены');
+        
+        console.log('Результаты загружены:', data);
+        displayResults(data);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки результатов:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительна.';
+    }
+}
+
         
         // Отображаем результаты
         function displayResults(data) {
