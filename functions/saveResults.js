@@ -26,17 +26,21 @@ function generateId(prefix = '') {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Некорректный метод запроса');
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   try {
     const { answers, scores } = JSON.parse(event.body);
+    console.log('Загружены данные:', { answers, scores });
 
     // 🔍 Валидация данных
     if (!answers || typeof answers !== 'object') {
+      console.log('❌ Недействительные ответы');
       throw new Error('Invalid or missing "answers"');
     }
     if (!scores || typeof scores !== 'object') {
+      console.log('❌ Недействительные оценки');
       throw new Error('Invalid or missing "scores"');
     }
 
@@ -58,6 +62,7 @@ exports.handler = async (event) => {
       .maybeSingle();
 
     if (existing) {
+      console.log('✅ Дублирование найдено, возвращаем существующий токен');
       return {
         statusCode: 200,
         body: JSON.stringify({ share_token: existing.share_token, reused: true })
@@ -74,8 +79,12 @@ exports.handler = async (event) => {
       created_at: new Date().toISOString()
     }]);
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Ошибка при сохранении в Supabase:', error);
+      throw error;
+    }
 
+    console.log('✅ Результаты успешно сохранены');
     return {
       statusCode: 200,
       body: JSON.stringify({ share_token: shareToken, reused: false })
