@@ -66,9 +66,13 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
+console.error('❌ saveResults ошибка:', error);
+
+return {
+  statusCode: 500,
+  body: JSON.stringify({ 
+    error: error.message,
+    stack: error.stack // 👈 добавим стек ошибки
+  })
 };
+
