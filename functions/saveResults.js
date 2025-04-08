@@ -3,7 +3,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-// 🔁 1. Стабильная сериализация
+// 🔁 Стабильная сериализация (гарантирует одинаковый hash)
 function stableStringify(obj) {
   if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
   if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
@@ -11,12 +11,17 @@ function stableStringify(obj) {
   return `{${sortedKeys.map(key => `"${key}":${stableStringify(obj[key])}`).join(',')}}`;
 }
 
-// 🧬 2. Генерация токена
+// 🧬 Генерация токена (на основе хэша, с base64 обрезкой)
 function generateStableRandomToken(dataString, length = 7) {
   const hash = crypto.createHash('sha256').update(dataString).digest('hex');
   const base62 = Buffer.from(hash, 'hex').toString('base64')
     .replace(/[+/=]/g, '').slice(0, length).replace(/^\d/, 'a');
   return base62;
+}
+
+// 🔑 Генерация session_id (на всякий случай, вдруг пригодится)
+function generateId(prefix = '') {
+  return prefix + Math.random().toString(36).slice(2, 10);
 }
 
 exports.handler = async (event) => {
@@ -26,19 +31,26 @@ exports.handler = async (event) => {
 
   try {
     const { answers, scores } = JSON.parse(event.body);
-    if (!Array.isArray(answers) || typeof scores !== 'object') {
-      throw new Error('Invalid or missing data');
+
+    // 🔍 Валидация данных
+    if (!answers || typeof answers !== 'object') {
+      throw new Error('Invalid or missing "answers"');
+    }
+    if (!scores || typeof scores !== 'object') {
+      throw new Error('Invalid or missing "scores"');
     }
 
-    const dataString = stableStringify({ answers, scores });
-    const shareToken = generateStableRandomToken(dataString);
+    const answersString = stableStringify({ answers, scores });
+    const shareToken = generateStableRandomToken(answersString);
+    const sessionId = generateId('session-');
 
-    // 🛡️ Безопасные переменные
+    // 🧪 Инициализация Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_KEY
     );
 
+    // 🔁 Проверка на дубликат
     const { data: existing } = await supabase
       .from('test_results')
       .select('share_token')
@@ -52,13 +64,17 @@ exports.handler = async (event) => {
       };
     }
 
-    await supabase.from('test_results').insert([{
+    // 📝 Сохраняем результат
+    const { error } = await supabase.from('test_results').insert([{
       answers,
       scores,
-      answers_hash: shareToken,
+      session_id: sessionId,
       share_token: shareToken,
+      answers_hash: shareToken,
       created_at: new Date().toISOString()
     }]);
+
+    if (error) throw error;
 
     return {
       statusCode: 200,
@@ -67,14 +83,12 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('❌ saveResults ошибка:', error);
-
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: error.message,
-        stack: error.stack // 👈 добавим стек ошибки
+        stack: error.stack
       })
     };
-  } // ← закрытие try/catch
-};   // ← закрытие handler
-
+  }
+};
