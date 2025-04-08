@@ -342,62 +342,36 @@
       return;
     }
 
-    // 2. Загружаем конфиг из Netlify Function
-    fetch('/.netlify/functions/env')
-      .then(response => {
-        if (!response.ok) throw new Error('Network error');
-        return response.json();
-      })
-      .then(env => {
-        // 3. Инициализируем клиент
-        window.supabase = supabase.createClient(
-          env.SUPABASE_URL,
-          env.SUPABASE_KEY,
-          {
-            db: { schema: 'public' },
-            auth: { persistSession: true }
-          }
-        );
-        console.log('Supabase готов к использованию');
-        
-        // 4. Можно вызывать функции, которые зависят от supabase
-        if (window.onSupabaseReady) {
-          window.onSupabaseReady();
-        }
-      })
-      .catch(err => {
-        console.error('Ошибка инициализации:', err);
-        alert('Приложение не может загрузиться. Обновите страницу.');
-      });
+    // 2. Нет загрузки ключей — они теперь спрятаны на сервере 😎
+    // Просто вызываем onSupabaseReady, если есть
+    if (window.onSupabaseReady) {
+      window.onSupabaseReady();
+    }
   }
 
   // Запускаем инициализацию
   document.addEventListener('DOMContentLoaded', initSupabase);
 
-  // 5. Функции для работы с Supabase
+  // 5. Функции для генерации ID (может пригодиться)
   function generateId(prefix = '') {
     return prefix + Math.random().toString(36).substr(2, 9);
   }
 
-  // 6. Сохранение результатов (с проверкой инициализации)
+  // 6. Сохранение результатов (через Netlify Function)
   window.saveTestResults = async (answers, scores) => {
-    if (!window.supabase) {
-      throw new Error('Supabase не инициализирован. Попробуйте позже.');
-    }
-    
-    const { data, error } = await supabase
-      .from('test_results')
-      .insert([{
-        answers,
-        scores,
-        session_id: generateId('session-'),
-        share_token: generateId('token-'),
-        created_at: new Date().toISOString()
-      }])
-      .select();
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, scores })
+    });
 
-    if (error) throw error;
-    return data[0];
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Ошибка при сохранении: ${error}`);
+    }
+
+    const result = await response.json();
+    return result;
   };
 
   // 7. Функция для тестирования из консоли
@@ -412,6 +386,7 @@
       console.error('❌ Ошибка:', error);
     }
   };
+
 
 
   // 4. Тестовая функция для консоли
