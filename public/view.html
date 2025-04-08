@@ -527,66 +527,70 @@
             }
         ];
 
-// Инициализация Supabase
-async function initSupabase() {
+  // Инициализация Supabase
+  async function initSupabase() {
     try {
-        // Подключаем Supabase
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      // Подключаем Supabase
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
 
-        // Используем переменные окружения Netlify, доступные на клиенте
-        const SUPABASE_URL = window.env.SUPABASE_URL;  // Доступ через window.env
-        const SUPABASE_KEY = window.env.SUPABASE_KEY;  // Доступ через window.env
+      // Загружаем конфиг из Netlify Function
+      const response = await fetch('/.netlify/functions/saveResults');
+      if (!response.ok) throw new Error('Не удалось загрузить конфиг');
 
-        if (!SUPABASE_URL || !SUPABASE_KEY) {
-            throw new Error('Не настроены переменные Supabase');
-        }
+      const env = await response.json();
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+        throw new Error('Не настроены переменные Supabase');
+      }
 
-        // Инициализация Supabase
-        window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+      // Инициализация Supabase
+      window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-        console.log('Supabase инициализирован');
-        return true;
+      console.log('Supabase инициализирован');
+      return true;
     } catch (error) {
-        console.error('Ошибка инициализации Supabase:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
-        return false;
+      console.error('Ошибка инициализации Supabase:', error);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+      return false;
     }
-}
+  }
 
-// Проверяем токен и загружаем результаты
-async function checkAndLoadResults() {
+  // Проверяем токен и загружаем результаты
+  async function checkAndLoadResults() {
     if (!shareToken) {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
-        return;
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+      return;
     }
-    
+
     const supabaseReady = await initSupabase();
     if (!supabaseReady) return;
-    
+
     try {
-        // Ищем результаты по токену
-        const { data, error } = await supabase
-            .from('test_results')
-            .select('*')
-            .eq('share_token', shareToken)
-            .single();
-        
-        if (error || !data) throw error || new Error('Результаты не найдены');
-        
-        console.log('Результаты загружены:', data);
-        displayResults(data);
-        
+      // Ищем результаты по токену
+      const { data, error } = await supabase
+        .from('test_results')
+        .select('*')
+        .eq('share_token', shareToken)
+        .single();
+
+      if (error || !data) throw error || new Error('Результаты не найдены');
+
+      console.log('Результаты загружены:', data);
+      displayResults(data);
+
     } catch (error) {
-        console.error('Ошибка загрузки результатов:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительна.';
+      console.error('Ошибка загрузки результатов:', error);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительна.';
     }
-}
+  }
+
+  // Вызов функции загрузки
+  checkAndLoadResults();
 
 
         
