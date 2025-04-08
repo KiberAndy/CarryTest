@@ -527,90 +527,121 @@
             }
         ];
 
-    // Загружаем конфиг и инициализируем Supabase
-    async function initSupabase() {
-      try {
-        // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
-        const response = await fetch('/.netlify/functions/saveResults', { method: 'POST' });
-        
-        if (!response.ok) throw new Error('Не удалось загрузить конфиг');
+// Загружаем конфиг и инициализируем Supabase
+async function initSupabase() {
+  try {
+    console.log('Инициализация Supabase...');
+    
+    // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
+    const response = await fetch('/.netlify/functions/saveResults', { method: 'POST' });
+    
+    if (!response.ok) throw new Error('Не удалось загрузить конфиг');
 
-        const env = await response.json();
-        if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
-          throw new Error('Не настроены переменные Supabase');
-        }
+    const env = await response.json();
+    console.log('Конфиг загружен:', env);
 
-        // Подключаем Supabase
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-        window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-
-        console.log('Supabase инициализирован');
-        return true;
-
-      } catch (error) {
-        console.error('Ошибка инициализации Supabase:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
-        return false;
-      }
+    if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+      throw new Error('Не настроены переменные Supabase');
     }
 
-    // Проверяем токен и загружаем результаты
-    async function checkAndLoadResults() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const shareToken = urlParams.get('result');
+    // Подключаем Supabase
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-      if (!shareToken) {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
-        return;
-      }
+    console.log('Supabase инициализирован');
+    return true;
 
-      const supabaseReady = await initSupabase();
-      if (!supabaseReady) return;
+  } catch (error) {
+    console.error('Ошибка инициализации Supabase:', error);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+    return false;
+  }
+}
 
-      try {
-        // Ищем результаты по токену
-        const { data, error } = await supabase
-          .from('test_results')
-          .select('*')
-          .eq('share_token', shareToken)
-          .single();
+// Проверяем токен и загружаем результаты
+async function checkAndLoadResults() {
+  console.log('Проверка и загрузка результатов...');
 
-        if (error || !data) throw error || new Error('Результаты не найдены');
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareToken = urlParams.get('result');
+  console.log('Получен токен из URL:', shareToken);
 
-        console.log('Результаты загружены:', data);
-        displayResults(data);
+  if (!shareToken) {
+    console.error('Ссылка на результаты недействительна (отсутствует токен)');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+    return;
+  }
 
-      } catch (error) {
-        console.error('Ошибка загрузки результатов:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
-      }
+  const supabaseReady = await initSupabase();
+  if (!supabaseReady) return;
+
+  try {
+    // Ищем результаты по токену
+    console.log('Запрос результатов из базы данных с токеном:', shareToken);
+    const { data, error } = await supabase
+      .from('test_results')
+      .select('*')
+      .eq('share_token', shareToken)
+      .single();
+
+    if (error || !data) {
+      console.error('Ошибка загрузки результатов:', error || new Error('Результаты не найдены'));
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
+      return;
     }
 
+    console.log('Результаты загружены:', data);
+    displayResults(data);
 
-        
-        // Отображаем результаты
-        function displayResults(data) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').style.display = 'block';
-            
-            // Устанавливаем дату
-            const date = new Date(data.created_at || new Date());
-            document.getElementById('result-date').textContent = 
-                `${date.toLocaleDateString()}, ${date.toLocaleTimeString()}`;
-            
-            const scores = data.scores;
-            const answers = data.answers;
-            
-            // Рассчитываем общую совместимость
-            const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
-            const totalScore = keyTraits.reduce((sum, trait) => sum + (scores[trait] || 0), 0) / keyTraits.length;
-            const roundedScore = Math.round(totalScore);
+  } catch (error) {
+    console.error('Ошибка при запросе данных:', error);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Не удалось загрузить результаты. Попробуйте позже.';
+  }
+}
+
+// Отображаем результаты
+function displayResults(data) {
+  console.log('Отображение результатов...');
+  
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+
+  // Устанавливаем дату
+  const date = new Date(data.created_at || new Date());
+  console.log('Дата создания результатов:', date);
+  document.getElementById('result-date').textContent = 
+      `${date.toLocaleDateString()}, ${date.toLocaleTimeString()}`;
+
+  const scores = data.scores;
+  const answers = data.answers;
+  console.log('Ответы:', answers);
+  console.log('Оценки:', scores);
+  
+  // Рассчитываем общую совместимость
+  const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
+  const totalScore = keyTraits.reduce((sum, trait) => {
+    if (scores[trait] !== undefined) {
+      return sum + scores[trait];
+    }
+    return sum;
+  }, 0) / keyTraits.length;
+
+  console.log('Общая совместимость:', totalScore);
+  const roundedScore = Math.round(totalScore);
+  console.log('Округленный результат:', roundedScore);
+
+  // Показать результат (например, на экране)
+  document.getElementById('result-score').textContent = `Совместимость: ${roundedScore}/10`;
+}
+
             
             // Устанавливаем прогресс
             const compatibilityBar = document.getElementById('compatibility-bar');
