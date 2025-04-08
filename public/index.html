@@ -329,6 +329,201 @@
             }
         }
     </style>
+	
+	<style>
+
+        /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
+/* Основные стили кнопки */
+#share-btn {
+    position: relative;
+    overflow: hidden;
+    transition: 
+        background-color 0.4s ease,
+        padding-right 0.4s ease;
+}
+
+/* Состояние "скопировано" */
+#share-btn.copied {
+    background-color: #4CAF50 !important;
+    padding-right: 45px;
+}
+
+/* Псевдоэлемент для галочки */
+#share-btn.copied::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    opacity: 0;
+    animation: 
+        checkFadeIn 0.5s ease forwards,
+        checkPulse 2s 0.5s infinite;
+}
+
+/* Анимация появления галочки */
+@keyframes checkFadeIn {
+    from { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+/* Пульсация галочки */
+@keyframes checkPulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+
+
+
+
+.share-button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.share-button:hover {
+    background: #45a049;
+}
+
+.share-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.share-link-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.share-link {
+    width: 70%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    margin-right: 10px;
+}
+
+.copy-btn {
+    padding: 8px 15px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.copy-btn:hover {
+    background: #0b7dda;
+}
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+    .share-link-container {
+        background: #333;
+        border-color: #444;
+    }
+    .share-link {
+        background: #222;
+        color: #eee;
+        border-color: #555;
+    }
+}
+</style>
+
+<style>
+.credits {
+  position: fixed;
+  top: 16px;        /* Изменили с bottom на top */
+  left: 16px;       /* Изменили с right на left */
+  display: flex;
+  align-items: center;
+  gap: 4px;         /* Уменьшили промежуток между элементами */
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  font-size: 12px;   /* Уменьшили размер текста */
+  line-height: 1;
+  padding: 6px 10px; /* Слегка уменьшили отступы */
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 18px; /* Чуть меньше скругление */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+/* Остальные стили оставляем без изменений */
+.credits:hover {
+  background: rgba(40, 40, 40, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.credits__text {
+  font-weight: 400;
+}
+
+.credits__link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.credits__link:hover {
+  color: #58a6ff;
+}
+
+.credits__icon {
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+
+.credits__divider {
+  opacity: 0.3;
+  margin: 0 2px;
+}
+
+.credits__icon {
+  transition: transform 0.3s ease, stroke 0.3s ease;
+}
+
+.credits__link:hover .credits__icon {
+  transform: scale(1.1);
+  stroke: #58a6ff;
+}
+</style>
+	
 <!--	<script type="module" src="main.js"></script>	-->
 
 <!-- Supabase JS клиент -->
@@ -594,71 +789,7 @@ checkForSharedResults();
   </a>
 </div>
 
-<style>
-.credits {
-  position: fixed;
-  top: 16px;        /* Изменили с bottom на top */
-  left: 16px;       /* Изменили с right на left */
-  display: flex;
-  align-items: center;
-  gap: 4px;         /* Уменьшили промежуток между элементами */
-  font-family: 'Segoe UI', -apple-system, sans-serif;
-  font-size: 12px;   /* Уменьшили размер текста */
-  line-height: 1;
-  padding: 6px 10px; /* Слегка уменьшили отступы */
-  background: rgba(30, 30, 30, 0.7);
-  backdrop-filter: blur(4px);
-  border-radius: 18px; /* Чуть меньше скругление */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.3s ease;
-}
 
-/* Остальные стили оставляем без изменений */
-.credits:hover {
-  background: rgba(40, 40, 40, 0.9);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.credits__text {
-  font-weight: 400;
-}
-
-.credits__link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: inherit;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.credits__link:hover {
-  color: #58a6ff;
-}
-
-.credits__icon {
-  flex-shrink: 0;
-  stroke-width: 2;
-}
-
-.credits__divider {
-  opacity: 0.3;
-  margin: 0 2px;
-}
-
-.credits__icon {
-  transition: transform 0.3s ease, stroke 0.3s ease;
-}
-
-.credits__link:hover .credits__icon {
-  transform: scale(1.1);
-  stroke: #58a6ff;
-}
-</style>
 
 </head>
 <body>
@@ -866,133 +997,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 }); // <-- Эта скобка закрывает DOMContentLoaded
 </script>
 
-<style>
 
-        /* Добавляем новые стили для анимации (Кнопка ✓ Ссылка скопирована!) */
-/* Основные стили кнопки */
-#share-btn {
-    position: relative;
-    overflow: hidden;
-    transition: 
-        background-color 0.4s ease,
-        padding-right 0.4s ease;
-}
-
-/* Состояние "скопировано" */
-#share-btn.copied {
-    background-color: #4CAF50 !important;
-    padding-right: 45px;
-}
-
-/* Псевдоэлемент для галочки */
-#share-btn.copied::after {
-    content: "✓";
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    opacity: 0;
-    animation: 
-        checkFadeIn 0.5s ease forwards,
-        checkPulse 2s 0.5s infinite;
-}
-
-/* Анимация появления галочки */
-@keyframes checkFadeIn {
-    from { opacity: 0; transform: translateY(-50%) scale(0.5); }
-    to { opacity: 1; transform: translateY(-50%) scale(1); }
-}
-
-/* Пульсация галочки */
-@keyframes checkPulse {
-    0% { transform: translateY(-50%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.1); }
-    100% { transform: translateY(-50%) scale(1); }
-}
-
-
-
-
-
-.share-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
-}
-
-.share-button:hover {
-    background: #45a049;
-}
-
-.share-button:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-}
-
-.share-link-container {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-    border: 1px solid #eee;
-}
-
-.share-link {
-    width: 70%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-    margin-right: 10px;
-}
-
-.copy-btn {
-    padding: 8px 15px;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.copy-btn:hover {
-    background: #0b7dda;
-}
-
-.spinner {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@media (prefers-color-scheme: dark) {
-    .share-link-container {
-        background: #333;
-        border-color: #444;
-    }
-    .share-link {
-        background: #222;
-        color: #eee;
-        border-color: #555;
-    }
-}
-</style>
 
     <script>
         const questions = [
