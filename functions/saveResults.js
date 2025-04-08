@@ -1,53 +1,42 @@
-const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto'); // Используем встроенный модуль для хеширования
+// netlify/functions/saveResults.js
 
-// 1. Стабильная сериализация данных
+const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
+
+// 🔁 1. Стабильная сериализация
 function stableStringify(obj) {
   if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
   if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
-  
   const sortedKeys = Object.keys(obj).sort();
-  return `{${sortedKeys.map(key => 
-    `"${key}":${stableStringify(obj[key])}`
-  ).join(',')}}`;
+  return `{${sortedKeys.map(key => `"${key}":${stableStringify(obj[key])}`).join(',')}}`;
 }
 
-// 2. Генерация случайного, но стабильного токена
+// 🧬 2. Генерация токена
 function generateStableRandomToken(dataString, length = 7) {
-  // Создаем хеш SHA-256 от данных
-  const hash = crypto.createHash('sha256')
-    .update(dataString)
-    .digest('hex'); // 64 символа
-  
-  // Преобразуем хеш в base62 (0-9a-zA-Z)
-  const base62 = Buffer.from(hash, 'hex')
-    .toString('base64')
-    .replace(/[+/=]/g, '') // Убираем не-URL-safe символы
-    .slice(0, length)
-    .replace(/^\d/, 'a'); // Гарантируем, что токен не начинается с цифры
-
+  const hash = crypto.createHash('sha256').update(dataString).digest('hex');
+  const base62 = Buffer.from(hash, 'hex').toString('base64')
+    .replace(/[+/=]/g, '').slice(0, length).replace(/^\d/, 'a');
   return base62;
 }
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Only POST' };
+    return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   try {
     const { answers, scores } = JSON.parse(event.body);
-    if (!answers || !scores) throw new Error('Missing data');
+    if (!Array.isArray(answers) || typeof scores !== 'object') {
+      throw new Error('Invalid or missing data');
+    }
 
-    // 1. Стабильная сериализация
     const dataString = stableStringify({ answers, scores });
-    
-    // 2. Генерация токена (стабильный для одинаковых данных)
     const shareToken = generateStableRandomToken(dataString);
 
-    // 3. Поиск существующей записи
+    // 🛡️ Безопасные переменные
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
     );
 
     const { data: existing } = await supabase
@@ -59,31 +48,21 @@ exports.handler = async (event) => {
     if (existing) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ 
-          share_token: existing.share_token,
-          reused: true 
-        })
+        body: JSON.stringify({ share_token: existing.share_token, reused: true })
       };
     }
 
-    // 4. Сохранение новой записи
-    const { data: newRecord } = await supabase
-      .from('test_results')
-      .insert([{
-        answers,
-        scores,
-        answers_hash: shareToken, // Хеш как ID
-        share_token: shareToken,
-        created_at: new Date().toISOString()
-      }])
-      .select();
+    await supabase.from('test_results').insert([{
+      answers,
+      scores,
+      answers_hash: shareToken,
+      share_token: shareToken,
+      created_at: new Date().toISOString()
+    }]);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ 
-        share_token: shareToken,
-        reused: false 
-      })
+      body: JSON.stringify({ share_token: shareToken, reused: false })
     };
 
   } catch (error) {
