@@ -341,7 +341,7 @@
     <script>
         // Получаем токен из URL
         const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('share') || urlParams.get('result');
+        const shareToken = urlParams.get('result');
         
         // Вопросы теста (должны соответствовать вопросам в index.html)
         const questions = [
@@ -533,7 +533,13 @@ async function initSupabase() {
     console.log('Инициализация Supabase...');
     
     // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
-    const response = await fetch('/.netlify/functions/saveResults', { method: 'POST' });
+    const response = await fetch('/.netlify/functions/saveResults', { 
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'config' })
+});
     
     if (!response.ok) throw new Error('Не удалось загрузить конфиг');
 
@@ -628,35 +634,32 @@ function displayResults(data) {
   // Рассчитываем общую совместимость
   const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
   const totalScore = keyTraits.reduce((sum, trait) => {
-    if (scores[trait] !== undefined) {
-      return sum + scores[trait];
-    }
-    return sum;
+    return sum + (scores[trait] || 0);
   }, 0) / keyTraits.length;
 
-  console.log('Общая совместимость:', totalScore);
+  console.log('Общая совместимость:', roundedScore);
   const roundedScore = Math.round(totalScore);
   console.log('Округленный результат:', roundedScore);
 
-  // Показать результат (например, на экране)
-  document.getElementById('result-score').textContent = `Совместимость: ${roundedScore}/10`;
-}
+  // Устанавливаем прогресс
+  const compatibilityBar = document.getElementById('compatibility-bar');
+  compatibilityBar.style.width = `${roundedScore}%`;
+  document.getElementById('progress-text').textContent = `${roundedScore}%`;
+  
+  // Изменяем цвет прогресс-бара
+  if (roundedScore <= 33) {
+    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #dc3545)';
+  } else if (roundedScore <= 66) {
+    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107)';
+  } else {
+    compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107, #28a745)';
+  }
+
+
 
 
             
-            // Устанавливаем прогресс
-            const compatibilityBar = document.getElementById('compatibility-bar');
-            compatibilityBar.style.width = `${roundedScore}%`;
-            document.getElementById('progress-text').textContent = `${roundedScore}%`;
-            
-            // Изменяем цвет прогресс-бара
-            if (roundedScore <= 33) {
-                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #dc3545)';
-            } else if (roundedScore <= 66) {
-                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107)';
-            } else {
-                compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107, #28a745)';
-            }
+
             
             // Устанавливаем текстовое описание совместимости
             let compatibilityText, description, levelColor;
