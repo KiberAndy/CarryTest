@@ -33,17 +33,25 @@ exports.handler = async (event) => {
   try {
     console.log('🔄 Начинаем обработку запроса...');
     
-    // Логируем заголовки и тело запроса
-    console.log('Заголовки запроса:', event.headers);
-    console.log('Тело запроса:', event.body);
+    // Логируем тело запроса
+    const body = event.body ? JSON.parse(event.body) : {};
+    console.log('Тело запроса:', body);
 
-    if (!event.body || event.body.trim() === '') {
-      console.log('❌ Пустое тело запроса');
-      return { statusCode: 400, body: 'Bad Request: Missing or empty body' };
+    // Проверяем, является ли запрос запросом конфигурации
+    if (body.action === 'config') {
+      console.log('🔄 Обработка запроса конфигурации...');
+      // Возвращаем переменные окружения
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          SUPABASE_URL: process.env.SUPABASE_URL,
+          SUPABASE_KEY: process.env.SUPABASE_KEY
+        })
+      };
     }
 
-    const { answers, scores } = JSON.parse(event.body);
-    console.log('Загружены данные:', { answers, scores });
+    // Остальная логика сохранения результатов теста
+    const { answers, scores } = body;
 
     // 🔍 Валидация данных
     if (!answers || typeof answers !== 'object') {
