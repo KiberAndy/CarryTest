@@ -633,12 +633,11 @@ function displayResults(data) {
   
   // Рассчитываем общую совместимость
   const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
-  const totalScore = keyTraits.reduce((sum, trait) => {
+const totalScore = keyTraits.reduce((sum, trait) => {
     return sum + (scores[trait] || 0);
-  }, 0) / keyTraits.length;
-
-  console.log('Общая совместимость:', roundedScore);
-  const roundedScore = Math.round(totalScore);
+}, 0) / keyTraits.length;
+const roundedScore = Math.round(totalScore);
+console.log('Общая совместимость:', roundedScore); // Теперь это работает корректно
   console.log('Округленный результат:', roundedScore);
 
   // Устанавливаем прогресс
@@ -655,7 +654,7 @@ function displayResults(data) {
     compatibilityBar.style.background = 'linear-gradient(90deg, #dc3545, #ffc107, #28a745)';
   }
 
-}
+
 
 
             
