@@ -527,70 +527,70 @@
             }
         ];
 
-  // Инициализация Supabase
-  async function initSupabase() {
-    try {
-      // Подключаем Supabase
-      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    // Загружаем конфиг и инициализируем Supabase
+    async function initSupabase() {
+      try {
+        // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
+        const response = await fetch('/.netlify/functions/saveResults', { method: 'POST' });
+        
+        if (!response.ok) throw new Error('Не удалось загрузить конфиг');
 
-      // Загружаем конфиг из Netlify Function
-      const response = await fetch('/.netlify/functions/saveResults');
-      if (!response.ok) throw new Error('Не удалось загрузить конфиг');
+        const env = await response.json();
+        if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+          throw new Error('Не настроены переменные Supabase');
+        }
 
-      const env = await response.json();
-      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
-        throw new Error('Не настроены переменные Supabase');
+        // Подключаем Supabase
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+        window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+
+        console.log('Supabase инициализирован');
+        return true;
+
+      } catch (error) {
+        console.error('Ошибка инициализации Supabase:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+        return false;
+      }
+    }
+
+    // Проверяем токен и загружаем результаты
+    async function checkAndLoadResults() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareToken = urlParams.get('result');
+
+      if (!shareToken) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+        return;
       }
 
-      // Инициализация Supabase
-      window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+      const supabaseReady = await initSupabase();
+      if (!supabaseReady) return;
 
-      console.log('Supabase инициализирован');
-      return true;
-    } catch (error) {
-      console.error('Ошибка инициализации Supabase:', error);
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
-      return false;
+      try {
+        // Ищем результаты по токену
+        const { data, error } = await supabase
+          .from('test_results')
+          .select('*')
+          .eq('share_token', shareToken)
+          .single();
+
+        if (error || !data) throw error || new Error('Результаты не найдены');
+
+        console.log('Результаты загружены:', data);
+        displayResults(data);
+
+      } catch (error) {
+        console.error('Ошибка загрузки результатов:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
+      }
     }
-  }
-
-  // Проверяем токен и загружаем результаты
-  async function checkAndLoadResults() {
-    if (!shareToken) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
-      return;
-    }
-
-    const supabaseReady = await initSupabase();
-    if (!supabaseReady) return;
-
-    try {
-      // Ищем результаты по токену
-      const { data, error } = await supabase
-        .from('test_results')
-        .select('*')
-        .eq('share_token', shareToken)
-        .single();
-
-      if (error || !data) throw error || new Error('Результаты не найдены');
-
-      console.log('Результаты загружены:', data);
-      displayResults(data);
-
-    } catch (error) {
-      console.error('Ошибка загрузки результатов:', error);
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительна.';
-    }
-  }
-
-  // Вызов функции загрузки
-  checkAndLoadResults();
 
 
         
