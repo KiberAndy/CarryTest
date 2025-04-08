@@ -26,11 +26,17 @@ function generateId(prefix = '') {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Запрос не POST. Возвращаем ошибку 405');
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   try {
-    // Проверяем, что тело запроса не пустое
+    console.log('🔄 Начинаем обработку запроса...');
+    
+    // Логируем заголовки и тело запроса
+    console.log('Заголовки запроса:', event.headers);
+    console.log('Тело запроса:', event.body);
+
     if (!event.body || event.body.trim() === '') {
       console.log('❌ Пустое тело запроса');
       return { statusCode: 400, body: 'Bad Request: Missing or empty body' };
@@ -54,17 +60,19 @@ exports.handler = async (event) => {
     const sessionId = generateId('session-');
 
     // 🧪 Инициализация Supabase
+    console.log('🔄 Инициализация Supabase...');
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_KEY
     );
 
     // 🔁 Проверка на дубликат
+    console.log('🔄 Проверка на дубликат в базе данных...');
     const { data: existing, error: selectError } = await supabase
       .from('test_results')
-      .select('share_token')  // Выбираем только share_token
-      .eq('answers_hash', shareToken)  // Ищем по уникальному хэшированному значению
-      .maybeSingle();  // Получаем одну запись
+      .select('share_token')
+      .eq('answers_hash', shareToken)
+      .maybeSingle();
 
     if (selectError) {
       console.log('❌ Ошибка при запросе из базы:', selectError);
@@ -80,6 +88,7 @@ exports.handler = async (event) => {
     }
 
     // 📝 Сохраняем новый результат в таблицу
+    console.log('🔄 Сохраняем новые данные в Supabase...');
     const { error } = await supabase.from('test_results').insert([{
       answers,
       scores,
@@ -101,7 +110,7 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('❌ saveResults ошибка:', error);
+    console.error('❌ Ошибка на сервере:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -111,4 +120,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
