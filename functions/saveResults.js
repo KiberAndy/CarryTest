@@ -26,11 +26,16 @@ function generateId(prefix = '') {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    console.log('❌ Некорректный метод запроса');
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   try {
+    // Проверяем, что тело запроса не пустое
+    if (!event.body || event.body.trim() === '') {
+      console.log('❌ Пустое тело запроса');
+      return { statusCode: 400, body: 'Bad Request: Missing or empty body' };
+    }
+
     const { answers, scores } = JSON.parse(event.body);
     console.log('Загружены данные:', { answers, scores });
 
@@ -55,11 +60,16 @@ exports.handler = async (event) => {
     );
 
     // 🔁 Проверка на дубликат
-    const { data: existing } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('test_results')
-      .select('share_token')
-      .eq('answers_hash', shareToken)
-      .maybeSingle();
+      .select('share_token')  // Выбираем только share_token
+      .eq('answers_hash', shareToken)  // Ищем по уникальному хэшированному значению
+      .maybeSingle();  // Получаем одну запись
+
+    if (selectError) {
+      console.log('❌ Ошибка при запросе из базы:', selectError);
+      throw selectError;
+    }
 
     if (existing) {
       console.log('✅ Дублирование найдено, возвращаем существующий токен');
@@ -69,7 +79,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // 📝 Сохраняем результат
+    // 📝 Сохраняем новый результат в таблицу
     const { error } = await supabase.from('test_results').insert([{
       answers,
       scores,
@@ -101,3 +111,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
