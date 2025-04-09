@@ -1224,6 +1224,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('Ошибка сервера');
             
             const { share_token, expires_at } = await response.json();  // Получаем expires_at
+			console.log(`Токен получен с временем истечения: ${expires_at}`);
+			
+			const expiresAtDate = new Date(expires_at);
+			console.log(`Дата истечения в клиенте: ${expiresAtDate.toISOString()}`);
+			console.log(`Текущее время на клиенте: ${new Date().toISOString()}`);
+			
+			// Проверка
+			if (expiresAtDate <= new Date()) {
+			  console.log('Токен истёк!');
+			} else {
+			  console.log('Токен ещё действителен!');
+			}
 
             // Рассчитываем оставшееся время
             const expirationTime = new Date(expires_at);
