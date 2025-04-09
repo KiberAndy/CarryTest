@@ -1194,87 +1194,82 @@ function generateCleanLink(token) {
 
 // Основной код выполнения
 document.addEventListener('DOMContentLoaded', async () => {
-    const shareBtn = document.getElementById('share-btn');
-    const expirationMessage = document.getElementById('expiration-message'); // Элемент, куда будем выводить оставшееся время
-
-    // Обработчик кнопки "Поделиться"
-    shareBtn.addEventListener('click', async function() {
-        const btn = this;
-        const originalText = btn.textContent;
+  const shareBtn = document.getElementById('share-btn');
+  
+  // Обработчик кнопки "Поделиться"
+  shareBtn.addEventListener('click', async function() {
+    const btn = this;
+    const originalText = btn.textContent;
+    
+    try {
+      // 1. Подготовка - показываем загрузку
+      btn.disabled = true;
+      btn.textContent = "⏳ Создание ссылки...";
+      
+      // 2. Ваша логика копирования
+      calculateResults();
+      const postData = {
+        answers: answers,
+        scores: scores,
+        timestamp: new Date().toISOString()
+      };
+      
+      const response = await fetch('/.netlify/functions/saveResults', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData)
+      });
+      
+      if (!response.ok) throw new Error('Ошибка сервера');
+      
+      const { share_token, expires_at, server_time } = await response.json();
+      
+      // Получаем серверное время
+      const serverTime = new Date(server_time);
+      const expiresAt = new Date(expires_at);
+      
+      // Вычисляем, сколько времени осталось до истечения
+      const timeRemaining = expiresAt - serverTime;
+      
+      // Если время ещё не истекло, отображаем таймер
+      const timerInterval = setInterval(() => {
+        const currentTime = new Date();
+        const remainingTime = expiresAt - currentTime;
         
-        try {
-            // 1. Подготовка - показываем загрузку
-            btn.disabled = true;
-            btn.textContent = "⏳ Создание ссылки...";
-
-            // 2. Ваша логика копирования
-            calculateResults();
-            const postData = {
-                answers: answers,
-                scores: scores,
-                timestamp: new Date().toISOString()
-            };
-            
-            const response = await fetch('/.netlify/functions/saveResults', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData)
-            });
-            
-            if (!response.ok) throw new Error('Ошибка сервера');
-            
-            const { share_token, expires_at } = await response.json();  // Получаем expires_at
-			console.log(`Токен получен с временем истечения: ${expires_at}`);
-			
-			const expiresAtDate = new Date(expires_at);
-			console.log(`Дата истечения в клиенте: ${expiresAtDate.toISOString()}`);
-			console.log(`Текущее время на клиенте: ${new Date().toISOString()}`);
-			
-			// Проверка
-			if (expiresAtDate <= new Date()) {
-			  console.log('Токен истёк!');
-			} else {
-			  console.log('Токен ещё действителен!');
-			}
-
-            // Рассчитываем оставшееся время
-            const expirationTime = new Date(expires_at);
-            const currentTime = new Date();
-            const timeRemaining = expirationTime - currentTime;
-
-            if (timeRemaining > 0) {
-                const minutesRemaining = Math.floor(timeRemaining / 60000);  // Оставшиеся минуты
-                expirationMessage.textContent = `Токен живёт еще ${minutesRemaining} минут`;
-            } else {
-                expirationMessage.textContent = 'Токен истёк!';
-            }
-            
-            // Копируем ссылку
-            await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-            
-            // 3. Показываем успех
-            btn.classList.add('copied');
-            btn.textContent = "Ссылка скопирована!";
-            btn.disabled = false;
-            
-            // 4. Возвращаем исходное состояние через 10 секунд
-            setTimeout(() => {
-                btn.classList.remove('copied');
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 400);
-            }, 10000);
-            
-        } catch (error) {
-            console.error('Ошибка:', error);
-            btn.textContent = "❌ Ошибка";
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }, 2000);
+        if (remainingTime <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('token-status').textContent = 'Токен истёк!';
+        } else {
+          document.getElementById('token-status').textContent = `Токен будет действителен ещё ${Math.floor(remainingTime / 1000)} секунд`;
         }
-    });
-}); // <-- Эта скобка закрывает DOMContentLoaded
+      }, 1000);  // Обновляем каждую секунду
+      
+      await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+      
+      // 3. Показываем успех
+      btn.classList.add('copied');
+      btn.textContent = "Ссылка скопирована!";
+      btn.disabled = false;
+      
+      // 4. Возвращаем исходное состояние через 10 секунд
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 400);
+      }, 10000);
+      
+    } catch (error) {
+      console.error('Ошибка:', error);
+      btn.textContent = "❌ Ошибка";
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
+}); 
+
 
 </script>
 
