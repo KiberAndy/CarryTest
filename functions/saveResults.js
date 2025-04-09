@@ -63,48 +63,67 @@ exports.handler = async (event) => {
       throw new Error('Invalid or missing "scores"');
     }
 
-    const answersString = stableStringify({ answers, scores });
-    const shareToken = generateStableRandomToken(answersString);
-    const sessionId = generateId('session-');
+const answersString = stableStringify({ answers, scores });
+const shareToken = generateStableRandomToken(answersString);
+const sessionId = generateId('session-');
 
-    // 🧪 Инициализация Supabase
-    console.log('🔄 Инициализация Supabase...');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_KEY
-    );
+// ⏳ Устанавливаем срок жизни токена
+const expiresAt = new Date();
+expiresAt.setHours(expiresAt.getMinutes() + 1); 
 
-    // 🔁 Проверка на дубликат
-    console.log('🔄 Проверка на дубликат в базе данных...');
-    const { data: existing, error: selectError } = await supabase
-      .from('test_results')
-      .select('share_token')
-      .eq('answers_hash', shareToken)
-      .maybeSingle();
+// Логируем время жизни токена
+console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
 
-    if (selectError) {
-      console.log('❌ Ошибка при запросе из базы:', selectError);
-      throw selectError;
-    }
+// 4. Возвращаем срок действия токена
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    share_token: shareToken,
+    expires_at: expiresAt.toISOString()  // Отправляем expiresAt в ответ
+  })
+};
 
-    if (existing) {
-      console.log('✅ Дублирование найдено, возвращаем существующий токен');
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ share_token: existing.share_token, reused: true })
-      };
-    }
+// 🧪 Инициализация Supabase
+console.log('🔄 Инициализация Supabase...');
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
-    // 📝 Сохраняем новый результат в таблицу
-    console.log('🔄 Сохраняем новые данные в Supabase...');
-    const { error } = await supabase.from('test_results').insert([{
-      answers,
-      scores,
-      session_id: sessionId,
-      share_token: shareToken,
-      answers_hash: shareToken,
-      created_at: new Date().toISOString()
-    }]);
+
+// 🔁 Проверка на дубликат
+console.log('🔄 Проверка на дубликат в базе данных...');
+const { data: existing, error: selectError } = await supabase
+  .from('test_results')
+  .select('share_token')
+  .eq('answers_hash', shareToken)
+  .maybeSingle();
+
+if (selectError) {
+  console.log('❌ Ошибка при запросе из базы:', selectError);
+  throw selectError;
+}
+
+if (existing) {
+  console.log('✅ Дублирование найдено, возвращаем существующий токен');
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ share_token: existing.share_token, reused: true })
+  };
+}
+
+// 📝 Сохраняем новый результат в таблицу
+console.log('🔄 Сохраняем новые данные в Supabase...');
+const { error } = await supabase.from('test_results').insert([{
+  answers,
+  scores,
+  session_id: sessionId,
+  share_token: shareToken,
+  answers_hash: shareToken,
+  created_at: new Date().toISOString(),
+  expires_at: expiresAt.toISOString() // 🎯 ВАЖНО: срок действия токена
+}]);
+
 
     if (error) {
       console.error('❌ Ошибка при сохранении в Supabase:', error);
