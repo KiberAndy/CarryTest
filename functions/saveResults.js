@@ -69,7 +69,7 @@ const sessionId = generateId('session-');
 
 // ⏳ Устанавливаем срок жизни токена
 const expiresAt = new Date();
-expiresAt.setHours(expiresAt.getMinutes() + 1); 
+expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
 // Логируем время жизни токена
 console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
