@@ -67,12 +67,34 @@ const answersString = stableStringify({ answers, scores });
 const shareToken = generateStableRandomToken(answersString);
 const sessionId = generateId('session-');
 
+const serverTime = new Date().toISOString();  // Точное время с сервера
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    share_token: shareToken,
+    expires_at: expiresAt.toISOString(),
+    server_time: serverTime  // Отправляем точное время с сервера
+  })
+};
+
+
 // ⏳ Устанавливаем срок жизни токена
 const expiresAt = new Date();
 expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
 // Логируем время жизни токена
 console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
+
+const expiresAt = new Date(expires_at);
+const currentTime = new Date();
+const bufferTime = 2000; // 2 секунды на запас
+
+if (expiresAt.getTime() + bufferTime > currentTime.getTime()) {
+  console.log('✅ Токен действителен!');
+} else {
+  console.log('❌ Токен истёк!');
+}
+
 
 // 4. Возвращаем срок действия токена
 return {
