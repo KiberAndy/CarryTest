@@ -33,14 +33,14 @@ exports.handler = async (event) => {
   try {
     console.log('🔄 Начинаем обработку запроса...');
     
-    // Логируем тело запроса
+    // 📦 Логируем тело запроса
     const body = event.body ? JSON.parse(event.body) : {};
     console.log('Тело запроса:', body);
 
-    // Проверяем, является ли запрос запросом конфигурации
+    // 🧩 Проверяем, является ли запрос запросом конфигурации
     if (body.action === 'config') {
       console.log('🔄 Обработка запроса конфигурации...');
-      // Возвращаем переменные окружения
+      // ⚙️ Возвращаем переменные окружения
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Остальная логика сохранения результатов теста
+    // 🧪 Извлекаем данные из тела запроса
     const { answers, scores } = body;
 
     // 🔍 Валидация данных
@@ -63,89 +63,55 @@ exports.handler = async (event) => {
       throw new Error('Invalid or missing "scores"');
     }
 
-const answersString = stableStringify({ answers, scores });
-const shareToken = generateStableRandomToken(answersString);
-const sessionId = generateId('session-');
+    // 🧮 Подготавливаем хеш
+    const answersString = stableStringify({ answers, scores });
+    const shareToken = generateStableRandomToken(answersString);
+    const sessionId = generateId('session-');
 
-const serverTime = new Date().toISOString();  // Точное время с сервера
-return {
-  statusCode: 200,
-  body: JSON.stringify({
-    share_token: shareToken,
-    expires_at: expiresAt.toISOString(),
-    server_time: serverTime  // Отправляем точное время с сервера
-  })
-};
+    // ⏳ Устанавливаем срок жизни токена на 1 минуту
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1); // ⏱️ 1 минута от текущего времени
+    console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
 
+    // 🧪 Инициализация Supabase
+    console.log('🔄 Инициализация Supabase...');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
+    );
 
-// ⏳ Устанавливаем срок жизни токена
-const expiresAt = new Date();
-expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+    // 🔁 Проверка на дубликат
+    console.log('🔄 Проверка на дубликат в базе данных...');
+    const { data: existing, error: selectError } = await supabase
+      .from('test_results')
+      .select('share_token')
+      .eq('answers_hash', shareToken)
+      .maybeSingle();
 
-// Логируем время жизни токена
-console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
+    if (selectError) {
+      console.log('❌ Ошибка при запросе из базы:', selectError);
+      throw selectError;
+    }
 
-const expiresAt = new Date(expires_at);
-const currentTime = new Date();
-const bufferTime = 2000; // 2 секунды на запас
+    if (existing) {
+      console.log('✅ Дублирование найдено, возвращаем существующий токен');
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ share_token: existing.share_token, reused: true })
+      };
+    }
 
-if (expiresAt.getTime() + bufferTime > currentTime.getTime()) {
-  console.log('✅ Токен действителен!');
-} else {
-  console.log('❌ Токен истёк!');
-}
-
-
-// 4. Возвращаем срок действия токена
-return {
-  statusCode: 200,
-  body: JSON.stringify({
-    share_token: shareToken,
-    expires_at: expiresAt.toISOString()  // Отправляем expiresAt в ответ
-  })
-};
-
-// 🧪 Инициализация Supabase
-console.log('🔄 Инициализация Supabase...');
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
-
-// 🔁 Проверка на дубликат
-console.log('🔄 Проверка на дубликат в базе данных...');
-const { data: existing, error: selectError } = await supabase
-  .from('test_results')
-  .select('share_token')
-  .eq('answers_hash', shareToken)
-  .maybeSingle();
-
-if (selectError) {
-  console.log('❌ Ошибка при запросе из базы:', selectError);
-  throw selectError;
-}
-
-if (existing) {
-  console.log('✅ Дублирование найдено, возвращаем существующий токен');
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ share_token: existing.share_token, reused: true })
-  };
-}
-
-// 📝 Сохраняем новый результат в таблицу
-console.log('🔄 Сохраняем новые данные в Supabase...');
-const { error } = await supabase.from('test_results').insert([{
-  answers,
-  scores,
-  session_id: sessionId,
-  share_token: shareToken,
-  answers_hash: shareToken,
-  created_at: new Date().toISOString(),
-  expires_at: expiresAt.toISOString() // 🎯 ВАЖНО: срок действия токена
-}]);
-
+    // 📝 Сохраняем новый результат в таблицу
+    console.log('🔄 Сохраняем новые данные в Supabase...');
+    const { error } = await supabase.from('test_results').insert([{
+      answers,
+      scores,
+      session_id: sessionId,
+      share_token: shareToken,
+      answers_hash: shareToken,
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString() // 🎯 ВАЖНО: срок действия токена
+    }]);
 
     if (error) {
       console.error('❌ Ошибка при сохранении в Supabase:', error);
@@ -153,9 +119,16 @@ const { error } = await supabase.from('test_results').insert([{
     }
 
     console.log('✅ Результаты успешно сохранены');
+    
+    // ⏰ Отправляем ответ с данными токена
     return {
       statusCode: 200,
-      body: JSON.stringify({ share_token: shareToken, reused: false })
+      body: JSON.stringify({
+        share_token: shareToken,
+        expires_at: expiresAt.toISOString(),   // 🎁 Клиенту — срок жизни токена
+        server_time: new Date().toISOString(), // 🕒 Серверное текущее время
+        reused: false
+      })
     };
 
   } catch (error) {
