@@ -1093,6 +1093,8 @@ checkForSharedResults();
         <button class="save-button" id="save-btn">Сохранить результаты</button>
 <!-- Кнопка и блок для ссылки -->
 <button class="share-button" id="share-btn">Поделиться результатами</button>
+<div id="expiration-message"></div>
+
 
 
 
@@ -1193,6 +1195,7 @@ function generateCleanLink(token) {
 // Основной код выполнения
 document.addEventListener('DOMContentLoaded', async () => {
     const shareBtn = document.getElementById('share-btn');
+    const expirationMessage = document.getElementById('expiration-message'); // Элемент, куда будем выводить оставшееся время
 
     // Обработчик кнопки "Поделиться"
     shareBtn.addEventListener('click', async function() {
@@ -1203,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 1. Подготовка - показываем загрузку
             btn.disabled = true;
             btn.textContent = "⏳ Создание ссылки...";
-            
+
             // 2. Ваша логика копирования
             calculateResults();
             const postData = {
@@ -1220,7 +1223,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (!response.ok) throw new Error('Ошибка сервера');
             
-            const { share_token } = await response.json();
+            const { share_token, expires_at } = await response.json();  // Получаем expires_at
+
+            // Рассчитываем оставшееся время
+            const expirationTime = new Date(expires_at);
+            const currentTime = new Date();
+            const timeRemaining = expirationTime - currentTime;
+
+            if (timeRemaining > 0) {
+                const minutesRemaining = Math.floor(timeRemaining / 60000);  // Оставшиеся минуты
+                expirationMessage.textContent = `Токен живёт еще ${minutesRemaining} минут`;
+            } else {
+                expirationMessage.textContent = 'Токен истёк!';
+            }
+            
+            // Копируем ссылку
             await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
             
             // 3. Показываем успех
@@ -1246,6 +1263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 }); // <-- Эта скобка закрывает DOMContentLoaded
+
 </script>
 
 <style>
