@@ -629,10 +629,16 @@ function displayResults(data) {
   const remainingTime = expiresAt - serverTime;
 
   // Если токен истёк, перенаправляем на страницу смерти
-  if (remainingTime <= 0) {
-    window.location.href = '/expired.html';
-    return; // Прерываем выполнение функции, чтобы не отображать результаты
-  }
+if (remainingTime <= 0) {
+  clearInterval(timerInterval);
+  document.getElementById('token-status').textContent = 'Токен истёк!';
+
+  // 💀 Переход на страницу смерти токена
+  setTimeout(() => {
+    window.location.href = '/expired';
+  }, 1000); // даём секунду на прощальное "Токен истёк!"
+}
+
 
   // Если токен ещё действителен, продолжаем отображать результаты
   document.getElementById('loading').style.display = 'none';
