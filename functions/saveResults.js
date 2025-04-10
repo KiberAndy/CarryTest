@@ -67,7 +67,7 @@ exports.handler = async (event) => {
       body: new URLSearchParams({
         secret: HCAPTCHA_SECRET,
         response: hcaptcha_token,
-        remoteip: ip
+
       }),
     });
     const captchaResult = await captchaCheck.json();
