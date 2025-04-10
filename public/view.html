@@ -645,15 +645,16 @@ async function checkAndLoadResults() {
     if (error || !data) throw error || new Error('Результаты не найдены');
 
     // 3. Проверяем срок действия
-    const expiresAt = new Date(data.expires_at);
+    const expiresAt = data.expires_at ? new Date(data.expires_at) : null;
     const currentTime = new Date();
     const timeLeft = expiresAt - currentTime;
 
     console.log(`Токен действителен до: ${expiresAt}, осталось: ${Math.floor(timeLeft/1000)} сек`);
 
-	if (timeLeft <= 0) {
-	  console.log('Токен просрочен, перенаправление...');
-	  document.getElementById('token-status').textContent = 'Токен истёк! Перенаправление...';
+    // Проверяем, если дата в прошлом (только для установленных дат)
+    if (expiresAt && expiresAt < new Date()) {
+      console.log('Токен просрочен, перенаправление...');
+      document.getElementById('token-status').textContent = 'Токен истёк! Перенаправление...';
 	  
 	  // Переносим логику перенаправления прямо сюда
 	  setTimeout(() => {
@@ -696,30 +697,41 @@ function startTokenTimer(expiresAt) {
   const timerElement = document.getElementById('token-status');
   const tokenTimerElement = document.querySelector('.token-timer'); // Добавлено для работы с цветами
   
-    // Если срок действия не указан (бесконечный токен)
-  if (!expiresAt) {
+  // Проверяем, является ли токен бессрочным
+  if (expiresAt === null || expiresAt === undefined) {
     timerElement.textContent = 'Токен действителен бессрочно';
     if (tokenTimerElement) {
-      tokenTimerElement.style.borderLeftColor = '#28a745'; // Зелёный для бессрочных
+      tokenTimerElement.style.borderLeftColor = '#28a745';
     }
-    return; // Прекращаем выполнение, так как таймер не нужен
+    return;
+  }
+
+  // Проверяем, что expiresAt - это корректная дата
+  if (!(expiresAt instanceof Date) || isNaN(expiresAt.getTime())) {
+    console.error('Некорректная дата истечения токена:', expiresAt);
+    timerElement.textContent = 'Ошибка: некорректный срок действия';
+    return;
   }
   
   const updateTimer = () => { // Добавлена объявление функции updateTimer
     const currentTime = new Date();
     const remainingTime = expiresAt - currentTime;
 
+    // Если время истекло
     if (remainingTime <= 0) {
       clearInterval(timerInterval);
       timerElement.textContent = 'Токен истёк! Перенаправление...';
+      if (tokenTimerElement) {
+        tokenTimerElement.style.borderLeftColor = '#dc3545';
+      }
       
-      // Переносим логику перенаправления сюда
       setTimeout(() => {
         window.location.href = '/expired.html';
       }, 2000);
       return;
     }
 
+    // Форматируем оставшееся время
     const seconds = Math.floor(remainingTime / 1000) % 60;
     const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
     const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
@@ -735,12 +747,13 @@ function startTokenTimer(expiresAt) {
     timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
     
     // Меняем цвет, если осталось мало времени
-    if (tokenTimerElement) { // Проверка на существование элемента
-      if (remainingTime < 3600000) { // Меньше 1 часа
-        tokenTimerElement.style.borderLeftColor = '#ffc107';
-      }
+    if (tokenTimerElement) {
       if (remainingTime < 600000) { // Меньше 10 минут
         tokenTimerElement.style.borderLeftColor = '#dc3545';
+      } else if (remainingTime < 3600000) { // Меньше 1 часа
+        tokenTimerElement.style.borderLeftColor = '#ffc107';
+      } else {
+        tokenTimerElement.style.borderLeftColor = '#58a6ff';
       }
     }
   }; // Закрывающая фигурная скобка для updateTimer
