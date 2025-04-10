@@ -1094,8 +1094,12 @@ checkForSharedResults();
 <!-- Кнопка и блок для ссылки -->
 <button class="share-button" id="share-btn">Поделиться результатами</button>
 <!-- Контейнер для капчи (не visible до того, как её активируют) -->
-<div id="hcaptcha-container" style="display:none;">
-  <div class="h-captcha" data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"></div>
+<div id="hcaptcha" class="h-captcha"
+     data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"
+     data-size="invisible"
+     data-callback="onCaptchaSuccess"
+     data-expired-callback="onCaptchaExpired"
+     data-error-callback="onCaptchaError">
 </div>
 <div id="token-status"></div>
 
@@ -1195,6 +1199,7 @@ function generateCleanLink(token) {
 // Основная функция для отправки данных на сервер
 async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
   try {
+    console.log('hcaptcha_token:', hcaptcha_token);
     const response = await fetch('/.netlify/functions/saveResults', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1217,90 +1222,72 @@ async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
     console.log('Серверное время:', result.server_time);
     console.log('Использована повторно:', result.reused);
 
-    return result; // Возвращаем весь результат
+    return result;
   } catch (error) {
     console.error('Ошибка при отправке данных:', error);
-    throw error; // Пробрасываем ошибку дальше
+    throw error;
   }
 }
 
 // Обработчик кнопки "Поделиться"
 document.addEventListener('DOMContentLoaded', () => {
   const shareBtn = document.getElementById('share-btn');
-  let hcaptchaRendered = false; // Флаг, чтобы избежать повторного рендера капчи
+  let hcaptchaWidgetId = null;
 
-  // Функция для блокировки кнопки
   function blockButton(btn) {
     btn.disabled = true;
     btn.textContent = "⏳ Ожидание капчи...";
   }
 
-  // Функция для разблокировки кнопки
   function unblockButton(btn, originalText) {
     btn.disabled = false;
     btn.textContent = originalText;
   }
 
-  // Обработчик кнопки "Поделиться"
-  shareBtn.addEventListener('click', async function() {
+  shareBtn.addEventListener('click', async function () {
     const btn = this;
     const originalText = btn.textContent;
 
-    blockButton(btn); // Блокируем кнопку сразу при клике
+    blockButton(btn);
 
     try {
       const captchaPassed = localStorage.getItem('hcaptchaPassed');
-      let hcaptcha_token;
+      let hcaptcha_token = localStorage.getItem('hcaptchaToken');
 
-      if (!captchaPassed) {
-        // Если капча не пройдена, показываем капчу
+      if (!captchaPassed || !hcaptcha_token) {
         document.getElementById('hcaptcha-container').style.display = 'block';
 
-        // Рендерим капчу только если она ещё не рендерена
-        if (!hcaptchaRendered) {
-          hcaptchaRendered = true; // Помечаем, что капча рендерится
-
-          // Удаляем предыдущие капчи (если они есть)
-          const existingCaptcha = document.querySelector('.h-captcha');
-          if (existingCaptcha) {
-            existingCaptcha.remove();
-          }
-
-          // Рендерим капчу
-          hcaptcha.render('hcaptcha-container', {
+        if (hcaptchaWidgetId === null) {
+          hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
             sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-            callback: function(token) {
-              // Сохраняем токен капчи и разрешаем продолжение
+            size: 'invisible',
+            callback: async function (token) {
               localStorage.setItem('hcaptchaPassed', 'true');
               localStorage.setItem('hcaptchaToken', token);
               hcaptcha_token = token;
 
-              unblockButton(btn, originalText); // Разблокируем кнопку после успешного прохождения капчи
+              unblockButton(btn, originalText);
+              await proceedWithShare(btn, originalText, token);
+            },
+            'error-callback': function () {
+              alert('Ошибка в hCaptcha. Попробуйте снова.');
+              unblockButton(btn, originalText);
             }
           });
         }
+
+        // Выполняем капчу вручную (невидимая)
+        hcaptcha.execute(hcaptchaWidgetId);
       } else {
-        // Если капча уже пройдена, берём токен из localStorage
-        hcaptcha_token = localStorage.getItem('hcaptchaToken');
-        unblockButton(btn, originalText); // Разблокируем кнопку
+        await proceedWithShare(btn, originalText, hcaptcha_token);
       }
-
-      // Ждём, пока кнопка не будет разблокирована
-      if (!hcaptcha_token) {
-        alert('⚠️ А как насчет капчи?');
-        return;
-      }
-
-      // Когда капча прошла успешно и кнопка разблокирована, продолжаем
-      await proceedWithShare(btn, originalText, hcaptcha_token);
     } catch (error) {
       console.error('Ошибка:', error);
       alert('Произошла ошибка при обработке запроса.');
-      unblockButton(btn, originalText); // Восстанавливаем кнопку после ошибки
+      unblockButton(btn, originalText);
     }
   });
 
-  // Функция для продолжения процесса после получения hcaptcha_token
   async function proceedWithShare(btn, originalText, hcaptcha_token) {
     calculateResults();
     let session_id = localStorage.getItem('session_id');
@@ -1309,12 +1296,10 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('session_id', session_id);
     }
 
-    // Отправляем данные и получаем share_token
     try {
       const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
       const share_token = result.share_token;
 
-      // Копируем ссылку в буфер обмена
       try {
         await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
         alert('Ссылка скопирована в буфер обмена!');
@@ -1323,12 +1308,10 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
       }
 
-      // Показываем успех
       btn.classList.add('copied');
       btn.textContent = "Ссылка скопирована!";
       btn.disabled = false;
 
-      // Возвращаем исходное состояние через 10 секунд
       setTimeout(() => {
         btn.classList.remove('copied');
         setTimeout(() => {
