@@ -526,41 +526,43 @@
 
 // Загружаем конфиг и инициализируем Supabase
 async function initSupabase() {
-  try {
-    console.log('Инициализация Supabase...');
-    
-    // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
-    const response = await fetch('/.netlify/functions/saveResults', { 
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ action: 'config' })
-});
-    
-    if (!response.ok) throw new Error('Не удалось загрузить конфиг');
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('Инициализация Supabase...');
+      
+      // Получаем конфиг из переменных окружения (вместо .env через серверную функцию)
+      const response = await fetch('/.netlify/functions/saveResults', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'config' })
+      });
+      
+      if (!response.ok) throw new Error('Не удалось загрузить конфиг');
 
-    const env = await response.json();
-    console.log('Конфиг загружен:', env);
+      const env = await response.json();
+      console.log('Конфиг загружен:', env);
 
-    if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
-      throw new Error('Не настроены переменные Supabase');
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+        throw new Error('Не настроены переменные Supabase');
+      }
+
+      // Подключаем Supabase
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+
+      console.log('Supabase инициализирован');
+      resolve(true);
+
+    } catch (error) {
+      console.error('Ошибка инициализации Supabase:', error);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+      reject(false);
     }
-
-    // Подключаем Supabase
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-
-    console.log('Supabase инициализирован');
-    return true;
-
-  } catch (error) {
-    console.error('Ошибка инициализации Supabase:', error);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
-    return false;
-  }
+  });
 }
 
 // Проверяем токен и загружаем результаты
@@ -574,7 +576,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const success = await Promise.race([initSupabase(), timeoutPromise]);
     
     if (success) {
-      checkAndLoadResults();  // Только если всё прошло успешно
+      // Проверяем, инициализирован ли Supabase
+      if (window.supabase) {
+        checkAndLoadResults();  // Только если всё прошло успешно
+      } else {
+        showError('Supabase не был инициализирован');
+      }
     }
   } catch (error) {
     showError('Ошибка инициализации Supabase: ' + error.message);
@@ -582,6 +589,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function checkAndLoadResults() {
+  if (!window.supabase) {
+    showError('Supabase не был инициализирован');
+    return;
+  }
+
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
