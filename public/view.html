@@ -198,6 +198,33 @@
 <meta name="theme-color" content="#1e1e2e">
 <meta name="msapplication-TileColor" content="#1e1e2e">
 
+<!-- Указание авторства (если используете иконки Flaticon) -->
+<div class="credits">
+  <span class="credits__text">Иконки от</span>
+  <a href="https://www.flaticon.com/authors/freepik" 
+     class="credits__link"
+     target="_blank" 
+     rel="noopener"
+     title="Freepik">
+    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    Freepik
+  </a>
+  <span class="credits__divider">|</span>
+  <a href="https://www.flaticon.com" 
+     class="credits__link"
+     target="_blank" 
+     rel="noopener"
+     title="Flaticon">
+    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v8m-4-4h8"/>
+    </svg>
+    Flaticon
+  </a>
+</div>
+
 <style>
 .credits {
   position: fixed;
@@ -266,42 +293,11 @@
 	
 </head>
 <body>
-
-<!-- Указание авторства (если используете иконки Flaticon) -->
-<div class="credits">
-  <span class="credits__text">Иконки от</span>
-  <a href="https://www.flaticon.com/authors/freepik" 
-     class="credits__link"
-     target="_blank" 
-     rel="noopener"
-     title="Freepik">
-	<svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-	  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor"/>
-	</svg>
-    Freepik
-  </a>
-  <span class="credits__divider">|</span>
-  <a href="https://www.flaticon.com" 
-     class="credits__link"
-     target="_blank" 
-     rel="noopener"
-     title="Flaticon">
-    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M12 8v8m-4-4h8"/>
-    </svg>
-    Flaticon
-  </a>
-</div>
-
     <h1>Результаты теста на совместимость игроков</h1>
     
     <div id="loading" class="loading">
         Загрузка результатов...
     </div>
-	
-	<div id="timer"></div>
-
     
     <div id="error" class="error" style="display: none;">
         Не удалось загрузить результаты. Проверьте правильность ссылки.
@@ -572,75 +568,105 @@ async function initSupabase() {
 
 // Проверяем токен и загружаем результаты
 async function checkAndLoadResults() {
-  console.log('Проверка и загрузка результатов...');
+  console.log('Начало загрузки результатов...');
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareToken = urlParams.get('result');
-  console.log('Получен токен из URL:', shareToken);
-
+  // 1. Получаем токен из URL
+  const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
-    console.error('Ссылка на результаты недействительна (отсутствует токен)');
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'Ссылка на результаты недействительна (отсутствует токен)';
+    showError('Ссылка недействительна - отсутствует токен');
     return;
   }
 
-  const supabaseReady = await initSupabase();
-  if (!supabaseReady) return;
-
   try {
-    // Ищем результаты по токену
-    console.log('Запрос результатов из базы данных с токеном:', shareToken);
+    // 2. Загружаем данные (используем уже инициализированный Supabase)
+    console.log('Запрос данных для токена:', shareToken);
     const { data, error } = await supabase
       .from('test_results')
-      .select('*')
+      .select('created_at, expires_at, scores, answers')
       .eq('share_token', shareToken)
       .single();
 
-    if (error || !data) {
-      console.error('Ошибка загрузки результатов:', error || new Error('Результаты не найдены'));
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Не удалось загрузить результаты. Ссылка может быть недействительной.';
+    if (error || !data) throw error || new Error('Результаты не найдены');
+
+    // 3. Проверяем срок действия
+    const expiresAt = new Date(data.expires_at);
+    const currentTime = new Date();
+    const timeLeft = expiresAt - currentTime;
+
+    console.log(`Токен действителен до: ${expiresAt}, осталось: ${Math.floor(timeLeft/1000)} сек`);
+
+    if (timeLeft <= 0) {
+      console.log('Токен просрочен, перенаправление...');
+      showTokenExpired();
       return;
     }
 
-    console.log('Результаты загружены:', data);
+    // 4. Запускаем таймер
+    startTokenTimer(expiresAt);
+
+    // 5. Отображаем результаты
     displayResults(data);
 
   } catch (error) {
-    console.error('Ошибка при запросе данных:', error);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'Не удалось загрузить результаты. Попробуйте позже.';
+    console.error('Ошибка:', error);
+    showError(error.message || 'Ошибка загрузки результатов');
   }
 }
+
+// Таймер обратного отсчета
+function startTokenTimer(expiresAt) {
+  const timerElement = document.getElementById('timer');
+  if (!timerElement) return;
+
+  const updateTimer = () => {
+    const currentTime = new Date();
+    const remainingTime = expiresAt - currentTime;
+
+    if (remainingTime <= 0) {
+      clearInterval(timerInterval);
+      timerElement.textContent = 'Токен истёк!';
+      showTokenExpired();
+      return;
+    }
+
+    const seconds = Math.floor(remainingTime / 1000);
+    const days = Math.floor(seconds / (3600 * 24));
+    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    timerElement.textContent = `Действителен ещё: ${days}д ${hours}ч ${minutes}м ${secs}с`;
+  };
+
+  // Первое обновление и запуск интервала
+  updateTimer();
+  const timerInterval = setInterval(updateTimer, 1000);
+}
+
+// Показать ошибку
+function showError(message) {
+  const errorElement = document.getElementById('error');
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+  }
+  document.getElementById('loading').style.display = 'none';
+}
+
+// Действия при истечении токена
+function showTokenExpired() {
+  setTimeout(() => {
+    window.location.href = '/expired.html';
+  }, 2000);
+}
+
+// Запуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', checkAndLoadResults);
 
 // Отображаем результаты
 function displayResults(data) {
   console.log('Отображение результатов...');
-
-  // Получаем серверное время и время истечения токена
-  const serverTime = new Date(data.server_time); // Примерное место для получения серверного времени
-  const expiresAt = new Date(data.expires_at);  // Примерное место для получения времени истечения токена
-
-  // Вычисляем, сколько времени осталось до истечения токена
-  const remainingTime = expiresAt - serverTime;
-
-  // Если токен истёк, перенаправляем на страницу смерти
-if (remainingTime <= 0) {
-  clearInterval(timerInterval);
-  document.getElementById('token-status').textContent = 'Токен истёк!';
-
-  // 💀 Переход на страницу смерти токена
-  setTimeout(() => {
-    window.location.href = '/expired';
-  }, 1000); // даём секунду на прощальное "Токен истёк!"
-}
-
-
-  // Если токен ещё действителен, продолжаем отображать результаты
+  
   document.getElementById('loading').style.display = 'none';
   document.getElementById('result').style.display = 'block';
 
@@ -654,39 +680,6 @@ if (remainingTime <= 0) {
   const answers = data.answers;
   console.log('Ответы:', answers);
   console.log('Оценки:', scores);
-
-  // Отображаем таймер
-  const timerElement = document.getElementById('timer');
-  const timerInterval = setInterval(() => {
-    const currentTime = new Date();
-    const timeRemaining = expiresAt - currentTime;
-
-    if (timeRemaining <= 0) {
-      clearInterval(timerInterval);
-      timerElement.textContent = 'Токен истёк!';
-    } else {
-      const secondsRemaining = Math.floor(timeRemaining / 1000);
-      const days = Math.floor(secondsRemaining / (3600 * 24));
-      const hours = Math.floor((secondsRemaining % (3600 * 24)) / 3600);
-      const minutes = Math.floor((secondsRemaining % 3600) / 60);
-      const seconds = secondsRemaining % 60;
-
-      let timeString = '';
-      if (days > 0) timeString += `${days} день${days === 1 ? '' : 'ей'} `;
-      if (hours > 0 || days > 0) timeString += `${hours} час${hours === 1 ? '' : 'ов'} `;
-      if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} минут${minutes === 1 ? 'а' : 'ы'} `;
-      timeString += `${seconds} секунд${seconds === 1 ? '' : 'ы'}`;
-
-      timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
-    }
-  }, 1000);  // Обновляем каждую секунду
-
-  // Отображаем ответы
-  showAnswers(answers);
-
-
-
-
   
   // Рассчитываем общую совместимость
   const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
