@@ -289,11 +289,42 @@
   transform: scale(1.1);
   stroke: #58a6ff;
 }
+
+/* Таймер */
+.token-timer {
+    background-color: #2a2a3a;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 20px auto;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    border-left: 4px solid #58a6ff;
+    max-width: 600px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.token-timer.expired {
+    border-left-color: #dc3545;
+    animation: pulseWarning 1.5s infinite;
+}
+
+@keyframes pulseWarning {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
 </style>
 	
 </head>
 <body>
     <h1>Результаты теста на совместимость игроков</h1>
+	
+	<div class="token-timer">
+        <span id="token-status">Проверка срока действия токена...</span>
+    </div>
     
     <div id="loading" class="loading">
         Загрузка результатов...
@@ -620,11 +651,16 @@ async function checkAndLoadResults() {
 
     console.log(`Токен действителен до: ${expiresAt}, осталось: ${Math.floor(timeLeft/1000)} сек`);
 
-    if (timeLeft <= 0) {
-      console.log('Токен просрочен, перенаправление...');
-      showTokenExpired();
-      return;
-    }
+	if (timeLeft <= 0) {
+	  console.log('Токен просрочен, перенаправление...');
+	  document.getElementById('token-status').textContent = 'Токен истёк! Перенаправление...';
+	  
+	  // Переносим логику перенаправления прямо сюда
+	  setTimeout(() => {
+		window.location.href = '/expired.html';
+	  }, 2000);
+	  return;
+	}
 
     // 4. Запускаем таймер
     startTokenTimer(expiresAt);
@@ -657,28 +693,48 @@ function showError(message) {
 
 // Таймер обратного отсчета
 function startTokenTimer(expiresAt) {
-  const timerElement = document.getElementById('timer');
-  if (!timerElement) return;
-
-  const updateTimer = () => {
+  const timerElement = document.getElementById('token-status');
+  const tokenTimerElement = document.querySelector('.token-timer'); // Добавлено для работы с цветами
+  
+  const updateTimer = () => { // Добавлена объявление функции updateTimer
     const currentTime = new Date();
     const remainingTime = expiresAt - currentTime;
 
     if (remainingTime <= 0) {
       clearInterval(timerInterval);
-      timerElement.textContent = 'Токен истёк!';
-      showTokenExpired();
+      timerElement.textContent = 'Токен истёк! Перенаправление...';
+      
+      // Переносим логику перенаправления сюда
+      setTimeout(() => {
+        window.location.href = '/expired.html';
+      }, 2000);
       return;
     }
 
-    const seconds = Math.floor(remainingTime / 1000);
-    const days = Math.floor(seconds / (3600 * 24));
-    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    const seconds = Math.floor(remainingTime / 1000) % 60;
+    const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
+    const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
 
-    timerElement.textContent = `Действителен ещё: ${days}д ${hours}ч ${minutes}м ${secs}с`;
-  };
+    // Красивое форматирование времени
+    let timeString = '';
+    if (days > 0) timeString += `${days} д `;
+    if (hours > 0 || days > 0) timeString += `${hours} ч `;
+    if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} м `;
+    timeString += `${seconds} с`;
+    
+    timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
+    
+    // Меняем цвет, если осталось мало времени
+    if (tokenTimerElement) { // Проверка на существование элемента
+      if (remainingTime < 3600000) { // Меньше 1 часа
+        tokenTimerElement.style.borderLeftColor = '#ffc107';
+      }
+      if (remainingTime < 600000) { // Меньше 10 минут
+        tokenTimerElement.style.borderLeftColor = '#dc3545';
+      }
+    }
+  }; // Закрывающая фигурная скобка для updateTimer
 
   // Первое обновление и запуск интервала
   updateTimer();
@@ -695,12 +751,6 @@ function showError(message) {
   document.getElementById('loading').style.display = 'none';
 }
 
-// Действия при истечении токена
-function showTokenExpired() {
-  setTimeout(() => {
-    window.location.href = '/expired.html';
-  }, 2000);
-}
 
 // Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', checkAndLoadResults);
