@@ -576,12 +576,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const success = await Promise.race([initSupabase(), timeoutPromise]);
     
     if (success) {
-      // Проверяем, инициализирован ли Supabase
-      if (window.supabase) {
-        checkAndLoadResults();  // Только если всё прошло успешно
-      } else {
-        showError('Supabase не был инициализирован');
-      }
+      checkAndLoadResults();  // Вызываем checkAndLoadResults, если инициализация прошла успешно
     }
   } catch (error) {
     showError('Ошибка инициализации Supabase: ' + error.message);
@@ -589,11 +584,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function checkAndLoadResults() {
-  if (!window.supabase) {
-    showError('Supabase не был инициализирован');
-    return;
-  }
-
+  // Поскольку мы уверены, что Supabase должен быть инициализирован в этот момент,
+  // проверку на `window.supabase` можно убрать.
+  
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
