@@ -647,6 +647,14 @@ function showError(message) {
   document.getElementById('loading').style.display = 'none';  // Скрываем индикатор загрузки
 }
 
+// Убедимся, что ошибка не отображается изначально
+document.addEventListener('DOMContentLoaded', () => {
+  const errorElement = document.getElementById('error');
+  if (errorElement) {
+    errorElement.style.display = 'none';  // Изначально скрываем блок ошибки
+  }
+});
+
 // Таймер обратного отсчета
 function startTokenTimer(expiresAt) {
   const timerElement = document.getElementById('timer');
