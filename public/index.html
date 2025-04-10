@@ -1251,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('hcaptchaPassed', 'true');
             localStorage.setItem('hcaptchaToken', token);
             hcaptcha_token = token;
-            // Продолжаем выполнение после того, как капча пройдена
+            // После прохождения капчи, продолжаем выполнение
             await proceedWithShare(btn, originalText, hcaptcha_token);
           }
         });
@@ -1260,13 +1260,6 @@ document.addEventListener('DOMContentLoaded', () => {
         hcaptcha_token = localStorage.getItem('hcaptchaToken');
         // Продолжаем выполнение сразу
         await proceedWithShare(btn, originalText, hcaptcha_token);
-      }
-
-      // Проверка на наличие hcaptcha_token
-      if (!hcaptcha_token) {
-        alert('⚠️ А как насчет капчи?');
-        btn.disabled = false;
-        btn.textContent = originalText;
       }
     } catch (error) {
       console.error('Ошибка:', error);
@@ -1278,6 +1271,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Функция для продолжения процесса после получения hcaptcha_token
   async function proceedWithShare(btn, originalText, hcaptcha_token) {
+    if (!hcaptcha_token) {
+      alert('⚠️ А как насчет капчи?');
+      btn.disabled = false;
+      btn.textContent = originalText;
+      return; // Возвращаем, если нет токена капчи
+    }
+
     calculateResults();
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
@@ -1289,35 +1289,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
       const share_token = result.share_token;
-      
-      // Получаем серверное время
-      const serverTime = new Date(result.server_time);
-      const expiresAt = new Date(result.expires_at);
-
-      // Вычисляем, сколько времени осталось до истечения
-      const timeRemaining = expiresAt - serverTime;
-
-      // Если время ещё не истекло, отображаем таймер
-      if (timeRemaining > 0) {
-        const timerInterval = setInterval(() => {
-          const currentTime = new Date();
-          const remainingTime = expiresAt - currentTime;
-
-          if (remainingTime <= 0) {
-            clearInterval(timerInterval);
-            document.getElementById('token-status').textContent = 'Токен истёк!';
-          } else {
-            const seconds = Math.floor(remainingTime / 1000) % 60;
-            const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
-            const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
-            const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
-
-            // Форматируем вывод
-            document.getElementById('token-status').textContent = 
-              `Страница будет действительна ещё ${days} д. ${hours} ч. ${minutes} м. ${seconds} с.`;
-          }
-        }, 1000);  // Обновляем каждую секунду
-      }
 
       // Копируем ссылку в буфер обмена
       try {
@@ -1350,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 
