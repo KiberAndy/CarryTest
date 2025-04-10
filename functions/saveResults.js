@@ -51,104 +51,112 @@ exports.handler = async (event) => {
       };
     }
 
-    const { answers, scores, session_id, hcaptcha_token } = body;
+const { answers, scores, session_id, hcaptcha_token } = body;
+
+function getClientIp(event) {
+    let ip = event.headers['x-forwarded-for'];
     
-    function getClientIp(event) {
-        let ip = event.headers['x-forwarded-for'];
-        
-        if (ip) {
-            // Берем первый IP, если их несколько
-            ip = ip.split(',')[0].trim();
-        } else {
-            ip = event.headers['client-ip'] || '';
-        }
-        
-        // Проверяем, что IP валидный (v4 или v6)
-        if (!ip || !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$/.test(ip)) {
-            console.warn('⚠️ Неверный IP, пропускаем проверку');
-            return undefined;
-        }
-        
-        return ip;
-    }
-
-    if (!answers || typeof answers !== 'object') throw new Error('Invalid or missing "answers"');
-    if (!scores || typeof scores !== 'object') throw new Error('Invalid or missing "scores"');
-    if (!hcaptcha_token) throw new Error('Missing hCaptcha token');
-
-    console.log('✅ Данные прошли первичную валидацию');
-
-    // Логируем значение HCAPTCHA_SECRET
-    console.log('HCAPTCHA_SECRET:', process.env.HCAPTCHA_SECRET);
-    
-    // 1. Получаем IP с защитой от ошибок
-    let ip;
-    try {
-        ip = getClientIp(event);
-        console.log('Определен IP адрес:', ip);
-    } catch (error) {
-        console.error('Ошибка при получении IP:', error);
-        ip = null;
-    }
-
-    // 2. Проверяем наличие обязательных данных
-    if (!HCAPTCHA_SECRET) {
-        console.error('HCAPTCHA_SECRET не настроен');
-        return { statusCode: 500, body: 'Server configuration error' };
-    }
-
-    // 3. Формируем параметры для hCaptcha
-    const captchaParams = {
-        secret: HCAPTCHA_SECRET,
-        response: hcaptcha_token
-    };
-
-    // Добавляем IP только если он валидный
     if (ip) {
-        captchaParams.remoteip = ip;
+        ip = ip.split(',')[0].trim();
+    } else {
+        ip = event.headers['client-ip'] || '';
     }
+    
+    if (!ip || !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$/.test(ip)) {
+        console.warn('⚠️ Неверный IP, пропускаем проверку');
+        return undefined;
+    }
+    
+    return ip;
+}
 
-    // 4. Логируем параметры перед отправкой
-    console.log('Параметры для hCaptcha:', {
-        hasIp: !!ip,
-        tokenPresent: !!hcaptcha_token,
-        secretPresent: !!HCAPTCHA_SECRET
+// Основные проверки данных
+if (!answers || typeof answers !== 'object') throw new Error('Invalid or missing "answers"');
+if (!scores || typeof scores !== 'object') throw new Error('Invalid or missing "scores"');
+if (!hcaptcha_token) throw new Error('Missing hCaptcha token');
+
+console.log('✅ Данные прошли первичную валидацию');
+
+// Получаем IP
+let ip;
+try {
+    ip = getClientIp(event);
+    console.log('Определен IP адрес:', ip);
+} catch (error) {
+    console.error('Ошибка при получении IP:', error);
+    ip = null;
+}
+
+// Проверка наличия секретного ключа
+if (!HCAPTCHA_SECRET) {
+    console.error('HCAPTCHA_SECRET не настроен');
+    return { statusCode: 500, body: 'Server configuration error' };
+}
+
+// Формируем параметры запроса
+const captchaParams = {
+    secret: HCAPTCHA_SECRET,
+    response: hcaptcha_token
+};
+
+if (ip) {
+    captchaParams.remoteip = ip;
+}
+
+console.log('Параметры для hCaptcha:', {
+    hasIp: !!ip,
+    tokenPresent: !!hcaptcha_token,
+    secretPresent: !!HCAPTCHA_SECRET
+});
+
+try {
+    // Отправляем запрос к hCaptcha
+    const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(captchaParams),
     });
 
-    try {
-        // 🧠 hCaptcha
-        const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(captchaParams),
-        });
+    const captchaResult = await captchaCheck.json();
+    console.log('🧪 Результат hCaptcha:', captchaResult);
 
-        const captchaResult = await captchaCheck.json();
-
-        // Логируем результат запроса
-        console.log('🧪 Результат hCaptcha:', captchaResult);
-
-        // Если капча не прошла валидацию
-        if (!captchaResult.success) {
-            console.error('❌ Ошибка капчи:', captchaResult['error-codes']);
+    // Обработка результата
+    if (!captchaResult.success) {
+        console.error('❌ Ошибка капчи:', captchaResult['error-codes']);
+        
+        // Специальная обработка для "expired-input-response"
+        if (captchaResult['error-codes']?.includes('expired-input-response')) {
             return { 
                 statusCode: 403, 
                 body: JSON.stringify({
-                    error: 'Проверка капчи не пройдена',
-                    details: captchaResult['error-codes']
+                    error: 'Срок действия капчи истек',
+                    solution: 'Пожалуйста, обновите страницу и пройдите проверку снова',
+                    error_codes: captchaResult['error-codes']
                 })
             };
         }
-    } catch (error) {
-        console.error('🔥 Ошибка при проверке капчи:', error);
+        
+        // Общая обработка других ошибок
         return { 
-            statusCode: 500, 
+            statusCode: 403, 
             body: JSON.stringify({
-                error: 'Ошибка сервера при проверке капчи',
-                details: error.message
+                error: 'Проверка капчи не пройдена',
+                details: captchaResult['error-codes']
             })
         };
     }
+} catch (error) {
+    console.error('🔥 Ошибка при проверке капчи:', error);
+    return { 
+        statusCode: 500, 
+        body: JSON.stringify({
+            error: 'Ошибка сервера при проверке капчи',
+            details: error.message
+        })
+    };
+}
+
+// Если капча пройдена успешно, продолжаем выполнение...
 
 
 
