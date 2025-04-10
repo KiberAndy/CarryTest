@@ -52,24 +52,25 @@ exports.handler = async (event) => {
     }
 
     const { answers, scores, session_id, hcaptcha_token } = body;
+    
     function getClientIp(event) {
-  let ip = event.headers['x-forwarded-for'];
-  
-  if (ip) {
-    // Берем первый IP, если их несколько
-    ip = ip.split(',')[0].trim();
-  } else {
-    ip = event.headers['client-ip'] || '';
-  }
-  
-  // Проверяем, что IP валидный (v4 или v6)
-  if (!ip || !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$/.test(ip)) {
-    console.warn('⚠️ Неверный IP, пропускаем проверку');
-    return undefined; // Не отправляем невалидный IP
-  }
-  
-  return ip;
-}
+        let ip = event.headers['x-forwarded-for'];
+        
+        if (ip) {
+            // Берем первый IP, если их несколько
+            ip = ip.split(',')[0].trim();
+        } else {
+            ip = event.headers['client-ip'] || '';
+        }
+        
+        // Проверяем, что IP валидный (v4 или v6)
+        if (!ip || !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$/.test(ip)) {
+            console.warn('⚠️ Неверный IP, пропускаем проверку');
+            return undefined;
+        }
+        
+        return ip;
+    }
 
     if (!answers || typeof answers !== 'object') throw new Error('Invalid or missing "answers"');
     if (!scores || typeof scores !== 'object') throw new Error('Invalid or missing "scores"');
@@ -77,31 +78,77 @@ exports.handler = async (event) => {
 
     console.log('✅ Данные прошли первичную валидацию');
 
-	// Логируем значение HCAPTCHA_SECRET
-	console.log('HCAPTCHA_SECRET:', process.env.HCAPTCHA_SECRET);
-	
+    // Логируем значение HCAPTCHA_SECRET
+    console.log('HCAPTCHA_SECRET:', process.env.HCAPTCHA_SECRET);
+    
+    // 1. Получаем IP с защитой от ошибок
+    let ip;
+    try {
+        ip = getClientIp(event);
+        console.log('Определен IP адрес:', ip);
+    } catch (error) {
+        console.error('Ошибка при получении IP:', error);
+        ip = null;
+    }
 
-	// 🧠 hCaptcha
-	const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
-	  method: 'POST',
-	  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-	  body: new URLSearchParams({
-		secret: HCAPTCHA_SECRET,  // Секретный ключ
-		response: hcaptcha_token, // Токен, полученный на клиенте
-		remoteip: ip // (необязательно) IP-адрес пользователя
-	  }),
-	});
+    // 2. Проверяем наличие обязательных данных
+    if (!HCAPTCHA_SECRET) {
+        console.error('HCAPTCHA_SECRET не настроен');
+        return { statusCode: 500, body: 'Server configuration error' };
+    }
 
-	const captchaResult = await captchaCheck.json();
+    // 3. Формируем параметры для hCaptcha
+    const captchaParams = {
+        secret: HCAPTCHA_SECRET,
+        response: hcaptcha_token
+    };
 
-	// Логируем результат запроса после его выполнения
-	console.log('🧪 Результат hCaptcha после запроса:', captchaResult);
+    // Добавляем IP только если он валидный
+    if (ip) {
+        captchaParams.remoteip = ip;
+    }
 
-	// Если капча не прошла валидацию, возвращаем ошибку 403
-	if (!captchaResult.success) {
-	  console.error('❌ Ошибка валидации капчи:', captchaResult);
-	  return { statusCode: 403, body: 'Проверка капчи не пройдена. Попробуй ещё раз.' };
-	}
+    // 4. Логируем параметры перед отправкой
+    console.log('Параметры для hCaptcha:', {
+        hasIp: !!ip,
+        tokenPresent: !!hcaptcha_token,
+        secretPresent: !!HCAPTCHA_SECRET
+    });
+
+    try {
+        // 🧠 hCaptcha
+        const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(captchaParams),
+        });
+
+        const captchaResult = await captchaCheck.json();
+
+        // Логируем результат запроса
+        console.log('🧪 Результат hCaptcha:', captchaResult);
+
+        // Если капча не прошла валидацию
+        if (!captchaResult.success) {
+            console.error('❌ Ошибка капчи:', captchaResult['error-codes']);
+            return { 
+                statusCode: 403, 
+                body: JSON.stringify({
+                    error: 'Проверка капчи не пройдена',
+                    details: captchaResult['error-codes']
+                })
+            };
+        }
+    } catch (error) {
+        console.error('🔥 Ошибка при проверке капчи:', error);
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({
+                error: 'Ошибка сервера при проверке капчи',
+                details: error.message
+            })
+        };
+    }
 
 
 
