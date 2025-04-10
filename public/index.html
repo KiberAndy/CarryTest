@@ -1228,8 +1228,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response = await fetch('/.netlify/functions/saveResults', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData)
-      });
+		  body: JSON.stringify({
+			answers,
+			scores,
+			session_id,
+			hcaptcha_token, // ← вот это обязательно!
+		  }),
+		});
       
       if (!response.ok) throw new Error('Ошибка сервера');
       
