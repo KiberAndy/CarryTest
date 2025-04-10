@@ -749,7 +749,7 @@ function startTokenTimer(expiresAt) {
     if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} м. `;
     timeString += `${seconds} с.`;
     
-    timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
+    timerElement.textContent = `Страница будет действительна ещё ${timeString}`;
     
     // Меняем цвет, если осталось мало времени
     if (tokenTimerElement) {
