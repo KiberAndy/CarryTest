@@ -1227,56 +1227,69 @@ async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
 // Обработчик кнопки "Поделиться"
 document.addEventListener('DOMContentLoaded', () => {
   const shareBtn = document.getElementById('share-btn');
+  
+  // Функция для блокировки кнопки
+  function blockButton(btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Ожидание капчи...";
+  }
 
+  // Функция для разблокировки кнопки
+  function unblockButton(btn, originalText) {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+
+  // Обработчик кнопки "Поделиться"
   shareBtn.addEventListener('click', async function() {
     const btn = this;
     const originalText = btn.textContent;
 
-    btn.disabled = true;
-    btn.textContent = "⏳ Создание ссылки...";
+    blockButton(btn); // Блокируем кнопку сразу при клике
 
     try {
-      let hcaptcha_token;
       const captchaPassed = localStorage.getItem('hcaptchaPassed');
+      let hcaptcha_token;
 
       if (!captchaPassed) {
         // Если капча не пройдена, показываем капчу
         document.getElementById('hcaptcha-container').style.display = 'block';
 
+        // Рендерим капчу
         hcaptcha.render('hcaptcha-container', {
           sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
           callback: function(token) {
-            // Когда капча прошла, сохраняем токен и продолжаем выполнение
+            // Сохраняем токен капчи и разрешаем продолжение
             localStorage.setItem('hcaptchaPassed', 'true');
             localStorage.setItem('hcaptchaToken', token);
             hcaptcha_token = token;
-            // После прохождения капчи сразу продолжаем
-            proceedWithShare(btn, originalText, hcaptcha_token);
+            
+            unblockButton(btn, originalText); // Разблокируем кнопку после успешного прохождения капчи
           }
         });
       } else {
-        // Если капча уже пройдена, сразу берём токен из localStorage
+        // Если капча уже пройдена, берём токен из localStorage
         hcaptcha_token = localStorage.getItem('hcaptchaToken');
-        // Продолжаем выполнение
-        proceedWithShare(btn, originalText, hcaptcha_token);
+        unblockButton(btn, originalText); // Разблокируем кнопку
       }
+
+      // Ждём, пока кнопка не будет разблокирована
+      if (!hcaptcha_token) {
+        alert('⚠️ А как насчет капчи?');
+        return;
+      }
+
+      // Когда капча прошла успешно и кнопка разблокирована, продолжаем
+      await proceedWithShare(btn, originalText, hcaptcha_token);
     } catch (error) {
       console.error('Ошибка:', error);
       alert('Произошла ошибка при обработке запроса.');
-      btn.disabled = false;
-      btn.textContent = originalText;
+      unblockButton(btn, originalText); // Восстанавливаем кнопку после ошибки
     }
   });
 
   // Функция для продолжения процесса после получения hcaptcha_token
   async function proceedWithShare(btn, originalText, hcaptcha_token) {
-    if (!hcaptcha_token) {
-      alert('⚠️ А как насчет капчи?');
-      btn.disabled = false;
-      btn.textContent = originalText;
-      return; // Возвращаем, если нет токена капчи
-    }
-
     calculateResults();
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
@@ -1320,6 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 
