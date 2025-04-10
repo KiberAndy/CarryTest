@@ -2,8 +2,15 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const fetch = require('node-fetch');
 
-// 🔁 Стабильная сериализация (гарантирует одинаковый hash)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET;
+const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+// 📦 Стабильная сериализация
 function stableStringify(obj) {
   if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
   if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
@@ -11,7 +18,7 @@ function stableStringify(obj) {
   return `{${sortedKeys.map(key => `"${key}":${stableStringify(obj[key])}`).join(',')}}`;
 }
 
-// 🧬 Генерация токена (на основе хэша, с base64 обрезкой)
+// 🧬 Генерация токена (hash → base64 → trimmed)
 function generateStableRandomToken(dataString, length = 7) {
   const hash = crypto.createHash('sha256').update(dataString).digest('hex');
   const base62 = Buffer.from(hash, 'hex').toString('base64')
@@ -19,121 +26,109 @@ function generateStableRandomToken(dataString, length = 7) {
   return base62;
 }
 
-// 🔑 Генерация session_id (на всякий случай, вдруг пригодится)
 function generateId(prefix = '') {
   return prefix + Math.random().toString(36).slice(2, 10);
 }
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    console.log('❌ Запрос не POST. Возвращаем ошибку 405');
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   try {
-    console.log('🔄 Начинаем обработку запроса...');
-    
-    // 📦 Логируем тело запроса
     const body = event.body ? JSON.parse(event.body) : {};
-    console.log('Тело запроса:', body);
 
-    // 🧩 Проверяем, является ли запрос запросом конфигурации
     if (body.action === 'config') {
-      console.log('🔄 Обработка запроса конфигурации...');
-      // ⚙️ Возвращаем переменные окружения
       return {
         statusCode: 200,
         body: JSON.stringify({
-          SUPABASE_URL: process.env.SUPABASE_URL,
-          SUPABASE_KEY: process.env.SUPABASE_KEY
+          SUPABASE_URL: SUPABASE_URL,
+          SUPABASE_KEY: SUPABASE_SERVICE_ROLE_KEY
         })
       };
     }
 
-    // 🧪 Извлекаем данные из тела запроса
-    const { answers, scores } = body;
+    const { answers, scores, session_id, hcaptcha_token } = body;
+    const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
 
-    // 🔍 Валидация данных
-    if (!answers || typeof answers !== 'object') {
-      console.log('❌ Недействительные ответы');
-      throw new Error('Invalid or missing "answers"');
+    if (!answers || typeof answers !== 'object') throw new Error('Invalid or missing "answers"');
+    if (!scores || typeof scores !== 'object') throw new Error('Invalid or missing "scores"');
+    if (!hcaptcha_token) throw new Error('Missing hCaptcha token');
+
+    // 🧠 Проверка hCaptcha
+    const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: HCAPTCHA_SECRET,
+        response: hcaptcha_token,
+        remoteip: ip
+      }),
+    });
+    const captchaResult = await captchaCheck.json();
+    if (!captchaResult.success) return { statusCode: 403, body: 'Captcha failed' };
+
+    // 🚦 Rate limit через Redis
+    const rateKey = `ip:${ip}`;
+    const redisRes = await fetch(`${UPSTASH_REDIS_REST_URL}/incr/${rateKey}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}` }
+    });
+    const count = parseInt(await redisRes.text());
+    if (count === 1) {
+      await fetch(`${UPSTASH_REDIS_REST_URL}/expire/${rateKey}/600`, {
+        headers: { Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}` }
+      });
     }
-    if (!scores || typeof scores !== 'object') {
-      console.log('❌ Недействительные оценки');
-      throw new Error('Invalid or missing "scores"');
+    if (count > 10) {
+      return { statusCode: 429, body: 'Too many requests, try again later.' };
     }
 
-    // 🧮 Подготавливаем хеш
+    // 🧩 Генерация токена и сессии
     const answersString = stableStringify({ answers, scores });
     const shareToken = generateStableRandomToken(answersString);
-    const sessionId = generateId('session-');
+    const finalSessionId = session_id || generateId('session-');
 
-    // ⏳ Устанавливаем срок жизни токена на 1 минуту
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // ⏱️ 7 дней от текущего времени
-    console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 дней
 
-    // 🧪 Инициализация Supabase
-    console.log('🔄 Инициализация Supabase...');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-	  process.env.SUPABASE_SERVICE_ROLE_KEY,
-      process.env.SUPABASE_KEY
-    );
+    // 🔌 Supabase
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // 🔁 Проверка на дубликат
-    console.log('🔄 Проверка на дубликат в базе данных...');
     const { data: existing, error: selectError } = await supabase
       .from('test_results')
       .select('share_token')
       .eq('answers_hash', shareToken)
       .maybeSingle();
-
-    if (selectError) {
-      console.log('❌ Ошибка при запросе из базы:', selectError);
-      throw selectError;
-    }
+    if (selectError) throw selectError;
 
     if (existing) {
-      console.log('✅ Дублирование найдено, возвращаем существующий токен');
       return {
         statusCode: 200,
         body: JSON.stringify({ share_token: existing.share_token, reused: true })
       };
     }
 
-    // 📝 Сохраняем новый результат в таблицу
-    console.log('🔄 Сохраняем новые данные в Supabase...');
-    const { error } = await supabase.from('test_results').insert([{
+    const { error: insertError } = await supabase.from('test_results').insert([{
       answers,
       scores,
-      session_id: sessionId,
+      session_id: finalSessionId,
       share_token: shareToken,
       answers_hash: shareToken,
       created_at: new Date().toISOString(),
-      expires_at: expiresAt.toISOString() // 🎯 ВАЖНО: срок действия токена
+      expires_at: expiresAt.toISOString()
     }]);
+    if (insertError) throw insertError;
 
-    if (error) {
-      console.error('❌ Ошибка при сохранении в Supabase:', error);
-      throw error;
-    }
-
-    console.log('✅ Результаты успешно сохранены');
-    
-    // ⏰ Отправляем ответ с данными токена
     return {
       statusCode: 200,
       body: JSON.stringify({
         share_token: shareToken,
-        expires_at: expiresAt.toISOString(),   // 🎁 Клиенту — срок жизни токена
-        server_time: new Date().toISOString(), // 🕒 Серверное текущее время
+        expires_at: expiresAt.toISOString(),
         reused: false
       })
     };
-
   } catch (error) {
-    console.error('❌ Ошибка на сервере:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -143,3 +138,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
