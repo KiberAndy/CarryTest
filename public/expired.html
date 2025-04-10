@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Токен истёк</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(to bottom, #0d0d0d, #1a1a1a);
+      color: #e0e0e0;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+      overflow: hidden;
+      transition: opacity 2s ease;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5em;
+      color: #ff5e5e;
+      text-shadow: 0 0 20px #ff5e5e88;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: #aaaaaa;
+      max-width: 500px;
+    }
+
+    a {
+      margin-top: 2em;
+      color: #58a6ff;
+      text-decoration: none;
+      border: 1px solid #58a6ff;
+      padding: 0.6em 1.2em;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    a:hover {
+      background-color: #58a6ff;
+      color: #121212;
+    }
+
+    .fade-in {
+      animation: fadeIn 1.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body class="fade-in">
+
+  <div>
+    <h1>⏳ Время вышло</h1>
+    <p>Этот токен больше не действителен.<br>Возможно, он устарел или уже был использован.</p>
+    <a href="/">Пройти тест заново</a>
+  </div>
+
+  <!-- 🌘 Плавное затемнение (при переходе) -->
+  <script>
+    const anchor = document.querySelector('a');
+    anchor.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.body.style.opacity = '0';
+      setTimeout(() => window.location.href = anchor.href, 2000);
+    });
+  </script>
+</body>
+</html>
