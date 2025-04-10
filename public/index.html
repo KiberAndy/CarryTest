@@ -1260,6 +1260,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!hcaptchaRendered) {
           hcaptchaRendered = true; // Помечаем, что капча рендерится
 
+          // Удаляем предыдущие капчи (если они есть)
+          const existingCaptcha = document.querySelector('.h-captcha');
+          if (existingCaptcha) {
+            existingCaptcha.remove();
+          }
+
           // Рендерим капчу
           hcaptcha.render('hcaptcha-container', {
             sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
@@ -1339,6 +1345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 
