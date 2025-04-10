@@ -1216,14 +1216,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
       
 	          // Получаем session_id или создаем его, если еще нет
-        let sessionId = localStorage.getItem('session_id');
-        if (!sessionId) {
-            sessionId = crypto.randomUUID(); // Генерация случайного session_id
-            localStorage.setItem('session_id', sessionId); // Сохраняем в localStorage
+        let session_id = localStorage.getItem('session_id');
+        if (!session_id) {
+            session_id = crypto.randomUUID(); // Генерация случайного session_id
+            localStorage.setItem('session_id', session_id); // Сохраняем в localStorage
         }
         
                 // Добавляем session_id в postData
-                postData.session_id = sessionId;
+                postData.session_id = session_id;
 	  
       const response = await fetch('/.netlify/functions/saveResults', {
         method: 'POST',
