@@ -10,6 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
+	<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
     <style>
         /* Основные стили */
@@ -937,7 +938,8 @@ checkForSharedResults();
         </header>
     </div>
 	
-	
+	            <!-- hCaptcha -->
+            <div class="h-captcha" data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"></div>
 	
 	    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
@@ -1213,6 +1215,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         timestamp: new Date().toISOString()
       };
       
+	          // Получаем session_id или создаем его, если еще нет
+        let sessionId = localStorage.getItem('session_id');
+        if (!sessionId) {
+            sessionId = crypto.randomUUID(); // Генерация случайного session_id
+            localStorage.setItem('session_id', sessionId); // Сохраняем в localStorage
+        }
+        
+                // Добавляем session_id в postData
+                postData.session_id = sessionId;
+	  
       const response = await fetch('/.netlify/functions/saveResults', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1221,7 +1233,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       if (!response.ok) throw new Error('Ошибка сервера');
       
-      const { share_token, expires_at, server_time } = await response.json();
+      const { share_token, expires_at, server_time, reused } = await response.json();
+	            console.log('Ссылка для шаринга:', share_token);
+                console.log('Срок действия:', expires_at);
+                console.log('Серверное время:', server_time);
+                console.log('Использована повторно:', reused);
       
       // Получаем серверное время
       const serverTime = new Date(server_time);
@@ -1647,6 +1663,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLinkInput = document.getElementById('share-link');
         const copyBtn = document.getElementById('copy-btn');
+
+
 
         let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
         let scores = {
