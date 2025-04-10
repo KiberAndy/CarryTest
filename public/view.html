@@ -525,6 +525,8 @@
         ];
 
 // Загружаем конфиг и инициализируем Supabase
+let isSupabaseInitialized = false;
+
 async function initSupabase() {
   return new Promise(async (resolve, reject) => {
     try {
@@ -553,6 +555,7 @@ async function initSupabase() {
       window.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
       console.log('Supabase инициализирован');
+      isSupabaseInitialized = true;  // Фиксируем успешную инициализацию
       resolve(true);
 
     } catch (error) {
@@ -576,7 +579,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const success = await Promise.race([initSupabase(), timeoutPromise]);
     
     if (success) {
-      checkAndLoadResults();  // Вызываем checkAndLoadResults, если инициализация прошла успешно
+      // Ждём, пока `supabase` будет инициализирован
+      if (isSupabaseInitialized) {
+        checkAndLoadResults();  // Только если всё прошло успешно
+      }
     }
   } catch (error) {
     showError('Ошибка инициализации Supabase: ' + error.message);
@@ -584,9 +590,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function checkAndLoadResults() {
-  // Поскольку мы уверены, что Supabase должен быть инициализирован в этот момент,
-  // проверку на `window.supabase` можно убрать.
-  
+  // Теперь мы уверены, что объект `supabase` инициализирован через флаг.
+  if (!isSupabaseInitialized) {
+    showError('Supabase не был инициализирован');
+    return;
+  }
+
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
