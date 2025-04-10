@@ -560,9 +560,6 @@ async function initSupabase() {
 
     } catch (error) {
       console.error('Ошибка инициализации Supabase:', error);
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Ошибка загрузки данных. Попробуйте позже.';
       reject(false);
     }
   });
@@ -585,6 +582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch (error) {
+    // Показать ошибку только в случае сбоя инициализации или тайм-аута
     showError('Ошибка инициализации Supabase: ' + error.message);
   }
 });
@@ -637,6 +635,16 @@ async function checkAndLoadResults() {
     console.error('Ошибка:', error);
     showError(error.message || 'Ошибка загрузки результатов');
   }
+}
+
+// Функция для отображения ошибки
+function showError(message) {
+  const errorElement = document.getElementById('error');
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';  // Показываем сообщение об ошибке
+  }
+  document.getElementById('loading').style.display = 'none';  // Скрываем индикатор загрузки
 }
 
 // Таймер обратного отсчета
