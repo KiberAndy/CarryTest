@@ -1230,18 +1230,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Вычисляем, сколько времени осталось до истечения
       const timeRemaining = expiresAt - serverTime;
       
-      // Если время ещё не истекло, отображаем таймер
-      const timerInterval = setInterval(() => {
-        const currentTime = new Date();
-        const remainingTime = expiresAt - currentTime;
-        
-        if (remainingTime <= 0) {
-          clearInterval(timerInterval);
-          document.getElementById('token-status').textContent = 'Токен истёк!';
-        } else {
-          document.getElementById('token-status').textContent = `Токен будет действителен ещё ${Math.floor(remainingTime / 1000)} секунд`;
-        }
-      }, 1000);  // Обновляем каждую секунду
+	// Если время ещё не истекло, отображаем таймер
+	const timerInterval = setInterval(() => {
+	  const currentTime = new Date();
+	  const remainingTime = expiresAt - currentTime;
+
+	  if (remainingTime <= 0) {
+		clearInterval(timerInterval);
+		document.getElementById('token-status').textContent = 'Токен истёк!';
+	  } else {
+		const seconds = Math.floor(remainingTime / 1000) % 60;
+		const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
+		const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
+		const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+
+		// Форматируем вывод
+		document.getElementById('token-status').textContent = 
+		  `Токен будет действителен ещё ${days} д ${hours} ч ${minutes} м ${seconds} с`;
+	  }
+	}, 1000);  // Обновляем каждую секунду
+
       
       await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
       
