@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "dependencies": {
+	"node-fetch": "^2.6.1",  // Добавляем node-fetch
     "@supabase/supabase-js": "^2.0.0"
   },
   "scripts": {
