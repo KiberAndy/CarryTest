@@ -20,6 +20,12 @@
   to = "/view.html"
   status = 200
   condition = "!is_file"
+  
+[[redirects]]
+  from = "/expired"
+  to = "/expired.html"
+  status = 200
+
 
 # Явное разрешение favicon (на всякий случай)
 [[redirects]]
