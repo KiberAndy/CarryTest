@@ -565,9 +565,19 @@ async function initSupabase() {
 
 // Проверяем токен и загружаем результаты
 document.addEventListener('DOMContentLoaded', async () => {
-  const success = await initSupabase();  // ⏳ Ждём, пока initSupabase завершится
-  if (success) {
-    checkAndLoadResults();  // ✅ Только если всё прошло успешно
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: Не удалось инициализировать Supabase')), 5000)
+  );
+
+  try {
+    // Ждём инициализации Supabase или тайм-аут 5 секунд
+    const success = await Promise.race([initSupabase(), timeoutPromise]);
+    
+    if (success) {
+      checkAndLoadResults();  // Только если всё прошло успешно
+    }
+  } catch (error) {
+    showError('Ошибка инициализации Supabase: ' + error.message);
   }
 });
 
