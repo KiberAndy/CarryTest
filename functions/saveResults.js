@@ -62,6 +62,9 @@ exports.handler = async (event) => {
 
 	// Логируем значение HCAPTCHA_SECRET
 	console.log('HCAPTCHA_SECRET:', process.env.HCAPTCHA_SECRET);
+	
+	// Получаем IP-адрес из заголовков
+	const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
 
 	// 🧠 hCaptcha
 	const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
