@@ -1236,10 +1236,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = "⏳ Создание ссылки...";
 
     try {
-      const captchaPassed = localStorage.getItem('hcaptchaPassed');
       let hcaptcha_token;
 
+      // Проверяем, была ли уже пройдена капча
+      const captchaPassed = localStorage.getItem('hcaptchaPassed');
+
       if (!captchaPassed) {
+        // Если капча не пройдена, показываем капчу
         document.getElementById('hcaptcha-container').style.display = 'block';
 
         hcaptcha.render('hcaptcha-container', {
@@ -1248,14 +1251,18 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('hcaptchaPassed', 'true');
             localStorage.setItem('hcaptchaToken', token);
             hcaptcha_token = token;
-            proceedWithShare(btn, originalText);
+            // Продолжаем выполнение после того, как капча пройдена
+            await proceedWithShare(btn, originalText, hcaptcha_token);
           }
         });
       } else {
+        // Если капча уже пройдена, сразу берём токен из localStorage
         hcaptcha_token = localStorage.getItem('hcaptchaToken');
-        proceedWithShare(btn, originalText);
+        // Продолжаем выполнение сразу
+        await proceedWithShare(btn, originalText, hcaptcha_token);
       }
 
+      // Проверка на наличие hcaptcha_token
       if (!hcaptcha_token) {
         alert('⚠️ А как насчет капчи?');
         btn.disabled = false;
@@ -1269,7 +1276,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  async function proceedWithShare(btn, originalText) {
+  // Функция для продолжения процесса после получения hcaptcha_token
+  async function proceedWithShare(btn, originalText, hcaptcha_token) {
     calculateResults();
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
@@ -1279,12 +1287,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Отправляем данные и получаем share_token
     try {
-      const result = await sendDataToServer(answers, scores, session_id, localStorage.getItem('hcaptchaToken'));
+      const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
       const share_token = result.share_token;
       
       // Получаем серверное время
-      const serverTime = new Date(server_time);
-      const expiresAt = new Date(expires_at);
+      const serverTime = new Date(result.server_time);
+      const expiresAt = new Date(result.expires_at);
 
       // Вычисляем, сколько времени осталось до истечения
       const timeRemaining = expiresAt - serverTime;
@@ -1342,6 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 </script>
