@@ -938,8 +938,7 @@ checkForSharedResults();
         </header>
     </div>
 	
-	            <!-- hCaptcha -->
-            <div class="h-captcha" data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"></div>
+
 	
 	    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
@@ -1094,6 +1093,10 @@ checkForSharedResults();
         <button class="save-button" id="save-btn">Сохранить результаты</button>
 <!-- Кнопка и блок для ссылки -->
 <button class="share-button" id="share-btn">Поделиться результатами</button>
+<!-- Контейнер для капчи (не visible до того, как её активируют) -->
+<div id="hcaptcha-container" style="display:none;">
+  <div class="h-captcha" data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"></div>
+</div>
 <div id="token-status"></div>
 
 
@@ -1181,133 +1184,164 @@ async function saveTestResults() {
 
 // Функция генерации правильной ссылки
 function generateCleanLink(token) {
-    // Получаем базовый URL текущей страницы
-    const baseUrl = window.location.href.split('?')[0].split('#')[0];
-    
-    // Заменяем текущий файл на view.html
-    const viewUrl = baseUrl.includes('/index.html') 
-        ? baseUrl.replace('/index.html', '/view.html')
-        : baseUrl.replace(/(\/)?$/, '/view.html');
-    
-    // Возвращаем ссылку с параметром result
-    return `${viewUrl}?result=${token}`;
+  const baseUrl = window.location.href.split('?')[0].split('#')[0];
+  const viewUrl = baseUrl.includes('/index.html') 
+    ? baseUrl.replace('/index.html', '/view.html')
+    : baseUrl.replace(/(\/)?$/, '/view.html');
+  
+  return `${viewUrl}?result=${token}`;
 }
 
-// Основной код выполнения
-document.addEventListener('DOMContentLoaded', async () => {
+// Основная функция для отправки данных на сервер
+async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
+  try {
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        answers,
+        scores,
+        session_id,
+        hcaptcha_token
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Сервер вернул ошибку: ${response.status}\n${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Ссылка для шаринга:', result.share_token);
+    console.log('Срок действия:', result.expires_at);
+    console.log('Серверное время:', result.server_time);
+    console.log('Использована повторно:', result.reused);
+
+    return result; // Возвращаем весь результат
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error);
+    throw error; // Пробрасываем ошибку дальше
+  }
+}
+
+// Обработчик кнопки "Поделиться"
+document.addEventListener('DOMContentLoaded', () => {
   const shareBtn = document.getElementById('share-btn');
-  
-  // Обработчик кнопки "Поделиться"
+
   shareBtn.addEventListener('click', async function() {
     const btn = this;
     const originalText = btn.textContent;
-    
+
+    btn.disabled = true;
+    btn.textContent = "⏳ Создание ссылки...";
+
     try {
-      // 1. Подготовка - показываем загрузку
-      btn.disabled = true;
-      btn.textContent = "⏳ Создание ссылки...";
-      
-      // 2. Ваша логика копирования
-      calculateResults();
-      const postData = {
-        answers: answers,
-        scores: scores,
-        timestamp: new Date().toISOString()
-      };
-      
-    // 🆔 Проверяем или создаём session_id
+      const captchaPassed = localStorage.getItem('hcaptchaPassed');
+      let hcaptcha_token;
+
+      if (!captchaPassed) {
+        document.getElementById('hcaptcha-container').style.display = 'block';
+
+        hcaptcha.render('hcaptcha-container', {
+          sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
+          callback: async function(token) {
+            localStorage.setItem('hcaptchaPassed', 'true');
+            localStorage.setItem('hcaptchaToken', token);
+            hcaptcha_token = token;
+            proceedWithShare(btn, originalText);
+          }
+        });
+      } else {
+        hcaptcha_token = localStorage.getItem('hcaptchaToken');
+        proceedWithShare(btn, originalText);
+      }
+
+      if (!hcaptcha_token) {
+        alert('⚠️ А как насчет капчи?');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      alert('Произошла ошибка при обработке запроса.');
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+
+  async function proceedWithShare(btn, originalText) {
+    calculateResults();
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
-      session_id = crypto.randomUUID(); // Создаём
-      localStorage.setItem('session_id', session_id); // Сохраняем
+      session_id = crypto.randomUUID();
+      localStorage.setItem('session_id', session_id);
     }
 
-    // 🛡️ hCaptcha токен
-    const hcaptcha_token = document.querySelector('[name="h-captcha-response"]')?.value;
-    if (!hcaptcha_token) {
-      alert('⚠️ Пройди капчу, без неё нас не пустят!');
-      return;
-    }
-
-    console.log('📦 Данные для отправки:', { answers, scores, session_id, hcaptcha_token });
-				
-		
-	  
-      const response = await fetch('/.netlify/functions/saveResults', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-		  body: JSON.stringify({
-			answers,
-			scores,
-			session_id,
-			hcaptcha_token, // ← вот это обязательно!
-		  }),
-		});
-      
-          if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Сервер вернул ошибку: ${response.status}\n${errorText}`);
-		}
-      
-      const { share_token, expires_at, server_time, reused } = await response.json();
-	            console.log('Ссылка для шаринга:', share_token);
-                console.log('Срок действия:', expires_at);
-                console.log('Серверное время:', server_time);
-                console.log('Использована повторно:', reused);
+    // Отправляем данные и получаем share_token
+    try {
+      const result = await sendDataToServer(answers, scores, session_id, localStorage.getItem('hcaptchaToken'));
+      const share_token = result.share_token;
       
       // Получаем серверное время
       const serverTime = new Date(server_time);
       const expiresAt = new Date(expires_at);
-      
+
       // Вычисляем, сколько времени осталось до истечения
       const timeRemaining = expiresAt - serverTime;
-      
-	// Если время ещё не истекло, отображаем таймер
-	const timerInterval = setInterval(() => {
-	  const currentTime = new Date();
-	  const remainingTime = expiresAt - currentTime;
 
-	  if (remainingTime <= 0) {
-		clearInterval(timerInterval);
-		document.getElementById('token-status').textContent = 'Токен истёк!';
-	  } else {
-		const seconds = Math.floor(remainingTime / 1000) % 60;
-		const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
-		const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
-		const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+      // Если время ещё не истекло, отображаем таймер
+      if (timeRemaining > 0) {
+        const timerInterval = setInterval(() => {
+          const currentTime = new Date();
+          const remainingTime = expiresAt - currentTime;
 
-		// Форматируем вывод
-		document.getElementById('token-status').textContent = 
-		  `Страница будет действительна ещё ${days} д. ${hours} ч. ${minutes} м. ${seconds} с.`;
-	  }
-	}, 1000);  // Обновляем каждую секунду
+          if (remainingTime <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('token-status').textContent = 'Токен истёк!';
+          } else {
+            const seconds = Math.floor(remainingTime / 1000) % 60;
+            const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
+            const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
 
-      
-      await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-      
-      // 3. Показываем успех
+            // Форматируем вывод
+            document.getElementById('token-status').textContent = 
+              `Страница будет действительна ещё ${days} д. ${hours} ч. ${minutes} м. ${seconds} с.`;
+          }
+        }, 1000);  // Обновляем каждую секунду
+      }
+
+      // Копируем ссылку в буфер обмена
+      try {
+        await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+        alert('Ссылка скопирована в буфер обмена!');
+      } catch (copyError) {
+        console.error('Ошибка копирования:', copyError);
+        alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
+      }
+
+      // Показываем успех
       btn.classList.add('copied');
       btn.textContent = "Ссылка скопирована!";
       btn.disabled = false;
-      
-      // 4. Возвращаем исходное состояние через 10 секунд
+
+      // Возвращаем исходное состояние через 10 секунд
       setTimeout(() => {
         btn.classList.remove('copied');
         setTimeout(() => {
           btn.textContent = originalText;
         }, 400);
       }, 10000);
-      
     } catch (error) {
-      console.error('Ошибка:', error);
+      console.error('Ошибка отправки данных:', error);
       btn.textContent = "❌ Ошибка";
       setTimeout(() => {
         btn.textContent = originalText;
         btn.disabled = false;
       }, 2000);
     }
-  });
-}); 
+  }
+});
 
 
 </script>
