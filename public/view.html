@@ -567,8 +567,13 @@ async function initSupabase() {
 }
 
 // Проверяем токен и загружаем результаты
-async function checkAndLoadResults() {
-  console.log('Начало загрузки результатов...');
+document.addEventListener('DOMContentLoaded', async () => {
+  const success = await initSupabase();  // ⏳ Ждём, пока initSupabase завершится
+  if (success) {
+    checkAndLoadResults();  // ✅ Только если всё прошло успешно
+  }
+});
+
 
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
