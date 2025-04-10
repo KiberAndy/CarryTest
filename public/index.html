@@ -1212,17 +1212,11 @@ async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Сервер вернул ошибку: ${response.status}\n${errorText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Неизвестная ошибка сервера');
     }
 
-    const result = await response.json();
-    console.log('Ссылка для шаринга:', result.share_token);
-    console.log('Срок действия:', result.expires_at);
-    console.log('Серверное время:', result.server_time);
-    console.log('Использована повторно:', result.reused);
-
-    return result;
+    return await response.json();
   } catch (error) {
     console.error('Ошибка при отправке данных:', error);
     throw error;
@@ -1236,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function blockButton(btn) {
     btn.disabled = true;
-    btn.textContent = "⏳ Ожидание капчи...";
+    btn.textContent = "⏳ Ожидание...";
   }
 
   function unblockButton(btn, originalText) {
@@ -1251,44 +1245,49 @@ document.addEventListener('DOMContentLoaded', () => {
     blockButton(btn);
 
     try {
-      const captchaPassed = localStorage.getItem('hcaptchaPassed');
-      let hcaptcha_token = localStorage.getItem('hcaptchaToken');
+      // Всегда сбрасываем предыдущий токен
+      localStorage.removeItem('hcaptchaToken');
+      localStorage.removeItem('hcaptchaPassed');
 
-      if (!captchaPassed || !hcaptcha_token) {
-        document.getElementById('hcaptcha-container').style.display = 'block';
+      document.getElementById('hcaptcha-container').style.display = 'block';
 
-        if (hcaptchaWidgetId === null) {
-          hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
-            sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-            size: 'invisible',
-            callback: async function (token) {
-              localStorage.setItem('hcaptchaPassed', 'true');
-              localStorage.setItem('hcaptchaToken', token);
-              hcaptcha_token = token;
-
-              unblockButton(btn, originalText);
-              await proceedWithShare(btn, originalText, token);
-            },
-            'error-callback': function () {
-              alert('Ошибка в hCaptcha. Попробуйте снова.');
+      if (hcaptchaWidgetId === null) {
+        hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
+          sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
+          size: 'invisible',
+          callback: async function (token) {
+            try {
+              await proceedWithShare(token);
+            } catch (error) {
+              console.error('Ошибка:', error);
+              alert(error.message);
+              hcaptcha.reset(hcaptchaWidgetId);
+            } finally {
               unblockButton(btn, originalText);
             }
-          });
-        }
-
-        // Выполняем капчу вручную (невидимая)
-        hcaptcha.execute(hcaptchaWidgetId);
-      } else {
-        await proceedWithShare(btn, originalText, hcaptcha_token);
+          },
+          'error-callback': function () {
+            alert('Ошибка в hCaptcha. Попробуйте снова.');
+            unblockButton(btn, originalText);
+          },
+          'expired-callback': function () {
+            alert('Время капчи истекло. Пожалуйста, попробуйте снова.');
+            hcaptcha.reset(hcaptchaWidgetId);
+            unblockButton(btn, originalText);
+          }
+        });
       }
+
+      // Выполняем капчу
+      hcaptcha.execute(hcaptchaWidgetId);
     } catch (error) {
       console.error('Ошибка:', error);
-      alert('Произошла ошибка при обработке запроса.');
+      alert('Произошла ошибка: ' + error.message);
       unblockButton(btn, originalText);
     }
   });
 
-  async function proceedWithShare(btn, originalText, hcaptcha_token) {
+  async function proceedWithShare(hcaptcha_token) {
     calculateResults();
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
@@ -1296,17 +1295,16 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('session_id', session_id);
     }
 
-    try {
-      const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
-      const share_token = result.share_token;
+    const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
+    const share_token = result.share_token;
 
-      try {
-        await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-        alert('Ссылка скопирована в буфер обмена!');
-      } catch (copyError) {
-        console.error('Ошибка копирования:', copyError);
-        alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
-      }
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+      alert('Ссылка скопирована в буфер обмена!');
+    } catch (copyError) {
+      console.error('Ошибка копирования:', copyError);
+      alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
+    }
 
       btn.classList.add('copied');
       btn.textContent = "Ссылка скопирована!";
