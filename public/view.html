@@ -583,21 +583,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (error) {
     // Показать ошибку только в случае сбоя инициализации или тайм-аута
-    showError('Ошибка инициализации Supabase: ' + error.message);
+    // Ошибка не будет показываться в этом случае
+    console.error(error);  // Просто логируем ошибку, не отображаем её
   }
 });
 
 async function checkAndLoadResults() {
   // Теперь мы уверены, что объект `supabase` инициализирован через флаг.
   if (!isSupabaseInitialized) {
-    showError('Supabase не был инициализирован');
+    // Ошибки не показываем! Пропускаем её отображение.
     return;
   }
 
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
-    showError('Ссылка недействительна - отсутствует токен');
+    // Ошибки не показываем!
     return;
   }
 
@@ -633,27 +634,26 @@ async function checkAndLoadResults() {
 
   } catch (error) {
     console.error('Ошибка:', error);
-    showError(error.message || 'Ошибка загрузки результатов');
+    // Ничего не показываем, только логируем ошибку
   }
 }
 
-// Функция для отображения ошибки
-function showError(message) {
-  const errorElement = document.getElementById('error');
-  if (errorElement) {
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';  // Показываем сообщение об ошибке
-  }
-  document.getElementById('loading').style.display = 'none';  // Скрываем индикатор загрузки
-}
-
-// Убедимся, что ошибка не отображается изначально
+// Скрыть блок ошибки сразу
 document.addEventListener('DOMContentLoaded', () => {
   const errorElement = document.getElementById('error');
   if (errorElement) {
     errorElement.style.display = 'none';  // Изначально скрываем блок ошибки
   }
 });
+
+// Не показывать ошибку на странице
+function showError(message) {
+  // Мы не будем ничего показывать, просто скроем все элементы с ошибкой
+  const errorElement = document.getElementById('error');
+  if (errorElement) {
+    errorElement.style.display = 'none';  // Прячем ошибку (она не будет показана)
+  }
+}
 
 // Таймер обратного отсчета
 function startTokenTimer(expiresAt) {
