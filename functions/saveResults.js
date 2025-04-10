@@ -60,20 +60,32 @@ exports.handler = async (event) => {
 
     console.log('✅ Данные прошли первичную валидацию');
 
-    // 🧠 hCaptcha
-    const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        secret: HCAPTCHA_SECRET,
-        response: hcaptcha_token,
+	// Логируем значение HCAPTCHA_SECRET
+	console.log('HCAPTCHA_SECRET:', process.env.HCAPTCHA_SECRET);
 
-      }),
-    });
-    const captchaResult = await captchaCheck.json();
-    console.log('🧪 Результат hCaptcha:', captchaResult);
+	// 🧠 hCaptcha
+	const captchaCheck = await fetch('https://hcaptcha.com/siteverify', {
+	  method: 'POST',
+	  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+	  body: new URLSearchParams({
+		secret: HCAPTCHA_SECRET,  // Секретный ключ
+		response: hcaptcha_token, // Токен, полученный на клиенте
+		remoteip: ip // (необязательно) IP-адрес пользователя
+	  }),
+	});
 
-    if (!captchaResult.success) return { statusCode: 403, body: 'Captcha failed' };
+	const captchaResult = await captchaCheck.json();
+
+	// Логируем результат запроса после его выполнения
+	console.log('🧪 Результат hCaptcha после запроса:', captchaResult);
+
+	// Если капча не прошла валидацию, возвращаем ошибку 403
+	if (!captchaResult.success) {
+	  console.error('❌ Ошибка валидации капчи:', captchaResult);
+	  return { statusCode: 403, body: 'Проверка капчи не пройдена. Попробуй ещё раз.' };
+	}
+
+
 
     // 🚦 Redis Rate Limit
     const rateKey = `ip:${ip}`;
