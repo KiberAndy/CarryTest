@@ -629,7 +629,7 @@ async function checkAndLoadResults() {
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
-    // Ошибки не показываем!
+    showError('Ссылка недействительна — отсутствует токен.');
     return;
   }
 
@@ -642,7 +642,12 @@ async function checkAndLoadResults() {
       .eq('share_token', shareToken)
       .single();
 
-    if (error || !data) throw error || new Error('Результаты не найдены');
+        // 💥 Если ничего не вернулось — токен не найден
+    if (error || !data) {
+      console.error('Ошибка при загрузке токена или токен не найден:', error);
+      showError('Результаты по ссылке не найдены. Возможно, токен недействителен.');
+      return;
+    }
 
     // 3. Проверяем срок действия
     const expiresAt = data.expires_at ? new Date(data.expires_at) : null;
