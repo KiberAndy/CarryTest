@@ -1215,15 +1215,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         timestamp: new Date().toISOString()
       };
       
-	          // Получаем session_id или создаем его, если еще нет
-        let session_id = localStorage.getItem('session_id');
-        if (!session_id) {
-            session_id = crypto.randomUUID(); // Генерация случайного session_id
-            localStorage.setItem('session_id', session_id); // Сохраняем в localStorage
-        }
-        
-                // Добавляем session_id в postData
-                postData.session_id = session_id;
+    // 🆔 Проверяем или создаём session_id
+    let session_id = localStorage.getItem('session_id');
+    if (!session_id) {
+      session_id = crypto.randomUUID(); // Создаём
+      localStorage.setItem('session_id', session_id); // Сохраняем
+    }
+
+    // 🛡️ hCaptcha токен
+    const hcaptcha_token = document.querySelector('[name="h-captcha-response"]')?.value;
+    if (!hcaptcha_token) {
+      alert('⚠️ Пройди капчу, без неё нас не пустят!');
+      return;
+    }
+
+    console.log('📦 Данные для отправки:', { answers, scores, session_id, hcaptcha_token });
+				
+		
 	  
       const response = await fetch('/.netlify/functions/saveResults', {
         method: 'POST',
@@ -1236,7 +1244,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 		  }),
 		});
       
-      if (!response.ok) throw new Error('Ошибка сервера');
+          if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Сервер вернул ошибку: ${response.status}\n${errorText}`);
+		}
       
       const { share_token, expires_at, server_time, reused } = await response.json();
 	            console.log('Ссылка для шаринга:', share_token);
