@@ -1237,8 +1237,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       let hcaptcha_token;
-
-      // Проверяем, была ли уже пройдена капча
       const captchaPassed = localStorage.getItem('hcaptchaPassed');
 
       if (!captchaPassed) {
@@ -1247,19 +1245,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hcaptcha.render('hcaptcha-container', {
           sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-          callback: async function(token) {
+          callback: function(token) {
+            // Когда капча прошла, сохраняем токен и продолжаем выполнение
             localStorage.setItem('hcaptchaPassed', 'true');
             localStorage.setItem('hcaptchaToken', token);
             hcaptcha_token = token;
-            // После прохождения капчи, продолжаем выполнение
-            await proceedWithShare(btn, originalText, hcaptcha_token);
+            // После прохождения капчи сразу продолжаем
+            proceedWithShare(btn, originalText, hcaptcha_token);
           }
         });
       } else {
         // Если капча уже пройдена, сразу берём токен из localStorage
         hcaptcha_token = localStorage.getItem('hcaptchaToken');
-        // Продолжаем выполнение сразу
-        await proceedWithShare(btn, originalText, hcaptcha_token);
+        // Продолжаем выполнение
+        proceedWithShare(btn, originalText, hcaptcha_token);
       }
     } catch (error) {
       console.error('Ошибка:', error);
@@ -1321,6 +1320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 
