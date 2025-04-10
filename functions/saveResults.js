@@ -70,7 +70,7 @@ exports.handler = async (event) => {
 
     // ⏳ Устанавливаем срок жизни токена на 1 минуту
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 1); // ⏱️ 1 минута от текущего времени
+    expiresAt.setDate(expiresAt.getDate() + 7); // ⏱️ 7 дней от текущего времени
     console.log(`⏳ Токен будет жить до: ${expiresAt.toISOString()} — потом RIP 🪦`);
 
     // 🧪 Инициализация Supabase
