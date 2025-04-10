@@ -1227,7 +1227,8 @@ async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
 // Обработчик кнопки "Поделиться"
 document.addEventListener('DOMContentLoaded', () => {
   const shareBtn = document.getElementById('share-btn');
-  
+  let hcaptchaRendered = false; // Флаг, чтобы избежать повторного рендера капчи
+
   // Функция для блокировки кнопки
   function blockButton(btn) {
     btn.disabled = true;
@@ -1255,18 +1256,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // Если капча не пройдена, показываем капчу
         document.getElementById('hcaptcha-container').style.display = 'block';
 
-        // Рендерим капчу
-        hcaptcha.render('hcaptcha-container', {
-          sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-          callback: function(token) {
-            // Сохраняем токен капчи и разрешаем продолжение
-            localStorage.setItem('hcaptchaPassed', 'true');
-            localStorage.setItem('hcaptchaToken', token);
-            hcaptcha_token = token;
-            
-            unblockButton(btn, originalText); // Разблокируем кнопку после успешного прохождения капчи
-          }
-        });
+        // Рендерим капчу только если она ещё не рендерена
+        if (!hcaptchaRendered) {
+          hcaptchaRendered = true; // Помечаем, что капча рендерится
+
+          // Рендерим капчу
+          hcaptcha.render('hcaptcha-container', {
+            sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
+            callback: function(token) {
+              // Сохраняем токен капчи и разрешаем продолжение
+              localStorage.setItem('hcaptchaPassed', 'true');
+              localStorage.setItem('hcaptchaToken', token);
+              hcaptcha_token = token;
+
+              unblockButton(btn, originalText); // Разблокируем кнопку после успешного прохождения капчи
+            }
+          });
+        }
       } else {
         // Если капча уже пройдена, берём токен из localStorage
         hcaptcha_token = localStorage.getItem('hcaptchaToken');
@@ -1333,6 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
 
 
 
