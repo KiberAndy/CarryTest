@@ -696,6 +696,15 @@ function startTokenTimer(expiresAt) {
   const timerElement = document.getElementById('token-status');
   const tokenTimerElement = document.querySelector('.token-timer'); // Добавлено для работы с цветами
   
+    // Если срок действия не указан (бесконечный токен)
+  if (!expiresAt) {
+    timerElement.textContent = 'Токен действителен бессрочно';
+    if (tokenTimerElement) {
+      tokenTimerElement.style.borderLeftColor = '#28a745'; // Зелёный для бессрочных
+    }
+    return; // Прекращаем выполнение, так как таймер не нужен
+  }
+  
   const updateTimer = () => { // Добавлена объявление функции updateTimer
     const currentTime = new Date();
     const remainingTime = expiresAt - currentTime;
@@ -718,10 +727,10 @@ function startTokenTimer(expiresAt) {
 
     // Красивое форматирование времени
     let timeString = '';
-    if (days > 0) timeString += `${days} д `;
-    if (hours > 0 || days > 0) timeString += `${hours} ч `;
-    if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} м `;
-    timeString += `${seconds} с`;
+    if (days > 0) timeString += `${days} д. `;
+    if (hours > 0 || days > 0) timeString += `${hours} ч. `;
+    if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} м. `;
+    timeString += `${seconds} с.`;
     
     timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
     
