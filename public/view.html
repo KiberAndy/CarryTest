@@ -298,6 +298,9 @@
     <div id="loading" class="loading">
         Загрузка результатов...
     </div>
+	
+	<div id="timer"></div>
+
     
     <div id="error" class="error" style="display: none;">
         Не удалось загрузить результаты. Проверьте правильность ссылки.
@@ -616,7 +619,21 @@ async function checkAndLoadResults() {
 // Отображаем результаты
 function displayResults(data) {
   console.log('Отображение результатов...');
-  
+
+  // Получаем серверное время и время истечения токена
+  const serverTime = new Date(data.server_time); // Примерное место для получения серверного времени
+  const expiresAt = new Date(data.expires_at);  // Примерное место для получения времени истечения токена
+
+  // Вычисляем, сколько времени осталось до истечения токена
+  const remainingTime = expiresAt - serverTime;
+
+  // Если токен истёк, перенаправляем на страницу смерти
+  if (remainingTime <= 0) {
+    window.location.href = '/expired.html';
+    return; // Прерываем выполнение функции, чтобы не отображать результаты
+  }
+
+  // Если токен ещё действителен, продолжаем отображать результаты
   document.getElementById('loading').style.display = 'none';
   document.getElementById('result').style.display = 'block';
 
@@ -630,6 +647,34 @@ function displayResults(data) {
   const answers = data.answers;
   console.log('Ответы:', answers);
   console.log('Оценки:', scores);
+
+  // Отображаем таймер
+  const timerElement = document.getElementById('timer');
+  const timerInterval = setInterval(() => {
+    const currentTime = new Date();
+    const timeRemaining = expiresAt - currentTime;
+
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerElement.textContent = 'Токен истёк!';
+    } else {
+      const secondsRemaining = Math.floor(timeRemaining / 1000);
+      const days = Math.floor(secondsRemaining / (3600 * 24));
+      const hours = Math.floor((secondsRemaining % (3600 * 24)) / 3600);
+      const minutes = Math.floor((secondsRemaining % 3600) / 60);
+      const seconds = secondsRemaining % 60;
+
+      let timeString = '';
+      if (days > 0) timeString += `${days} день${days === 1 ? '' : 'ей'} `;
+      if (hours > 0 || days > 0) timeString += `${hours} час${hours === 1 ? '' : 'ов'} `;
+      if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes} минут${minutes === 1 ? 'а' : 'ы'} `;
+      timeString += `${seconds} секунд${seconds === 1 ? '' : 'ы'}`;
+
+      timerElement.textContent = `Токен будет действителен ещё ${timeString}`;
+    }
+  }, 1000);  // Обновляем каждую секунду
+}
+
   
   // Рассчитываем общую совместимость
   const keyTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor'];
