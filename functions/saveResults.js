@@ -52,7 +52,24 @@ exports.handler = async (event) => {
     }
 
     const { answers, scores, session_id, hcaptcha_token } = body;
-    const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
+    function getClientIp(event) {
+  let ip = event.headers['x-forwarded-for'];
+  
+  if (ip) {
+    // Берем первый IP, если их несколько
+    ip = ip.split(',')[0].trim();
+  } else {
+    ip = event.headers['client-ip'] || '';
+  }
+  
+  // Проверяем, что IP валидный (v4 или v6)
+  if (!ip || !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[0-9a-fA-F:]+$/.test(ip)) {
+    console.warn('⚠️ Неверный IP, пропускаем проверку');
+    return undefined; // Не отправляем невалидный IP
+  }
+  
+  return ip;
+}
 
     if (!answers || typeof answers !== 'object') throw new Error('Invalid or missing "answers"');
     if (!scores || typeof scores !== 'object') throw new Error('Invalid or missing "scores"');
