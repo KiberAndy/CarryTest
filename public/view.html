@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-
+async function checkAndLoadResults() {
   // 1. Получаем токен из URL
   const shareToken = new URLSearchParams(window.location.search).get('result');
   if (!shareToken) {
