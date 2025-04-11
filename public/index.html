@@ -1298,6 +1298,26 @@ const initCaptcha = () => {
 };
 
 
+// Глобальные колбэки для hCaptcha
+window.onCaptchaSuccess = async function(token) {
+  try {
+    await handleCaptchaSuccess(token);
+  } catch (err) {
+    console.error('Ошибка обработки токена:', err);
+    hcaptcha.reset(); // На случай провала
+  }
+};
+
+window.onCaptchaError = function() {
+  alert('Ошибка капчи. Попробуйте снова.');
+  unblockButton();
+};
+
+window.onCaptchaExpired = function() {
+  alert('Время капчи истекло. Попробуйте ещё раз.');
+  unblockButton();
+};
+
 
 shareBtn.addEventListener('click', () => {
   blockButton();
