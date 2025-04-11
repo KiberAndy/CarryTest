@@ -1283,8 +1283,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 const initCaptcha = () => {
-  if (hcaptchaWidgetId !== null) return;
-
   const captchaElement = document.getElementById('hcaptcha');
   if (!captchaElement) {
     console.error('Элемент #hcaptcha не найден!');
@@ -1293,29 +1291,28 @@ const initCaptcha = () => {
     return;
   }
 
-  // Видимость капчи (если нужно)
   captchaElement.style.display = 'block';
 
-  // Просто фиксация, что капча уже отрендерена HTML-ом
-  hcaptchaWidgetId = true;
-
-  // Остальная логика уже привязана к data-callback, так что тут ничего не нужно делать
+  // Никакого render, никакого ID
+  // Просто вызывай execute позже без аргументов
 };
 
 
-  shareBtn.addEventListener('click', () => {
-    blockButton();
-    document.getElementById('hcaptcha').style.display = 'block';
 
-    try {
-      initCaptcha();
-      hcaptcha.execute(hcaptchaWidgetId);
-    } catch (error) {
-      console.error('Ошибка инициализации:', error);
-      alert('Произошла ошибка. Обновите страницу.');
-      unblockButton();
-    }
-  });
+shareBtn.addEventListener('click', () => {
+  blockButton();
+  document.getElementById('hcaptcha').style.display = 'block';
+
+  try {
+    initCaptcha();
+    hcaptcha.execute(); // 🔥 Без аргументов!
+  } catch (error) {
+    console.error('Ошибка инициализации:', error);
+    alert('Произошла ошибка. Обновите страницу.');
+    unblockButton();
+  }
+});
+
 
   // Если тебе нужно использовать proceedWithShare отдельно:
   window.proceedWithShare = async function(hcaptcha_token) {
