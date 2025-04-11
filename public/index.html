@@ -1227,84 +1227,116 @@ async function sendDataToServer(answers, scores, session_id, hcaptcha_token) {
 document.addEventListener('DOMContentLoaded', () => {
   const shareBtn = document.getElementById('share-btn');
   let hcaptchaWidgetId = null;
+  const originalText = shareBtn.textContent;
 
-  function blockButton(btn) {
-    btn.disabled = true;
-    btn.textContent = "⏳ Ожидание...";
-  }
+  const blockButton = () => {
+    shareBtn.disabled = true;
+    shareBtn.textContent = "⏳ Ожидание...";
+  };
 
-  function unblockButton(btn, originalText) {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
+  const unblockButton = () => {
+    shareBtn.disabled = false;
+    shareBtn.textContent = originalText;
+  };
 
-  shareBtn.addEventListener('click', async function () {
-    const btn = this;
-    const originalText = btn.textContent;
+  const sendDataToServerWithCaptcha = async (hcaptcha_token) => {
+    calculateResults();
+    let session_id = localStorage.getItem('session_id') || crypto.randomUUID();
+    localStorage.setItem('session_id', session_id);
 
-    blockButton(btn);
+    const response = await fetch('/.netlify/functions/saveResults', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, scores, session_id, hcaptcha_token }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Ошибка сервера');
+    }
+
+    return response.json();
+  };
+
+  const handleCaptchaSuccess = async (token) => {
+    try {
+      const result = await sendDataToServerWithCaptcha(token);
+
+      try {
+        await navigator.clipboard.writeText(
+          `${window.location.origin}/view.html?result=${result.share_token}`
+        );
+        alert('Ссылка скопирована в буфер обмена!');
+      } catch (copyError) {
+        console.error('Ошибка копирования:', copyError);
+        alert('Ссылка готова, но не скопировалась автоматически.');
+      }
+    } catch (error) {
+      console.error('Ошибка отправки:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      unblockButton();
+    }
+  };
+
+  const initCaptcha = () => {
+    if (hcaptchaWidgetId !== null) return;
+
+    hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
+      sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
+      size: 'invisible',
+      callback: (token) => {
+        handleCaptchaSuccess(token)
+          .catch(() => hcaptcha.reset(hcaptchaWidgetId));
+      },
+      'error-callback': () => {
+        alert('Ошибка проверки. Попробуйте снова.');
+        unblockButton();
+      },
+      'expired-callback': () => {
+        alert('Время капчи истекло. Обновите страницу.');
+        unblockButton();
+      }
+    });
+  };
+
+  shareBtn.addEventListener('click', () => {
+    blockButton();
+    document.getElementById('hcaptcha-container').style.display = 'block';
 
     try {
-      // Всегда сбрасываем предыдущий токен
-      localStorage.removeItem('hcaptchaToken');
-      localStorage.removeItem('hcaptchaPassed');
-
-      document.getElementById('hcaptcha-container').style.display = 'block';
-
-      if (hcaptchaWidgetId === null) {
-        hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
-          sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-          size: 'invisible',
-          callback: async function (token) {
-            try {
-              await proceedWithShare(token);
-            } catch (error) {
-              console.error('Ошибка:', error);
-              alert(error.message);
-              hcaptcha.reset(hcaptchaWidgetId);
-            } finally {
-              unblockButton(btn, originalText);
-            }
-          },
-          'error-callback': function () {
-            alert('Ошибка в hCaptcha. Попробуйте снова.');
-            unblockButton(btn, originalText);
-          },
-          'expired-callback': function () {
-            alert('Время капчи истекло. Пожалуйста, попробуйте снова.');
-            hcaptcha.reset(hcaptchaWidgetId);
-            unblockButton(btn, originalText);
-          }
-        });
-      }
-
-      // Выполняем капчу
+      initCaptcha();
       hcaptcha.execute(hcaptchaWidgetId);
     } catch (error) {
-      console.error('Ошибка:', error);
-      alert('Произошла ошибка: ' + error.message);
-      unblockButton(btn, originalText);
+      console.error('Ошибка инициализации:', error);
+      alert('Произошла ошибка. Обновите страницу.');
+      unblockButton();
     }
   });
 
-  async function proceedWithShare(hcaptcha_token) {
-    calculateResults();
-    let session_id = localStorage.getItem('session_id');
-    if (!session_id) {
-      session_id = crypto.randomUUID();
-      localStorage.setItem('session_id', session_id);
-    }
-
-    const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
-    const share_token = result.share_token;
+  // Если тебе нужно использовать proceedWithShare отдельно:
+  window.proceedWithShare = async function(hcaptcha_token) {
+    const btn = document.getElementById('share-btn');
+    const originalText = btn.textContent;
 
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
-      alert('Ссылка скопирована в буфер обмена!');
-    } catch (copyError) {
-      console.error('Ошибка копирования:', copyError);
-      alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
-    }
+      calculateResults();
+      let session_id = localStorage.getItem('session_id');
+      if (!session_id) {
+        session_id = crypto.randomUUID();
+        localStorage.setItem('session_id', session_id);
+      }
+
+      const result = await sendDataToServer(answers, scores, session_id, hcaptcha_token);
+      const share_token = result.share_token;
+
+      try {
+        await navigator.clipboard.writeText(`${window.location.origin}/view.html?result=${share_token}`);
+        alert('Ссылка скопирована в буфер обмена!');
+      } catch (copyError) {
+        console.error('Ошибка копирования:', copyError);
+        alert('Не удалось скопировать ссылку, но вы можете скопировать её вручную.');
+      }
 
       btn.classList.add('copied');
       btn.textContent = "Ссылка скопирована!";
@@ -1324,8 +1356,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = false;
       }, 2000);
     }
-  }
+  };
 });
+
 
 
 
