@@ -1094,13 +1094,16 @@ checkForSharedResults();
 <!-- Кнопка и блок для ссылки -->
 <button class="share-button" id="share-btn">Поделиться результатами</button>
 <!-- Контейнер для капчи (не visible до того, как её активируют) -->
-<div id="hcaptcha" class="h-captcha"
+<div id="hcaptcha"
+     class="h-captcha"
      data-sitekey="1268147e-1adc-4994-b298-5640daf844ca"
      data-size="invisible"
      data-callback="onCaptchaSuccess"
      data-expired-callback="onCaptchaExpired"
-     data-error-callback="onCaptchaError">
+     data-error-callback="onCaptchaError"
+     style="display: none;">
 </div>
+
 <div id="token-status"></div>
 
 
@@ -1279,30 +1282,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const initCaptcha = () => {
-    if (hcaptchaWidgetId !== null) return;
+const initCaptcha = () => {
+  if (hcaptchaWidgetId !== null) return;
 
-    hcaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
-      sitekey: '1268147e-1adc-4994-b298-5640daf844ca',
-      size: 'invisible',
-      callback: (token) => {
-        handleCaptchaSuccess(token)
-          .catch(() => hcaptcha.reset(hcaptchaWidgetId));
-      },
-      'error-callback': () => {
-        alert('Ошибка проверки. Попробуйте снова.');
-        unblockButton();
-      },
-      'expired-callback': () => {
-        alert('Время капчи истекло. Обновите страницу.');
-        unblockButton();
-      }
-    });
-  };
+  const captchaElement = document.getElementById('hcaptcha');
+  if (!captchaElement) {
+    console.error('Элемент #hcaptcha не найден!');
+    alert('Ошибка инициализации капчи. Попробуйте обновить страницу.');
+    unblockButton();
+    return;
+  }
+
+  // Видимость капчи (если нужно)
+  captchaElement.style.display = 'block';
+
+  // Просто фиксация, что капча уже отрендерена HTML-ом
+  hcaptchaWidgetId = true;
+
+  // Остальная логика уже привязана к data-callback, так что тут ничего не нужно делать
+};
+
 
   shareBtn.addEventListener('click', () => {
     blockButton();
-    document.getElementById('hcaptcha-container').style.display = 'block';
+    document.getElementById('hcaptcha').style.display = 'block';
 
     try {
       initCaptcha();
