@@ -71,6 +71,13 @@ function applyTranslations() {
         if (text) el.textContent = text;
     });
 
+    // Применение подсказок (tooltips)
+    document.querySelectorAll('[data-tooltip]').forEach((el) => {
+        const tooltipKey = el.getAttribute('data-tooltip');
+        const tooltipText = t(tooltipKey);
+        if (tooltipText) el.setAttribute('title', tooltipText);
+    });
+
     // Вопросы (если есть)
     if (window.questions && tData.questions) {
         questions.forEach((q, i) => {
