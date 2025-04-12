@@ -11,8 +11,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
 	<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+	<script src="/js/i18n.js" defer></script>
     <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
     <style>
+	
+	/* Языки */
+.language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#language-select {
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: rgba(40, 40, 40, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+}
+
+#language-select:hover {
+    background: rgba(50, 50, 50, 0.9);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-4px) scale(1.05);
+}
+
+#language-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+#language-select option {
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    text-align: center;
+    font-size: 14px;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#language-select option:hover {
+    background: #444;
+    transform: scale(1.05); /* эффект увеличения при наведении */
+}
+
+/* Стрелочка */
+#language-select::-webkit-appearance: none; /* Для Chrome, Safari */
+#language-select::-moz-appearance: none; /* Для Firefox */
+#language-select::after {
+    content: ' ▼'; /* Стрелка вниз */
+    font-size: 18px;
+    color: white;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* чтобы стрелка не мешала кликам */
+}
+
+/* Эффект анимации на стрелке */
+#language-select:hover::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Анимация для выпадающего списка */
+#language-select option {
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Дополнительные стили для выпадающего списка */
+#language-select option:first-child {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+#language-select option:last-child {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+
+
+
+	
+	
         /* Основные стили */
         :root {
             --primary-accent: #6e45e2;
@@ -879,6 +985,14 @@ checkForSharedResults();
 
 </head>
 <body>
+
+<div class="language-switcher">
+    <select id="language-select">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <!-- Add more languages as needed -->
+    </select>
+</div>
 
 <!-- Указание авторства (если используете иконки Flaticon) -->
 <div class="credits">
