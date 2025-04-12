@@ -1,34 +1,18 @@
-<title data-i18n="title">Player Compatibility Test</title>
-<p class="quiz-subtitle">
-    <span class="subtitle-text" data-i18n="quiz.subtitle.text">Answer the questions to determine your gaming style</span>
-    <span class="subtitle-highlight" data-i18n="quiz.subtitle.highlight">and compatibility with other players.</span>
-</p>
+{
+  "title": "Player Compatibility Test",
+  "quiz": {
+    "subtitle": {
+      "text": "Answer the questions to determine your gaming style",
+      "highlight": "and compatibility with other players."
+    }
+  },
+  "credits": {
+    "text": "Icons by",
+    "freepik": "Freepik",
+    "flaticon": "Flaticon"
+  }
+}
 
-<div class="credits">
-  <span class="credits__text" data-i18n="credits.text">Icons by</span>
-  <a href="https://www.flaticon.com/authors/freepik" 
-     class="credits__link"
-     target="_blank" 
-     rel="noopener"
-     title="Freepik">
-    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor"/>
-    </svg>
-    <span data-i18n="credits.freepik">Freepik</span>
-  </a>
-  <span class="credits__divider">|</span>
-  <a href="https://www.flaticon.com" 
-     class="credits__link"
-     target="_blank" 
-     rel="noopener"
-     title="Flaticon">
-    <svg class="credits__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M12 8v8m-4-4h8"/>
-    </svg>
-    <span data-i18n="credits.flaticon">Flaticon</span>
-  </a>
-</div>
 
 
 {
