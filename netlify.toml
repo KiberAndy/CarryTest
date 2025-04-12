@@ -42,6 +42,14 @@
     Access-Control-Allow-Methods = "GET, POST"
     Access-Control-Allow-Headers = "Authorization, Content-Type"
     Access-Control-Allow-Credentials = "true"  # Если требуется передавать куки или другие данные с запросом
+	
+	[[headers]]
+  for = "/lang/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://carrytest.netlify.app"
+    Access-Control-Allow-Methods = "GET"
+    Access-Control-Allow-Headers = "Content-Type"
+
 
 # Устанавливаем версию Node.js
 [build.environment]
