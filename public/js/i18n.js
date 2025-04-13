@@ -63,8 +63,8 @@ function applyTranslations() {
 
     // Обновление мета-данных
     document.title = t('title');
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.content = t('description');
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t('description');
 
     // Обновление статических элементов
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -76,31 +76,53 @@ function applyTranslations() {
         el.title = t(el.dataset.tooltip);
     });
 
-    // Полное обновление вопросов
+    // Обновление вопросов
     updateQuestionsData();
     renderQuiz();
 }
 
 // 🔄 Обновление данных вопросов
 function updateQuestionsData() {
-    if (!window.questions || !translations[currentLanguage]) return;
+    if (!window.questions || !translations[currentLanguage]) {
+        console.warn('[i18n] Вопросы или переводы не загружены');
+        return;
+    }
+
+    if (!Array.isArray(window.questions) || !window.questions.every(q => q.options && Array.isArray(q.options))) {
+        console.error('[i18n] Неверная структура window.questions. Ожидается массив объектов с массивом options');
+        return;
+    }
+
+    const qData = translations[currentLanguage];
+    const qList = qData.questions || {};
+    const optList = qData.options || {};
 
     questions.forEach((q, index) => {
         const qKey = `question${index + 1}`;
 
-        // Обновление текста вопроса
-        if (translations[currentLanguage].questions?.[qKey]) {
-            q.question = translations[currentLanguage].questions[qKey];
+        // ✅ Обновление текста вопроса
+        if (qList[qKey]) {
+            q.question = qList[qKey];
+        } else {
+            console.warn(`[i18n] Не найден текст вопроса: ${qKey}`);
+            q.question = '[❌ Нет перевода вопроса]';
         }
 
-        // Обновление вариантов ответов
-        if (translations[currentLanguage].options?.[qKey]) {
+        // ✅ Обновление текста вариантов ответа
+        if (optList[qKey] && Array.isArray(optList[qKey])) {
+            const optsFromTranslation = optList[qKey];
             q.options.forEach((opt, i) => {
-                if (translations[currentLanguage].options[qKey][i]) {
-                    opt.text = translations[currentLanguage].options[qKey][i];
+                if (optsFromTranslation[i]) {
+                    opt.text = optsFromTranslation[i];
                 } else {
-                    console.warn(`[i18n] Missing option ${i} for ${qKey}`);
+                    console.warn(`[i18n] Не найден перевод опции ${i + 1} в ${qKey}`);
+                    opt.text = `[❌ Нет текста]`;
                 }
+            });
+        } else {
+            console.warn(`[i18n] Не найден список вариантов для ${qKey}`);
+            q.options.forEach(opt => {
+                opt.text = '[❌ Нет текста]';
             });
         }
     });
@@ -109,32 +131,32 @@ function updateQuestionsData() {
 // 📋 Функция отрисовки викторины
 function renderQuiz() {
     const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) {
-        console.error(`[UI] quiz-container не найден`);
-        return;
-    }
+    if (!quizContainer) return;
 
     quizContainer.innerHTML = '';
 
     questions.forEach((question, index) => {
         const questionHTML = `
             <div class="question">
-                <h3>${question.question || '[Нет текста вопроса]'}</h3>
+                <h3>${question.question}</h3>
                 <div class="options" id="options-${index}"></div>
             </div>
         `;
         quizContainer.insertAdjacentHTML('beforeend', questionHTML);
 
         const optionsContainer = quizContainer.querySelector(`#options-${index}`);
-        if (!optionsContainer) return;
-
         question.options.forEach((option, optIndex) => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
-            optionDiv.textContent = option.text || '[Нет текста]';
+            optionDiv.textContent = option.text || '[❌ Нет текста]';
 
+            // Обработчик выбора ответа
             optionDiv.addEventListener('click', () => {
-                handleAnswerSelect(index, optIndex, optionDiv);
+                if (typeof handleAnswerSelect === 'function') {
+                    handleAnswerSelect(index, optIndex, optionDiv);
+                } else {
+                    console.error('❌ handleAnswerSelect не определён!');
+                }
             });
 
             optionsContainer.appendChild(optionDiv);
@@ -142,29 +164,11 @@ function renderQuiz() {
     });
 }
 
-// ✅ Обработчик выбора ответа
-function handleAnswerSelect(questionIndex, optionIndex, optionDiv) {
-    console.log(`[Quiz] Вопрос ${questionIndex}, выбран вариант ${optionIndex}`);
-
-    // Подсветка выбранного варианта
-    const optionsContainer = optionDiv?.parentElement;
-    if (optionsContainer) {
-        optionsContainer.querySelectorAll('.option').forEach(el => {
-            el.classList.remove('selected');
-        });
-        optionDiv.classList.add('selected');
-    }
-
-    // Здесь можно сохранить выбор, отправить данные или перейти к следующему вопросу
-    // Например:
-    // saveAnswer(questionIndex, optionIndex);
-}
-
 // 🚀 Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
     const lang = detectPreferredLanguage();
-    const langSelect = document.getElementById('language-select');
-    if (langSelect) langSelect.value = lang;
+    const select = document.getElementById('language-select');
+    if (select) select.value = lang;
     await setLanguage(lang);
 });
 
