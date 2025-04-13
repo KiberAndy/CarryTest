@@ -103,24 +103,8 @@ function applyTranslations() {
             });
         });
 
-        // Если уже отрисовано — обновляем
-        if (document.getElementById('quiz-container').children.length > 0) {
-            renderQuiz();
-        }
-    }
-
-    // Вопросы (если есть) - дополнительное обновление
-    if (window.questions && tData.questions) {
-        questions.forEach((q, i) => {
-            const qTrans = tData.questions[i];
-            if (!qTrans) return;
-            q.question = qTrans.question || q.question;
-            q.options = qTrans.options || q.options;
-        });
-
-        if (document.getElementById('quiz-container').children.length > 0) {
-            renderQuiz();
-        }
+        // После применения переводов вызываем renderQuiz
+        renderQuiz();
     }
 }
 
@@ -135,6 +119,35 @@ document.addEventListener('DOMContentLoaded', () => {
             setLanguage(e.target.value);
         });
     }
+
+    // Пример загрузки вопросов
+    window.questions = [
+        {
+            "question": "Как ты реагируешь на проигрыш?",
+            "question_i18n": "question1",
+            "options": [
+                { "text": "Спокойно анализирую ошибки", "i18n": "q1o1" },
+                { "text": "Лёгкое недовольство", "i18n": "q1o2" },
+                { "text": "Сильно расстраиваюсь", "i18n": "q1o3" },
+                { "text": "Злюсь и обвиняю команду", "i18n": "q1o4" }
+            ],
+            "trait": "temperament",
+            "weights": [100, 70, 30, 0]
+        },
+        {
+            "question": "Ты предпочитаешь играть:",
+            "question_i18n": "question2",
+            "options": [
+                { "text": "Всегда на команду", "i18n": "q2o1" },
+                { "text": "В основном на команду", "i18n": "q2o2" },
+                { "text": "Чаще на себя", "i18n": "q2o3" },
+                { "text": "Только на себя", "i18n": "q2o4" }
+            ],
+            "trait": "teamSpirit",
+            "weights": [100, 75, 30, 0]
+        },
+        // Другие вопросы...
+    ];
 
     setLanguage(defaultLang);
 
@@ -198,32 +211,3 @@ function renderQuiz() {
         quizContainer.appendChild(questionElement);
     });
 }
-
-// Пример загрузки вопросов
-window.questions = [
-    {
-        question: "Как ты реагируешь на проигрыш?",
-        question_i18n: "question1",
-        options: [
-            { text: "Спокойно анализирую ошибки", i18n: "q1o1" },
-            { text: "Лёгкое недовольство", i18n: "q1o2" },
-            { text: "Сильно расстраиваюсь", i18n: "q1o3" },
-            { text: "Злюсь и обвиняю команду", i18n: "q1o4" }
-        ],
-        trait: "temperament",
-        weights: [100, 70, 30, 0]
-    },
-    {
-        question: "Ты предпочитаешь играть:",
-        question_i18n: "question2",
-        options: [
-            { text: "Всегда на команду", i18n: "q2o1" },
-            { text: "В основном на команду", i18n: "q2o2" },
-            { text: "Чаще на себя", i18n: "q2o3" },
-            { text: "Только на себя", i18n: "q2o4" }
-        ],
-        trait: "teamSpirit",
-        weights: [100, 75, 30, 0]
-    },
-    // Другие вопросы...
-];
