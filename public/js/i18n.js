@@ -114,15 +114,21 @@ function applyTranslations() {
         questions.forEach((q, i) => {
             const qTrans = tData.questions[i];
             if (!qTrans) return;
-            q.question = qTrans.question || q.question;
-            q.options = qTrans.options || q.options;
-        });
 
-        if (document.getElementById('quiz-container').children.length > 0) {
-            renderQuiz();
-        }
+            if (qTrans.question) q.question = qTrans.question;
+
+            if (qTrans.options && Array.isArray(qTrans.options)) {
+                q.options.forEach((opt, j) => {
+                    if (qTrans.options[j]) {
+                        opt.text = qTrans.options[j].text || opt.text;
+                    }
+                });
+            }
+        });
     }
 }
+
+
 
 // 🚀 Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
