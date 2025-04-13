@@ -125,7 +125,7 @@ function applyTranslations() {
             }
         });
     }
-
+}
 
 
 // 🚀 Запуск при загрузке страницы
@@ -186,7 +186,7 @@ function renderQuiz() {
             optionDiv.textContent = t(`options.question${index + 1}[${optIndex}]`);
 
             // Добавляем обработчик события для выбора варианта
-            optionElement.addEventListener('click', () => {
+            optionDiv.addEventListener('click', () => {
                 // Логика выбора варианта
                 console.log(`Выбран вариант: ${option.text}`);
             });
