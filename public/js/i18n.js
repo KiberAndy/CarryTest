@@ -1,90 +1,114 @@
-let currentLanguage = 'ru';
-const translations = {};
-const supportedLanguages = ['ru', 'en'];
+// i18n.js — полный, несокращённый, рабочий
 
-function t(keyPath) {
-  return keyPath.split('.').reduce((obj, key) => {
-    if (obj && obj.hasOwnProperty(key)) return obj[key];
-    return undefined;
-  }, translations[currentLanguage]) || keyPath;
-}
+let currentLanguage = "ru";
+let translations = {};
 
-function detectPreferredLanguage() {
-  const storedLang = localStorage.getItem('preferredLanguage');
-  if (storedLang && supportedLanguages.includes(storedLang)) return storedLang;
+// Сохраняем оригинальные вопросы для возврата при смене языка
+window.originalQuestions = window.originalQuestions || JSON.parse(JSON.stringify(questions));
 
-  const browserLangs = navigator.languages || [navigator.language];
-  const normalized = browserLangs.map((l) => l.slice(0, 2).toLowerCase());
-  return normalized.find((lang) => supportedLanguages.includes(lang)) || 'ru';
-}
-
-async function loadTranslations(lang) {
-  if (!supportedLanguages.includes(lang)) return;
-  if (translations[lang]) return translations[lang];
-
+async function setLanguage(lang) {
   try {
     const res = await fetch(`/lang/${lang}.json`);
-    if (!res.ok) throw new Error(`Translation file not found: ${lang}`);
-    translations[lang] = await res.json();
-    console.log(`[i18n] Loaded ${lang} translations:`, translations[lang]);
-  } catch (error) {
-    console.error('[i18n] Failed to load translations:', error);
+    if (!res.ok) throw new Error(`[i18n] Translation file not found: /lang/${lang}.json`);
+
+    const translated = await res.json();
+    translations = translated;
+    currentLanguage = lang;
+
+    console.log(`[i18n] Loaded ${lang} translations:`, translated);
+    applyTranslations();
+  } catch (err) {
+    console.error("[i18n]", err);
   }
 }
 
-// 🔁 Обновляет все вопросы и их опции
+function applyTranslations() {
+  document.getElementById("title").textContent = translations.title || "Player Compatibility Test";
+  document.getElementById("description").textContent = translations.description || "";
+
+  updateQuestionsData();
+  renderQuestions();
+  restoreSelectedAnswers();
+}
+
 function updateQuestionsData() {
-  if (!translations[currentLanguage]?.questions || !translations[currentLanguage]?.options) {
-    console.warn('[i18n] Вопросы или переводы не загружены');
+  if (!translations.questions || !translations.options) {
+    console.warn("[i18n] Вопросы или переводы не загружены");
     return;
   }
 
-  if (!window.originalQuestions) {
-    window.originalQuestions = window.questions.map(q => ({ ...q }));
-  }
+  questions = window.originalQuestions.map((q) => {
+    const id = q.question_i18n;
+    const translatedQuestion = translations.questions[id] || q.question;
+    const translatedOptions = translations.options[id] || q.options;
 
-  window.questions = window.originalQuestions.map((q) => ({
-    ...q,
-    question: t(`questions.${q.question_i18n}`),
-    options: t(`options.${q.question_i18n}`)
-  }));
-
-  if (typeof renderQuestions === 'function') {
-    renderQuestions();
-  }
+    return {
+      ...q,
+      question: translatedQuestion,
+      options: translatedOptions
+    };
+  });
 }
 
-// 🏁 Применяет переводы к интерфейсу
-function applyTranslations() {
-  document.title = t('title');
-  const titleEl = document.getElementById('test-title');
-  const descEl = document.getElementById('test-description');
+function renderQuestions() {
+  const container = document.getElementById("questions-container");
+  container.innerHTML = "";
 
-  if (titleEl) titleEl.textContent = t('title');
-  if (descEl) descEl.textContent = t('description');
+  questions.forEach((q, index) => {
+    const qDiv = document.createElement("div");
+    qDiv.className = "question-block";
 
-  updateQuestionsData();
-}
+    const qText = document.createElement("div");
+    qText.className = "question-text";
+    qText.innerHTML = q.question;
+    qDiv.appendChild(qText);
 
-// 🌍 Установка языка
-async function setLanguage(lang) {
-  if (!supportedLanguages.includes(lang)) return;
-  await loadTranslations(lang);
-  currentLanguage = lang;
-  localStorage.setItem('preferredLanguage', lang);
-  applyTranslations();
-}
+    const optionsDiv = document.createElement("div");
+    optionsDiv.className = "options";
 
-// 🧠 Автоустановка при загрузке
-document.addEventListener('DOMContentLoaded', async () => {
-  await setLanguage(detectPreferredLanguage());
-
-  // Повесь на переключатель языков, если он есть
-  const langSwitch = document.getElementById('language-switch');
-  if (langSwitch) {
-    langSwitch.addEventListener('change', (e) => {
-      const selectedLang = e.target.value;
-      setLanguage(selectedLang);
+    q.options.forEach((opt, optIndex) => {
+      const btn = document.createElement("button");
+      btn.className = "option-button";
+      btn.innerHTML = opt;
+      btn.addEventListener("click", () => handleAnswerSelect(index, optIndex));
+      optionsDiv.appendChild(btn);
     });
-  }
+
+    qDiv.appendChild(optionsDiv);
+    container.appendChild(qDiv);
+  });
+}
+
+let selectedAnswers = [];
+
+function handleAnswerSelect(questionIndex, optionIndex) {
+  selectedAnswers[questionIndex] = optionIndex;
+  highlightSelectedAnswers();
+}
+
+function highlightSelectedAnswers() {
+  const blocks = document.querySelectorAll(".question-block");
+
+  blocks.forEach((block, qIndex) => {
+    const buttons = block.querySelectorAll(".option-button");
+    buttons.forEach((btn, oIndex) => {
+      btn.classList.toggle("selected", selectedAnswers[qIndex] === oIndex);
+    });
+  });
+}
+
+function restoreSelectedAnswers() {
+  highlightSelectedAnswers();
+}
+
+// Автозагрузка языка с локали браузера
+const browserLang = navigator.language.startsWith("ru") ? "ru" : "en";
+setLanguage(browserLang);
+
+// Поддержка переключателя языка (если он есть)
+document.querySelectorAll(".lang-switch").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const lang = btn.getAttribute("data-lang");
+    setLanguage(lang);
+  });
 });
