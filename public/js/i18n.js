@@ -6,7 +6,7 @@ function t(keyPath) {
   const langData = translations[currentLanguage] || {};
   return keyPath.split('.').reduce((obj, key) => 
     (obj && obj[key] !== undefined) ? obj[key] : null, langData
-  ) || keyPath;
+  ) || keyPath; // Возвращаем keyPath, если перевод не найден
 }
 
 async function detectPreferredLanguage() {
@@ -33,17 +33,16 @@ async function loadTranslations(lang) {
 }
 
 function updateContent() {
-  // Обновляем весь интерфейс
+  // Обновляем все элементы с переводами
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const keys = el.dataset.i18n.split('|');
     el.textContent = keys.map(k => t(k.trim())).join('');
   });
 
-  // Специальная обработка для тега title
-  const title = t('title');
-  if (title !== 'title') document.title = title;
+  // Обновляем тег title без проверки
+  document.title = t('title'); // Теперь всегда обновляем title, даже если его нет
 
-  // Обновление вопросов теста
+  // Обновляем вопросы теста
   if (window.questions) {
     window.questions = window.originalQuestions.map(q => ({
       ...q,
