@@ -1,124 +1,181 @@
-let currentLanguage = 'ru'; // По умолчанию русский
+// 🌐 Улучшенная система перевода интерфейса
+let currentLanguage = 'ru';
 const translations = {};
-const supportedLanguages = ['ru', 'en']; // Поддерживаемые языки
+const supportedLanguages = ['ru', 'en'];
 
-/**
- * Функция для получения перевода по ключу
- */
+// 🔎 Утилита для доступа к переводу по ключу
 function t(keyPath) {
-  const langData = translations[currentLanguage] || {};
-  return keyPath.split('.').reduce((obj, key) => 
-    (obj && obj[key] !== undefined) ? obj[key] : null, langData
-  ) || keyPath; // Если перевод не найден, возвращаем сам ключ
+    return keyPath.split('.').reduce((obj, key) => {
+        if (obj && obj.hasOwnProperty(key)) return obj[key];
+        return undefined;
+    }, translations[currentLanguage]) || keyPath;
 }
 
-/**
- * Определение предпочтительного языка пользователя
- */
-async function detectPreferredLanguage() {
-  const storedLang = localStorage.getItem('preferredLanguage');
-  if (storedLang && supportedLanguages.includes(storedLang)) return storedLang;
+// 🧠 Умный детектор предпочтительного языка
+function detectPreferredLanguage() {
+    const storedLang = localStorage.getItem('preferredLanguage');
+    if (storedLang && supportedLanguages.includes(storedLang)) {
+        return storedLang;
+    }
 
-  const browserLangs = navigator.languages?.map(l => l.slice(0, 2).toLowerCase()) || 
-                      [navigator.language?.slice(0, 2).toLowerCase()];
-  return supportedLanguages.find(lang => browserLangs.includes(lang)) || 'ru'; // По умолчанию русский
+    const browserLangs = navigator.languages || [navigator.language];
+    const normalized = browserLangs.map(l => l.slice(0, 2).toLowerCase());
+
+    return normalized.find(lang => supportedLanguages.includes(lang)) || 'ru';
 }
 
-/**
- * Загрузка переводов для указанного языка
- */
+// 🛠️ Загрузка перевода
 async function loadTranslations(lang) {
-  if (!supportedLanguages.includes(lang)) return;
+    if (!supportedLanguages.includes(lang)) return;
 
-  if (translations[lang]) return; // Если переводы уже загружены, не загружаем снова
-
-  try {
-    const response = await fetch(`./lang/${lang}.json`);
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    translations[lang] = await response.json();
-    console.log(`Переводы для ${lang} успешно загружены`, translations[lang]);
-  } catch (error) {
-    console.error(`Ошибка загрузки переводов для ${lang}:`, error);
-    throw error;
-  }
+    try {
+        const response = await fetch(`/lang/${lang}.json`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        translations[lang] = await response.json();
+        console.log(`[i18n] Loaded ${lang} translations:`, translations[lang]);
+    } catch (error) {
+        console.error(`[i18n] Error loading ${lang}:`, error);
+    }
 }
 
-/**
- * Обновление контента страницы на основе текущего языка
- */
-function updateContent() {
-  // Обновляем все элементы с переводами
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const keys = el.dataset.i18n.split('|');
-    el.textContent = keys.map(k => t(k.trim())).join('');
-  });
-
-  // Обновляем тег title без проверки
-  document.title = t('title'); // Теперь всегда обновляем title
-
-  // Обновляем вопросы теста
-  if (window.questions) {
-    window.questions = window.originalQuestions.map(q => ({
-      ...q,
-      question: t(`questions.${q.question_i18n}`),
-      options: t(`options.${q.question_i18n}`)?.split('|') || q._originalOptions
-    }));
-    if (typeof renderQuestions === 'function') renderQuestions();
-  }
-
-  console.log('Контент обновлен для языка:', currentLanguage);
-}
-
-/**
- * Установка текущего языка
- */
+// 🌍 Установка языка и применение переводов
 async function setLanguage(lang) {
-  if (!supportedLanguages.includes(lang)) return;
+    if (currentLanguage === lang) return;
 
-  try {
-    // Сначала пытаемся загрузить основной язык
-    await loadTranslations(lang);
+    if (!translations[lang]) {
+        await loadTranslations(lang);
+    }
+
+    if (!translations[lang]) {
+        console.warn(`[i18n] Failed to load ${lang}, keeping ${currentLanguage}`);
+        return;
+    }
+
     currentLanguage = lang;
     localStorage.setItem('preferredLanguage', lang);
-    updateContent();
-  } catch (error) {
-    console.error(`Ошибка загрузки ${lang}, попытка загрузить резервный язык 'en'`);
-    try {
-      // Если основной не загрузился, загружаем английский как резервный
-      await loadTranslations('en');
-      currentLanguage = 'en';
-      localStorage.setItem('preferredLanguage', 'en');
-      updateContent();
-    } catch (err) {
-      console.error('Не удалось загрузить ни один язык', err);
-    }
-  }
+    applyTranslations();
 }
 
-/**
- * Инициализация приложения
- */
+// 🎨 Применение переводов
+function applyTranslations() {
+    const tData = translations[currentLanguage];
+    if (!tData) return;
+
+    // Обновление мета-данных
+    document.title = t('title');
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.content = t('description');
+
+    // Обновление статических элементов
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+
+    // Обновление подсказок
+    document.querySelectorAll('[data-tooltip]').forEach(el => {
+        el.title = t(el.dataset.tooltip);
+    });
+
+    // Обновление вопросов
+    updateQuestionsData();
+    renderQuiz();
+}
+
+// 🔄 Обновление данных вопросов
+function updateQuestionsData() {
+    if (!window.questions || !translations[currentLanguage]) {
+        console.warn('[i18n] Вопросы или переводы не загружены');
+        return;
+    }
+
+    if (!Array.isArray(window.questions) || !window.questions.every(q => q.options && Array.isArray(q.options))) {
+        console.error('[i18n] Неверная структура window.questions. Ожидается массив объектов с массивом options');
+        return;
+    }
+
+    const qData = translations[currentLanguage];
+    const qList = qData.questions || {};
+    const optList = qData.options || {};
+
+    questions.forEach((q, index) => {
+        const qKey = `question${index + 1}`;
+
+        // ✅ Обновление текста вопроса
+        if (qList[qKey]) {
+            q.question = qList[qKey];
+        } else {
+            console.warn(`[i18n] Не найден текст вопроса: ${qKey}`);
+            q.question = '[❌ Нет перевода вопроса]';
+        }
+
+        // ✅ Обновление текста вариантов ответа
+        if (optList[qKey] && Array.isArray(optList[qKey])) {
+            const optsFromTranslation = optList[qKey];
+            q.options.forEach((opt, i) => {
+                if (optsFromTranslation[i]) {
+                    opt.text = optsFromTranslation[i];
+                } else {
+                    console.warn(`[i18n] Не найден перевод опции ${i + 1} в ${qKey}`);
+                    opt.text = `[❌ Нет текста]`;
+                }
+            });
+        } else {
+            console.warn(`[i18n] Не найден список вариантов для ${qKey}`);
+            q.options.forEach(opt => {
+                opt.text = '[❌ Нет текста]';
+            });
+        }
+    });
+}
+
+// 📋 Функция отрисовки викторины
+function renderQuiz() {
+    const quizContainer = document.getElementById('quiz-container');
+    if (!quizContainer) return;
+
+    quizContainer.innerHTML = '';
+
+    questions.forEach((question, index) => {
+        const questionHTML = `
+            <div class="question">
+                <h3>${question.question}</h3>
+                <div class="options" id="options-${index}"></div>
+            </div>
+        `;
+        quizContainer.insertAdjacentHTML('beforeend', questionHTML);
+
+        const optionsContainer = quizContainer.querySelector(`#options-${index}`);
+        question.options.forEach((option, optIndex) => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+            optionDiv.textContent = option.text || '[❌ Нет текста]';
+
+            // Обработчик выбора ответа
+            optionDiv.addEventListener('click', () => {
+                if (typeof handleAnswerSelect === 'function') {
+                    handleAnswerSelect(index, optIndex, optionDiv);
+                } else {
+                    console.error('❌ handleAnswerSelect не определён!');
+                }
+            });
+
+            optionsContainer.appendChild(optionDiv);
+        });
+    });
+}
+
+// 🚀 Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
-  // Сохраняем оригинальные вопросы
-  if (window.questions && !window.originalQuestions) {
-    window.originalQuestions = window.questions.map(q => ({
-      ...q,
-      _originalQuestion: q.question,
-      _originalOptions: [...q.options]
-    }));
-  }
-
-  // Устанавливаем язык
-  try {
-    const lang = await detectPreferredLanguage(); // Определяем предпочтительный язык
-    await setLanguage(lang); // Загружаем переводы и устанавливаем язык
-    console.log('Язык установлен:', lang);
-  } catch (error) {
-    console.error('Ошибка инициализации языка:', error);
-  }
-
-  // Вешаем обработчик на переключатель языка
-  document.getElementById('language-switch')?.addEventListener('change', e => {
-    setLanguage(e.target.value); // Переключаем язык при изменении
-  });
+    const lang = detectPreferredLanguage();
+    const select = document.getElementById('language-select');
+    if (select) select.value = lang;
+    await setLanguage(lang);
 });
+
+// 🎮 Обработчик выбора языка
+const langSelect = document.getElementById('language-select');
+if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+    });
+}
