@@ -1,123 +1,96 @@
-// 🌐 Улучшенная система перевода интерфейса
-let currentLanguage = 'ru';
-const translations = {};
-const supportedLanguages = ['ru', 'en'];
-let answers = {}; // Добавляем хранилище ответов
+// i18n.js - Система перевода
+const i18n = {
+  currentLanguage: 'ru',
+  translations: {},
+  supportedLanguages: ['ru', 'en'],
 
-// 🔎 Утилита для доступа к переводу по ключу
-function t(keyPath) {
-    return keyPath.split('.').reduce((obj, key) => obj?.[key], translations[currentLanguage]) || keyPath;
-}
+  // Инициализация системы
+  async init() {
+    await this.loadTranslations('ru');
+    await this.loadTranslations('en');
+    this.setLanguage(this.detectPreferredLanguage());
+  },
 
-// 🧠 Обновленный детектор языка
-function detectPreferredLanguage() {
-    return localStorage.getItem('preferredLanguage') || 
-           navigator.language.slice(0, 2) === 'en' ? 'en' : 'ru';
-}
-
-// 🛠️ Загрузка перевода
-async function loadTranslations(lang) {
+  // Загрузка переводов
+  async loadTranslations(lang) {
     try {
-        const response = await fetch(`/lang/${lang}.json`);
-        translations[lang] = await response.json();
-        console.log('Translations loaded:', translations[lang]);
+      const response = await fetch(`/lang/${lang}.json`);
+      this.translations[lang] = await response.json();
     } catch (error) {
-        console.error('Translation load error:', error);
+      console.error(`Error loading ${lang} translations:`, error);
     }
-}
+  },
 
-// 🌍 Установка языка
-async function setLanguage(lang) {
-    if (!translations[lang]) await loadTranslations(lang);
-    currentLanguage = lang;
+  // Установка языка
+  setLanguage(lang) {
+    if (!this.supportedLanguages.includes(lang)) return;
+    this.currentLanguage = lang;
     localStorage.setItem('preferredLanguage', lang);
-    applyTranslations();
-}
+    this.applyTranslations();
+  },
 
-// 🎨 Применение переводов
-function applyTranslations() {
-    // Обновляем мета-данные
-    document.title = t('title');
-    document.querySelector('meta[name="description"]').content = t('description');
-
-    // Обновляем селектор языка
-    const langSelect = document.getElementById('language-select');
-    if (langSelect) langSelect.value = currentLanguage;
-
-    // Полностью перерисовываем викторину
-    renderQuiz();
-}
-
-// 📋 Функция отрисовки викторины
-function renderQuiz() {
-    const quizContainer = document.getElementById('quiz-container');
-    quizContainer.innerHTML = '';
-
-    questions.forEach((q, index) => {
-        const questionHTML = `
-            <div class="question">
-                <h3>${t(`questions.question${index + 1}`)}</h3>
-                <div class="options" id="options-${index}"></div>
-            </div>
-        `;
-        quizContainer.insertAdjacentHTML('beforeend', questionHTML);
-
-        const optionsContainer = document.getElementById(`options-${index}`);
-        const options = t(`options.question${index + 1}`);
-
-        options.forEach((optionText, optIndex) => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = `option${answers[index] === optIndex ? ' selected' : ''}`;
-            optionDiv.textContent = optionText;
-            
-            optionDiv.addEventListener('click', () => {
-                handleAnswerSelect(index, optIndex, optionsContainer);
-            });
-
-            optionsContainer.appendChild(optionDiv);
-        });
-    });
-
-    updateProgress();
-}
-
-// 🎮 Обработчик выбора ответа
-function handleAnswerSelect(questionIndex, optionIndex, container) {
-    // Сбрасываем выделение
-    container.querySelectorAll('.option').forEach(opt => 
-        opt.classList.remove('selected')
-    );
-    
-    // Устанавливаем новый выбор
-    container.children[optionIndex].classList.add('selected');
-    answers[questionIndex] = optionIndex;
-    
-    // Сохраняем и обновляем прогресс
-    localStorage.setItem('playerCompatibilityAnswers', JSON.stringify(answers));
-    updateProgress();
-}
-
-// 📊 Обновление прогресса
-function updateProgress() {
-    const progress = document.getElementById('completion-info');
-    if (progress) {
-        const answered = Object.keys(answers).length;
-        progress.textContent = `${answered}/${questions.length} questions answered`;
+  // Определение языка браузера
+  detectPreferredLanguage() {
+    const storedLang = localStorage.getItem('preferredLanguage');
+    if (storedLang && this.supportedLanguages.includes(storedLang)) {
+      return storedLang;
     }
+    
+    const browserLang = navigator.language.slice(0, 2);
+    return this.supportedLanguages.includes(browserLang) ? browserLang : 'ru';
+  },
+
+  // Получение перевода
+  t(keyPath) {
+    return keyPath.split('.').reduce((obj, key) => obj?.[key], this.translations[this.currentLanguage]) || keyPath;
+  },
+
+  // Применение переводов
+  applyTranslations() {
+    // Мета-данные
+    document.title = this.t('title');
+    document.querySelector('meta[name="description"]').content = this.t('description');
+
+    // Обновление интерфейса
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = this.t(el.dataset.i18n);
+    });
+
+    // Обновление вопросов, если тест уже инициализирован
+    if (window.quizInitialized) {
+      updateQuestionsText();
+      renderQuiz();
+    }
+  }
+};
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', async () => {
+  await i18n.init();
+  
+  // Настройка переключателя языка
+  const langSelect = document.getElementById('language-select');
+  if (langSelect) {
+    langSelect.value = i18n.currentLanguage;
+    langSelect.addEventListener('change', (e) => {
+      i18n.setLanguage(e.target.value);
+    });
+  }
+});
+
+// Функция для обновления текста вопросов
+function updateQuestionsText() {
+  questions.forEach((q, index) => {
+    const qKey = `question${index + 1}`;
+    q.question = i18n.t(`questions.${qKey}`);
+    
+    if (i18n.t(`options.${qKey}`)) {
+      q.options.forEach((opt, i) => {
+        opt.text = i18n.t(`options.${qKey}[${i}]`);
+      });
+    }
+  });
 }
 
-// 🚀 Инициализация
-document.addEventListener('DOMContentLoaded', async () => {
-    // Загрузка сохраненных ответов
-    answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
-    
-    // Инициализация языка
-    const lang = detectPreferredLanguage();
-    document.getElementById('language-select').value = lang;
-    await setLanguage(lang);
-    
-    // Обработчик изменения языка
-    document.getElementById('language-select').addEventListener('change', (e) => {
-        setLanguage(e.target.value);
-    });
-});
+// Пометить, что тест инициализирован
+window.quizInitialized = true;
