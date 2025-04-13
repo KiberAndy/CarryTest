@@ -41,7 +41,7 @@ async function loadTranslations(lang) {
 // 🌍 Установка языка и применение переводов
 async function setLanguage(lang) {
     if (currentLanguage === lang) return;
-
+    
     if (!translations[lang]) {
         await loadTranslations(lang);
     }
@@ -59,12 +59,15 @@ async function setLanguage(lang) {
 // 🎨 Применение переводов
 function applyTranslations() {
     const tData = translations[currentLanguage];
-    if (!tData) return;
+    if (!tData || !tData.questions || !tData.options) {
+        console.warn('[i18n] Вопросы или переводы не загружены');
+        return;
+    }
 
     // Обновление мета-данных
     document.title = t('title');
-    const desc = document.querySelector('meta[name="description"]');
-    if (desc) desc.content = t('description');
+    const descMeta = document.querySelector('meta[name="description"]');
+    if (descMeta) descMeta.content = t('description');
 
     // Обновление статических элементов
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -73,57 +76,31 @@ function applyTranslations() {
 
     // Обновление подсказок
     document.querySelectorAll('[data-tooltip]').forEach(el => {
-        el.title = t(el.dataset.tooltip);
+        el.title = t(`tooltips.${el.dataset.tooltip}`);
     });
 
-    // Обновление вопросов
+    // Обновление вопросов и опций
     updateQuestionsData();
     renderQuiz();
 }
 
 // 🔄 Обновление данных вопросов
 function updateQuestionsData() {
-    if (!window.questions || !translations[currentLanguage]) {
-        console.warn('[i18n] Вопросы или переводы не загружены');
-        return;
-    }
+    if (!window.questions || !translations[currentLanguage]) return;
 
-    if (!Array.isArray(window.questions) || !window.questions.every(q => q.options && Array.isArray(q.options))) {
-        console.error('[i18n] Неверная структура window.questions. Ожидается массив объектов с массивом options');
-        return;
-    }
-
-    const qData = translations[currentLanguage];
-    const qList = qData.questions || {};
-    const optList = qData.options || {};
-
-    questions.forEach((q, index) => {
-        const qKey = `question${index + 1}`;
-
-        // ✅ Обновление текста вопроса
-        if (qList[qKey]) {
-            q.question = qList[qKey];
-        } else {
-            console.warn(`[i18n] Не найден текст вопроса: ${qKey}`);
-            q.question = '[❌ Нет перевода вопроса]';
+    questions.forEach((q) => {
+        const qKey = q.question_i18n;
+        
+        // Обновление текста вопроса
+        const translatedQuestion = translations[currentLanguage].questions?.[qKey];
+        if (translatedQuestion) {
+            q.question = translatedQuestion;
         }
 
-        // ✅ Обновление текста вариантов ответа
-        if (optList[qKey] && Array.isArray(optList[qKey])) {
-            const optsFromTranslation = optList[qKey];
-            q.options.forEach((opt, i) => {
-                if (optsFromTranslation[i]) {
-                    opt.text = optsFromTranslation[i];
-                } else {
-                    console.warn(`[i18n] Не найден перевод опции ${i + 1} в ${qKey}`);
-                    opt.text = `[❌ Нет текста]`;
-                }
-            });
-        } else {
-            console.warn(`[i18n] Не найден список вариантов для ${qKey}`);
-            q.options.forEach(opt => {
-                opt.text = '[❌ Нет текста]';
-            });
+        // Обновление вариантов ответов
+        const translatedOptions = translations[currentLanguage].options?.[qKey];
+        if (translatedOptions && Array.isArray(q.options)) {
+            q.options = q.options.map((opt, i) => translatedOptions[i] ?? opt);
         }
     });
 }
@@ -144,18 +121,18 @@ function renderQuiz() {
         `;
         quizContainer.insertAdjacentHTML('beforeend', questionHTML);
 
-        const optionsContainer = quizContainer.querySelector(`#options-${index}`);
+        const optionsContainer = document.getElementById(`options-${index}`);
         question.options.forEach((option, optIndex) => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
-            optionDiv.textContent = option.text || '[❌ Нет текста]';
+            optionDiv.textContent = option;
 
             // Обработчик выбора ответа
             optionDiv.addEventListener('click', () => {
                 if (typeof handleAnswerSelect === 'function') {
                     handleAnswerSelect(index, optIndex, optionDiv);
                 } else {
-                    console.error('❌ handleAnswerSelect не определён!');
+                    console.error('[i18n] handleAnswerSelect is not defined');
                 }
             });
 
@@ -167,8 +144,8 @@ function renderQuiz() {
 // 🚀 Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
     const lang = detectPreferredLanguage();
-    const select = document.getElementById('language-select');
-    if (select) select.value = lang;
+    const langSelect = document.getElementById('language-select');
+    if (langSelect) langSelect.value = lang;
     await setLanguage(lang);
 });
 
