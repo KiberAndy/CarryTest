@@ -33,6 +33,7 @@ async function loadTranslations(lang) {
         const response = await fetch(`/lang/${lang}.json`);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         translations[lang] = await response.json();
+        console.log(`Переводы для языка ${lang} загружены:`, translations[lang]);
     } catch (error) {
         console.error(`Ошибка загрузки перевода "${lang}":`, error);
     }
@@ -144,6 +145,8 @@ function renderQuiz() {
     quizContainer.innerHTML = ''; // Очищаем контейнер перед рендерингом
 
     questions.forEach((question, index) => {
+        console.log(`Отрисовка вопроса ${index + 1}:`, question);
+
         // Создаем элемент для вопроса
         const questionElement = document.createElement('div');
         questionElement.className = 'question';
@@ -154,6 +157,8 @@ function renderQuiz() {
         optionsContainer.className = 'options';
 
         question.options.forEach((option) => {
+            console.log(`Отрисовка варианта ответа:`, option);
+
             const optionElement = document.createElement('div');
             optionElement.className = 'option';
             optionElement.textContent = option.text; // Используем текст из объекта option
