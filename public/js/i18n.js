@@ -1,114 +1,100 @@
-// i18n.js — полный, несокращённый, рабочий
+let currentLanguage = 'ru';
+const translations = {};
+const supportedLanguages = ['ru', 'en'];
 
-let currentLanguage = "ru";
-let translations = {};
-
-// Сохраняем оригинальные вопросы для возврата при смене языка
-window.originalQuestions = window.originalQuestions || JSON.parse(JSON.stringify(questions));
-
-async function setLanguage(lang) {
-  try {
-    const res = await fetch(`/lang/${lang}.json`);
-    if (!res.ok) throw new Error(`[i18n] Translation file not found: /lang/${lang}.json`);
-
-    const translated = await res.json();
-    translations = translated;
-    currentLanguage = lang;
-
-    console.log(`[i18n] Loaded ${lang} translations:`, translated);
-    applyTranslations();
-  } catch (err) {
-    console.error("[i18n]", err);
-  }
+function t(keyPath) {
+  const translationSource = translations[currentLanguage] || {};
+  return keyPath.split('.').reduce((obj, key) => {
+    return (obj && obj.hasOwnProperty(key)) ? obj[key] : undefined;
+  }, translationSource) || keyPath;
 }
 
-function applyTranslations() {
-  document.getElementById("title").textContent = translations.title || "Player Compatibility Test";
-  document.getElementById("description").textContent = translations.description || "";
+function detectPreferredLanguage() {
+  const storedLang = localStorage.getItem('preferredLanguage');
+  if (storedLang && supportedLanguages.includes(storedLang)) return storedLang;
 
-  updateQuestionsData();
-  renderQuestions();
-  restoreSelectedAnswers();
+  const browserLangs = navigator.languages || [navigator.language];
+  const normalized = browserLangs.map(l => l.slice(0, 2).toLowerCase());
+  return normalized.find(lang => supportedLanguages.includes(lang)) || 'ru';
+}
+
+async function loadTranslations(lang) {
+  if (!supportedLanguages.includes(lang)) return;
+  if (translations[lang]) return translations[lang];
+
+  try {
+    const res = await fetch(`/lang/${lang}.json`);
+    if (!res.ok) throw new Error(`Translation file not found: ${lang}`);
+    translations[lang] = await res.json();
+    return translations[lang];
+  } catch (error) {
+    console.error('[i18n] Failed to load translations:', error);
+    throw error;
+  }
 }
 
 function updateQuestionsData() {
-  if (!translations.questions || !translations.options) {
-    console.warn("[i18n] Вопросы или переводы не загружены");
+  if (!translations[currentLanguage]?.questions || !translations[currentLanguage]?.options) {
+    console.warn('[i18n] Missing questions or options translations');
     return;
   }
 
-  questions = window.originalQuestions.map((q) => {
-    const id = q.question_i18n;
-    const translatedQuestion = translations.questions[id] || q.question;
-    const translatedOptions = translations.options[id] || q.options;
-
-    return {
+  if (!window.originalQuestions) {
+    window.originalQuestions = window.questions.map(q => ({ 
       ...q,
-      question: translatedQuestion,
-      options: translatedOptions
-    };
-  });
+      _originalQuestion: q.question,
+      _originalOptions: [...q.options]
+    }));
+  }
+
+  window.questions = window.originalQuestions.map(q => ({
+    ...q,
+    question: t(`questions.${q.question_i18n}`),
+    options: translations[currentLanguage].options[q.question_i18n] || q._originalOptions
+  }));
+
+  if (typeof renderQuestions === 'function') renderQuestions();
 }
 
-function renderQuestions() {
-  const container = document.getElementById("questions-container");
-  container.innerHTML = "";
+function applyTranslations() {
+  document.title = t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  updateQuestionsData();
+}
 
-  questions.forEach((q, index) => {
-    const qDiv = document.createElement("div");
-    qDiv.className = "question-block";
+async function setLanguage(lang) {
+  if (!supportedLanguages.includes(lang)) return;
+  
+  try {
+    await loadTranslations(lang);
+    currentLanguage = lang;
+    localStorage.setItem('preferredLanguage', lang);
+    applyTranslations();
+  } catch (error) {
+    console.error('[i18n] Language switch failed:', error);
+  }
+}
 
-    const qText = document.createElement("div");
-    qText.className = "question-text";
-    qText.innerHTML = q.question;
-    qDiv.appendChild(qText);
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!window.originalQuestions) {
+    window.originalQuestions = window.questions?.map(q => ({
+      ...q,
+      _originalQuestion: q.question,
+      _originalOptions: [...q.options]
+    })) || [];
+  }
 
-    const optionsDiv = document.createElement("div");
-    optionsDiv.className = "options";
+  const lang = detectPreferredLanguage();
+  await setLanguage(lang);
 
-    q.options.forEach((opt, optIndex) => {
-      const btn = document.createElement("button");
-      btn.className = "option-button";
-      btn.innerHTML = opt;
-      btn.addEventListener("click", () => handleAnswerSelect(index, optIndex));
-      optionsDiv.appendChild(btn);
+  const langSwitch = document.getElementById('language-switch');
+  if (langSwitch) {
+    langSwitch.value = currentLanguage;
+    langSwitch.addEventListener('change', (e) => {
+      setLanguage(e.target.value);
     });
-
-    qDiv.appendChild(optionsDiv);
-    container.appendChild(qDiv);
-  });
-}
-
-let selectedAnswers = [];
-
-function handleAnswerSelect(questionIndex, optionIndex) {
-  selectedAnswers[questionIndex] = optionIndex;
-  highlightSelectedAnswers();
-}
-
-function highlightSelectedAnswers() {
-  const blocks = document.querySelectorAll(".question-block");
-
-  blocks.forEach((block, qIndex) => {
-    const buttons = block.querySelectorAll(".option-button");
-    buttons.forEach((btn, oIndex) => {
-      btn.classList.toggle("selected", selectedAnswers[qIndex] === oIndex);
-    });
-  });
-}
-
-function restoreSelectedAnswers() {
-  highlightSelectedAnswers();
-}
-
-// Автозагрузка языка с локали браузера
-const browserLang = navigator.language.startsWith("ru") ? "ru" : "en";
-setLanguage(browserLang);
-
-// Поддержка переключателя языка (если он есть)
-document.querySelectorAll(".lang-switch").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const lang = btn.getAttribute("data-lang");
-    setLanguage(lang);
-  });
+  }
 });
