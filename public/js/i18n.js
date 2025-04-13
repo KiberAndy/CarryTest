@@ -144,6 +144,11 @@ function renderQuiz() {
     const quizContainer = document.getElementById('quiz-container');
     quizContainer.innerHTML = ''; // Очищаем контейнер перед рендерингом
 
+    if (!window.questions || !Array.isArray(window.questions)) {
+        console.error('Вопросы не загружены или имеют неверную структуру');
+        return;
+    }
+
     questions.forEach((question, index) => {
         console.log(`Отрисовка вопроса ${index + 1}:`, question);
 
@@ -156,8 +161,18 @@ function renderQuiz() {
         const optionsContainer = document.createElement('div');
         optionsContainer.className = 'options';
 
+        if (!question.options || !Array.isArray(question.options)) {
+            console.error(`Вопрос ${index + 1} не содержит вариантов ответа`);
+            return;
+        }
+
         question.options.forEach((option) => {
             console.log(`Отрисовка варианта ответа:`, option);
+
+            if (!option.text) {
+                console.error(`Вариант ответа у вопроса ${index + 1} не содержит текста`);
+                return;
+            }
 
             const optionElement = document.createElement('div');
             optionElement.className = 'option';
