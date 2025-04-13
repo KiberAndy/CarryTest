@@ -78,6 +78,38 @@ function applyTranslations() {
         if (tooltipText) el.setAttribute('title', tooltipText);
     });
 
+    // Переводим вопросы через i18n-ключи, если заданы
+    if (window.questions && Array.isArray(questions)) {
+        questions.forEach((q) => {
+            // Перевод текста вопроса по ключу question_i18n
+            if (q.question_i18n) {
+                const translatedQuestion = t(`questions.${q.question_i18n}`);
+                if (translatedQuestion) q.question = translatedQuestion;
+            }
+
+            // Перевод текста tooltip, если указан
+            if (q.tooltip) {
+                const translatedTooltip = t(`tooltips.${q.tooltip}`);
+                if (translatedTooltip) q.tooltipText = translatedTooltip;
+            }
+
+            // Перевод каждого варианта по его ключу i18n
+            q.options?.forEach((opt) => {
+                if (opt.i18n) {
+                    const translatedOption = t(`options.${opt.i18n}`);
+                    if (translatedOption) opt.text = translatedOption;
+                }
+            });
+        });
+
+        // Если уже отрисовано — обновляем
+        if (document.getElementById('quiz-container').children.length > 0) {
+            renderQuiz();
+        }
+    }
+}
+
+
     // Вопросы (если есть)
     if (window.questions && tData.questions) {
         questions.forEach((q, i) => {

@@ -1,239 +1,244 @@
-{
-  "title": "Player Compatibility Test",
-  "quiz": {
-    "subtitle": {
-      "text": "Answer the questions to determine your gaming style",
-      "highlight": "and compatibility with other players."
-    },
-    "questions": [
-      {
-        "question": "How do you react to losing?",
-        "options": [
-          "Calmly analyze mistakes",
-          "Mild dissatisfaction",
-          "Get very upset",
-          "Get angry and blame the team"
-        ],
-        "trait": "temperament",
-        "weights": [100, 70, 30, 0]
-      },
-      {
-        "question": "You prefer to play:",
-        "options": [
-          "Always for the team",
-          "Mostly for the team",
-          "More for yourself",
-          "Only for yourself"
-        ],
-        "trait": "teamSpirit",
-        "weights": [100, 75, 30, 0]
-      },
-      {
-        "question": "How often do you communicate in voice chat?",
-        "options": [
-          "Very actively",
-          "Moderately",
-          "Rarely",
-          "Don't communicate at all"
-        ],
-        "trait": "communication",
-        "weights": [90, 80, 40, 20]
-      },
-      {
-        "question": "How do you react to teammates' mistakes?",
-        "options": [
-          "Calmly, everyone makes mistakes",
-          "Might point them out",
-          "Get angry but stay silent",
-          "Yell and blame them"
-        ],
-        "trait": "tolerance",
-        "weights": [100, 60, 30, 0]
-      },
-      {
-        "question": "How do you learn in games?",
-        "options": [
-          "Quickly figure things out and apply them",
-          "Learn, but not immediately",
-          "Take long to adapt",
-          "Don't want to learn"
-        ],
-        "trait": "learning",
-        "weights": [100, 70, 30, 0]
-      },
-      {
-        "question": "What role do you prefer on a team?",
-        "options": [
-          "Support (helping the team)",
-          "Leader (organizing the game)",
-          "Attacker (making breakthroughs)",
-          "Lone wolf (playing solo)"
-        ],
-        "trait": "teamRole",
-        "weights": [90, 80, 70, 30]
-      },
-      {
-        "question": "How long can you play without breaks?",
-        "options": [
-          "Very long (5+ hours)",
-          "Long (3-4 hours)",
-          "Not very long (1-2 hours)",
-          "Get tired quickly (less than an hour)"
-        ],
-        "trait": "stamina",
-        "weights": [90, 80, 50, 0]
-      },
-      {
-        "question": "How do you react to toxic players?",
-        "options": [
-          "Ignore them",
-          "Respond calmly",
-          "Start arguing",
-          "Fuel the conflict"
-        ],
-        "trait": "humor",
-        "weights": [100, 80, 40, 0]
-      },
-      {
-        "question": "How do you feel about playing by strategy?",
-        "options": [
-          {
-            "text": "Love clear plans",
-            "tooltip": "You prefer following structured strategies and avoiding randomness."
-          },
-          "Like it, but not always",
-          "It hinders improvisation",
-          "Don't like tactics at all"
-        ],
-        "trait": "strategy",
-        "weights": [100, 70, 40, 10]
-      },
-      {
-        "question": "How do you behave in critical situations?",
-        "options": [
-          "Composed and cool-headed",
-          "Get slightly nervous",
-          "Panic",
-          "Quit the game"
-        ],
-        "trait": "temperament",
-        "weights": [100, 70, 30, 0]
-      },
-      {
-        "question": "How do you treat newcomers on the team?",
-        "options": [
-          "Help and explain",
-          "Tolerate but with remarks",
-          "Ignore them",
-          "Get irritated"
-        ],
-        "trait": "tolerance",
-        "weights": [100, 60, 30, 0]
-      },
-      {
-        "question": "How do you choose your hero/class?",
-        "options": [
-          "Choose based on team needs",
-          "Choose my favorite hero",
-          "Pick the strongest one",
-          "Always play the same role"
-        ],
-        "trait": "teamSpirit",
-        "weights": [100, 70, 50, 30]
-      },
-      {
-        "question": "What do you do after several consecutive losses?",
-        "options": [
-          "Keep playing calmly",
-          "Analyze mistakes",
-          "Get angry but keep playing",
-          "Quit the game"
-        ],
-        "trait": "temperament",
-        "weights": [90, 100, 40, 0]
-      },
-      {
-        "question": "How do you play with random teammates?",
-        "options": [
-          "Easily find common ground",
-          "Try to cooperate",
-          "Don't trust them",
-          "They irritate me"
-        ],
-        "trait": "tolerance",
-        "weights": [100, 70, 40, 0]
-      },
-      {
-        "question": "How do you react to playing against stronger opponents?",
-        "options": [
-          "Challenge! That's interesting!",
-          "Get slightly tense but try",
-          "Feel irritated",
-          "Give up quickly"
-        ],
-        "trait": "competitiveness",
-        "weights": [100, 70, 30, 0]
-      },
-      {
-        "question": "How do you feel about cheaters?",
-        "options": [
-          "Report and block them",
-          "Ignore them",
-          "Try to adapt",
-          "Cheat back"
-        ],
-        "trait": "ethics",
-        "weights": [100, 60, 40, 0]
-      },
-      {
-        "question": "How do you behave in arguments with the team?",
-        "options": [
-          "Discuss with arguments",
-          "Might flare up but cool down quickly",
-          "Argue frequently",
-          "Insist on my way and get angry"
-        ],
-        "trait": "communication",
-        "weights": [100, 70, 40, 0]
-      },
-      {
-        "question": "How sensitive are you?",
-        "options": [
-          "Very calm, hard to provoke",
-          "Mostly calm but can get upset sometimes",
-          "Quite emotional, often worry about the game",
-          "Extremely sensitive, any criticism stings"
-        ],
-        "trait": "temperament",
-        "weights": [100, 70, 40, 10]
-      },
-      {
-        "question": "What's more important to you in games?",
-        "options": [
-          "Team victory",
-          "Personal success",
-          "Enjoyable pastime",
-          "Ratings and scores"
-        ],
-        "trait": "priority",
-        "weights": [100, 60, 80, 50]
-      },
-      {
-        "question": "How often do you get distracted while playing?",
-        "options": [
-          "Rarely, fully focused",
-          "Sometimes, but it doesn't affect gameplay",
-          "Often, lose concentration",
-          "Constantly distracted"
-        ],
-        "trait": "focus",
-        "weights": [100, 70, 30, 0]
-      }
-    ]
+[
+  {
+    "question": "How do you usually behave in games?",
+    "question_i18n": "question1",
+    "options": [
+      { "text": "I'm calm and friendly", "i18n": "q1o1" },
+      { "text": "I'm neutral and quiet", "i18n": "q1o2" },
+      { "text": "Depends on the team", "i18n": "q1o3" },
+      { "text": "Toxic and proud", "i18n": "q1o4" }
+    ],
+    "trait": "temperament",
+    "weights": [100, 70, 30, 0]
   },
-  "credits": {
-    "text": "Icons by",
-    "freepik": "Freepik",
-    "flaticon": "Flaticon"
+  {
+    "question": "How do you feel about voice communication?",
+    "question_i18n": "question2",
+    "options": [
+      { "text": "I love it and always use it", "i18n": "q2o1" },
+      { "text": "I don't mind it", "i18n": "q2o2" },
+      { "text": "I prefer text chat", "i18n": "q2o3" },
+      { "text": "I avoid talking", "i18n": "q2o4" }
+    ],
+    "trait": "communication",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What’s your preferred role in a team?",
+    "question_i18n": "question3",
+    "options": [
+      { "text": "Leader or strategist", "i18n": "q3o1" },
+      { "text": "Supportive teammate", "i18n": "q3o2" },
+      { "text": "Wildcard or flex", "i18n": "q3o3" },
+      { "text": "Solo player", "i18n": "q3o4" }
+    ],
+    "trait": "team_role",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How do you respond to mistakes in the team?",
+    "question_i18n": "question4",
+    "options": [
+      { "text": "Calmly and constructively", "i18n": "q4o1" },
+      { "text": "Point out gently", "i18n": "q4o2" },
+      { "text": "Get irritated", "i18n": "q4o3" },
+      { "text": "Start flaming", "i18n": "q4o4" }
+    ],
+    "trait": "reaction_to_mistakes",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What do you value more?",
+    "question_i18n": "question5",
+    "options": [
+      { "text": "Teamwork and communication", "i18n": "q5o1" },
+      { "text": "Everyone doing their part", "i18n": "q5o2" },
+      { "text": "Each for their own", "i18n": "q5o3" },
+      { "text": "I carry alone", "i18n": "q5o4" }
+    ],
+    "trait": "cooperation",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What's your skill level?",
+    "question_i18n": "question6",
+    "options": [
+      { "text": "Top-tier / pro", "i18n": "q6o1" },
+      { "text": "Above average", "i18n": "q6o2" },
+      { "text": "Casual player", "i18n": "q6o3" },
+      { "text": "Newbie or just for fun", "i18n": "q6o4" }
+    ],
+    "trait": "skill_level",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How do you usually play?",
+    "question_i18n": "question7",
+    "options": [
+      { "text": "Carefully and thoughtfully", "i18n": "q7o1" },
+      { "text": "Balanced and flexible", "i18n": "q7o2" },
+      { "text": "Reckless and aggressive", "i18n": "q7o3" },
+      { "text": "Chaotic or random", "i18n": "q7o4" }
+    ],
+    "trait": "playstyle",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How often do you help teammates?",
+    "question_i18n": "question8",
+    "options": [
+      { "text": "Always help and support", "i18n": "q8o1" },
+      { "text": "Help when I can", "i18n": "q8o2" },
+      { "text": "Only if it benefits me", "i18n": "q8o3" },
+      { "text": "Why should I?", "i18n": "q8o4" }
+    ],
+    "trait": "helpfulness",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What kind of players annoy you?",
+    "question_i18n": "question9",
+    "options": [
+      { "text": "Toxic and arrogant", "i18n": "q9o1" },
+      { "text": "Incompetent ones", "i18n": "q9o2" },
+      { "text": "Overly serious", "i18n": "q9o3" },
+      { "text": "Nobody really", "i18n": "q9o4" }
+    ],
+    "trait": "tolerance",
+    "weights": [0, 30, 70, 100]
+  },
+  {
+    "question": "Do you prefer playing with people you know?",
+    "question_i18n": "question10",
+    "options": [
+      { "text": "Yes, only with friends", "i18n": "q10o1" },
+      { "text": "Preferably friends, but open to others", "i18n": "q10o2" },
+      { "text": "Don't care", "i18n": "q10o3" },
+      { "text": "Randoms are more fun", "i18n": "q10o4" }
+    ],
+    "trait": "familiarity_preference",
+    "weights": [100, 70, 30, 0]
   }
-}
+]
+[
+  {
+    "question": "How do you usually deal with losses?",
+    "question_i18n": "question11",
+    "options": [
+      { "text": "Learn and move on", "i18n": "q11o1" },
+      { "text": "Get annoyed, but accept it", "i18n": "q11o2" },
+      { "text": "Blame teammates", "i18n": "q11o3" },
+      { "text": "Alt+F4 ragequit", "i18n": "q11o4" }
+    ],
+    "trait": "resilience",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How often do you play games?",
+    "question_i18n": "question12",
+    "options": [
+      { "text": "Every day", "i18n": "q12o1" },
+      { "text": "A few times a week", "i18n": "q12o2" },
+      { "text": "Sometimes", "i18n": "q12o3" },
+      { "text": "Rarely", "i18n": "q12o4" }
+    ],
+    "trait": "activity_level",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What's your approach to strategy?",
+    "question_i18n": "question13",
+    "options": [
+      { "text": "Plan everything", "i18n": "q13o1" },
+      { "text": "Adapt on the go", "i18n": "q13o2" },
+      { "text": "Follow others", "i18n": "q13o3" },
+      { "text": "No plan, just vibes", "i18n": "q13o4" }
+    ],
+    "trait": "strategic_thinking",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What do you do if a teammate is having a bad game?",
+    "question_i18n": "question14",
+    "options": [
+      { "text": "Encourage and support", "i18n": "q14o1" },
+      { "text": "Ignore and focus on the game", "i18n": "q14o2" },
+      { "text": "Complain about them", "i18n": "q14o3" },
+      { "text": "Troll them back", "i18n": "q14o4" }
+    ],
+    "trait": "empathy",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How do you treat new or less skilled players?",
+    "question_i18n": "question15",
+    "options": [
+      { "text": "Help and teach them", "i18n": "q15o1" },
+      { "text": "Tolerate them", "i18n": "q15o2" },
+      { "text": "Avoid them", "i18n": "q15o3" },
+      { "text": "Mock or bully them", "i18n": "q15o4" }
+    ],
+    "trait": "mentorship",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "Do you prefer competitive or casual games?",
+    "question_i18n": "question16",
+    "options": [
+      { "text": "Only competitive", "i18n": "q16o1" },
+      { "text": "Mostly competitive", "i18n": "q16o2" },
+      { "text": "Mostly casual", "i18n": "q16o3" },
+      { "text": "Only casual", "i18n": "q16o4" }
+    ],
+    "trait": "competitive_spirit",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How important is winning to you?",
+    "question_i18n": "question17",
+    "options": [
+      { "text": "Winning is everything", "i18n": "q17o1" },
+      { "text": "It’s important", "i18n": "q17o2" },
+      { "text": "Nice if it happens", "i18n": "q17o3" },
+      { "text": "Don't care at all", "i18n": "q17o4" }
+    ],
+    "trait": "goal_orientation",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How do you act when your team is losing?",
+    "question_i18n": "question18",
+    "options": [
+      { "text": "Try even harder", "i18n": "q18o1" },
+      { "text": "Keep calm and play", "i18n": "q18o2" },
+      { "text": "Lose motivation", "i18n": "q18o3" },
+      { "text": "Give up", "i18n": "q18o4" }
+    ],
+    "trait": "mental_fortitude",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "What’s your attitude towards meta?",
+    "question_i18n": "question19",
+    "options": [
+      { "text": "Always follow meta", "i18n": "q19o1" },
+      { "text": "Use it when needed", "i18n": "q19o2" },
+      { "text": "I play what I like", "i18n": "q19o3" },
+      { "text": "Meta is a trap", "i18n": "q19o4" }
+    ],
+    "trait": "meta_following",
+    "weights": [100, 70, 30, 0]
+  },
+  {
+    "question": "How do you pick your character or class?",
+    "question_i18n": "question20",
+    "options": [
+      { "text": "For team synergy", "i18n": "q20o1" },
+      { "text": "Depends on mood or need", "i18n": "q20o2" },
+      { "text": "Pick first, no matter what", "i18n": "q20o3" },
+      { "text": "Random or for fun", "i18n": "q20o4" }
+    ],
+    "trait": "pick_style",
+    "weights": [100, 70, 30, 0]
+  }
+]
