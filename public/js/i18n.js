@@ -138,7 +138,36 @@ document.addEventListener('DOMContentLoaded', () => {
     setLanguage(defaultLang);
 });
 
-// 📋 Функция отрисовки викторины (тут должен быть твой код)
+// 📋 Функция отрисовки викторины
 function renderQuiz() {
-    // Пример: перебор questions и генерация интерфейса
+    const quizContainer = document.getElementById('quiz-container');
+    quizContainer.innerHTML = ''; // Очищаем контейнер перед рендерингом
+
+    questions.forEach((question, index) => {
+        // Создаем элемент для вопроса
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question';
+        questionElement.innerHTML = `<strong>Вопрос ${index + 1}/20</strong>: ${question.question}`;
+
+        // Создаем элементы для вариантов ответа
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options';
+
+        question.options.forEach((option) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'option';
+            optionElement.textContent = option.text; // Используем текст из объекта option
+
+            // Добавляем обработчик события для выбора варианта
+            optionElement.addEventListener('click', () => {
+                // Логика выбора варианта
+                console.log(`Выбран вариант: ${option.text}`);
+            });
+
+            optionsContainer.appendChild(optionElement);
+        });
+
+        questionElement.appendChild(optionsContainer);
+        quizContainer.appendChild(questionElement);
+    });
 }
