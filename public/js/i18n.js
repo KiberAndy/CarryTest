@@ -107,10 +107,8 @@ function applyTranslations() {
             renderQuiz();
         }
     }
-}
 
-
-    // Вопросы (если есть)
+    // Вопросы (если есть) - дополнительное обновление
     if (window.questions && tData.questions) {
         questions.forEach((q, i) => {
             const qTrans = tData.questions[i];
