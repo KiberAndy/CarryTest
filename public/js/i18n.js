@@ -109,24 +109,22 @@ function applyTranslations() {
         }
     }
 
-    // Вопросы (если есть) - дополнительное обновление
+    // Обновляем текст в объектах вопросов
     if (window.questions && tData.questions) {
-        questions.forEach((q, i) => {
-            const qTrans = tData.questions[i];
-            if (!qTrans) return;
-
-            if (qTrans.question) q.question = qTrans.question;
-
-            if (qTrans.options && Array.isArray(qTrans.options)) {
-                q.options.forEach((opt, j) => {
-                    if (qTrans.options[j]) {
-                        opt.text = qTrans.options[j].text || opt.text;
-                    }
-                });
+        questions.forEach((q, index) => {
+            const qKey = `question${index + 1}`;
+            if (tData.questions[qKey]) {
+                q.question = tData.questions[qKey];
+            }
+            
+            if (tData.options[qKey]) {
+                q.options = tData.options[qKey].map((text, i) => ({
+                    ...q.options[i],
+                    text: text
+                }));
             }
         });
     }
-}
 
 
 
@@ -161,10 +159,13 @@ function renderQuiz() {
         // Создаем элемент для вопроса
         const questionElement = document.createElement('div');
         questionElement.className = 'question';
-        questionElement.innerHTML = `<strong>Вопрос ${index + 1}/20</strong>: ${question.question}`;
+        questionElement.innerHTML = `
+            <h3>${t('questions.question' + (index + 1))}</h3>
+            <div class="options" id="options-${index}"></div>
+        `;
 
         // Создаем элементы для вариантов ответа
-        const optionsContainer = document.createElement('div');
+        const optionsContainer = questionElement.querySelector(`#options-${index}`);
         optionsContainer.className = 'options';
 
         if (!question.options || !Array.isArray(question.options)) {
@@ -172,7 +173,7 @@ function renderQuiz() {
             return;
         }
 
-        question.options.forEach((option) => {
+        question.options.forEach((option, optIndex) => {
             console.log(`Отрисовка варианта ответа:`, option);
 
             if (!option.text) {
@@ -180,9 +181,9 @@ function renderQuiz() {
                 return;
             }
 
-            const optionElement = document.createElement('div');
-            optionElement.className = 'option';
-            optionElement.textContent = option.text; // Используем текст из объекта option
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+            optionDiv.textContent = t(`options.question${index + 1}[${optIndex}]`);
 
             // Добавляем обработчик события для выбора варианта
             optionElement.addEventListener('click', () => {
@@ -190,7 +191,7 @@ function renderQuiz() {
                 console.log(`Выбран вариант: ${option.text}`);
             });
 
-            optionsContainer.appendChild(optionElement);
+            optionsContainer.appendChild(optionDiv);
         });
 
         questionElement.appendChild(optionsContainer);
