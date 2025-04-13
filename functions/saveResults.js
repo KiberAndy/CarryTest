@@ -180,60 +180,75 @@ try {
       return { statusCode: 429, body: 'Too many requests, try again later.' };
     }
 
-    // 🔗 Подключение Supabase
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// 🔗 Подключение Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const answersString = stableStringify({ answers, scores });
-    const shareToken = generateStableRandomToken(answersString);
-    const finalSessionId = session_id || generateId('session-');
+const answersString = stableStringify({ answers, scores });
+const shareToken = generateStableRandomToken(answersString);
+const finalSessionId = session_id || generateId('session-');
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+const expiresAt = new Date();
+expiresAt.setDate(expiresAt.getDate() + 7);
+const expiresIso = expiresAt.toISOString();
 
-    console.log('🛠️ Начинаем вставку. shareToken:', shareToken);
+console.log('🛠️ Начинаем вставку. shareToken:', shareToken);
 
-    const { data: existing, error: selectError } = await supabase
-      .from('test_results')
-      .select('share_token')
-      .eq('answers_hash', shareToken)
-      .maybeSingle();
-    if (selectError) {
-      console.error('❌ Ошибка при SELECT:', selectError);
-      throw selectError;
-    }
+const { data: existing, error: selectError } = await supabase
+  .from('test_results')
+  .select('id, share_token')
+  .eq('answers_hash', shareToken)
+  .maybeSingle();
 
-    if (existing) {
-      console.log('♻️ Найден дубликат. Возвращаем существующий токен.');
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ share_token: existing.share_token, reused: true })
-      };
-    }
+if (selectError) {
+  console.error('❌ Ошибка при SELECT:', selectError);
+  throw selectError;
+}
 
-    const { error: insertError } = await supabase.from('test_results').insert([{
-      answers,
-      scores,
-      session_id: finalSessionId,
-      share_token: shareToken,
-      answers_hash: shareToken,
-      created_at: new Date().toISOString(),
-      expires_at: expiresAt.toISOString()
-    }]);
-    if (insertError) {
-      console.error('❌ Ошибка при INSERT:', insertError);
-      throw insertError;
-    }
+if (existing) {
+  // 🔁 Обновляем срок действия
+  const { error: updateError } = await supabase
+    .from('test_results')
+    .update({ expires_at: expiresIso })
+    .eq('id', existing.id);
 
-    console.log('✅ Результат успешно сохранён');
+  if (updateError) {
+    console.error('❌ Ошибка при UPDATE expires_at:', updateError);
+    throw updateError;
+  }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        share_token: shareToken,
-        expires_at: expiresAt.toISOString(),
-        reused: false
-      })
-    };
+  console.log('♻️ Найден дубликат. TTL обновлён, возвращаем существующий токен.');
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ share_token: existing.share_token, reused: true, expires_at: expiresIso })
+  };
+}
+
+// 🆕 Если записи нет — создаём новую
+const { error: insertError } = await supabase.from('test_results').insert([{
+  answers,
+  scores,
+  session_id: finalSessionId,
+  share_token: shareToken,
+  answers_hash: shareToken,
+  created_at: new Date().toISOString(),
+  expires_at: expiresIso
+}]);
+
+if (insertError) {
+  console.error('❌ Ошибка при INSERT:', insertError);
+  throw insertError;
+}
+
+console.log('✅ Результат успешно сохранён');
+
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    share_token: shareToken,
+    expires_at: expiresIso,
+    reused: false
+  })
+};
   } catch (error) {
     console.error('🔥 Системная ошибка:', error);
     return {
