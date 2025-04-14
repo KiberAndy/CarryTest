@@ -137,15 +137,7 @@ function updateQuestionsData() {
     console.log('[i18n] Завершена обработка вопросов и опций:', questions); // Логируем обновленные вопросы и опции
 }
 
-
-
-
-
 // 📋 Функция отрисовки викторины
-// Заглушка для handleAnswerSelect
-function handleAnswerSelect(questionIndex, optionIndex, optionElement) {
-    console.log('Выбран вариант', optionIndex, 'для вопроса', questionIndex);
-}
 function renderQuiz() {
     const quizContainer = document.getElementById('quiz-container');
     if (!quizContainer) return;
@@ -162,19 +154,10 @@ function renderQuiz() {
         quizContainer.insertAdjacentHTML('beforeend', questionHTML);
 
         const optionsContainer = quizContainer.querySelector(`#options-${index}`);
-        question.options.forEach((option, optIndex) => {
+        question.options.forEach(option => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
             optionDiv.textContent = option || '[❌ Нет текста]';
-
-            // Обработчик выбора ответа
-            optionDiv.addEventListener('click', () => {
-                if (typeof handleAnswerSelect === 'function') {
-                    handleAnswerSelect(index, optIndex, optionDiv);
-                } else {
-                    console.error('❌ handleAnswerSelect не определён!');
-                }
-            });
 
             optionsContainer.appendChild(optionDiv);
         });
