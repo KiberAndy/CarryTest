@@ -12,17 +12,6 @@ function t(keyPath) {
     }, translations[currentLanguage]) || keyPath;
 }
 
-// Пример использования:
-// t('buttons.submit') вернёт "Получить результат"
-
-
-    // Доступ к переводу по ключу
-    return keyPath.split('.').reduce((obj, key) => {
-        if (obj && obj.hasOwnProperty(key)) return obj[key];
-        return keyPath;  // Возвращаем ключ, если перевода нет
-    }, translations[currentLanguage]) || keyPath;
-}
-
 
 // 🧠 Умный детектор предпочтительного языка
 function detectPreferredLanguage() {
