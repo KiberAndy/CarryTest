@@ -142,6 +142,10 @@ function updateQuestionsData() {
 
 
 // 📋 Функция отрисовки викторины
+// Заглушка для handleAnswerSelect
+function handleAnswerSelect(questionIndex, optionIndex, optionElement) {
+    console.log('Выбран вариант', optionIndex, 'для вопроса', questionIndex);
+}
 function renderQuiz() {
     const quizContainer = document.getElementById('quiz-container');
     if (!quizContainer) return;
