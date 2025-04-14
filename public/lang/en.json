@@ -11,16 +11,16 @@
     "question6": "What role do you prefer in a team?",
     "question7": "How long can you play without a break?",
     "question8": "How do you react to toxic players?",
-    "question9": "How do you feel about <span class='tooltip'>strategic gameplay<span class='tooltiptext'></span></span>?",
-    "question10": "How do you behave in <span class='tooltip'>critical situations<span class='tooltiptext'></span></span>?",
+    "question9": "How do you feel about strategic gameplay?",
+    "question10": "How do you behave in critical situations?",
     "question11": "How do you treat newcomers in the team?",
     "question12": "How do you choose your hero/class?",
     "question13": "What do you do after several consecutive defeats?",
-    "question14": "How do you play with <span class='tooltip'>strangers<span class='tooltiptext'></span></span>?",
+    "question14": "How do you play with strangers?",
     "question15": "How do you react to playing against stronger opponents?",
     "question16": "How do you feel about cheaters?",
     "question17": "How do you behave in arguments with the team?",
-    "question18": "How <span class='tooltip'>sensitive<span class='tooltiptext'></span></span> are you?",
+    "question18": "How sensitive are you?",
     "question19": "What's more important to you in the game?",
     "question20": "How often do you get distracted during the game?"
   },
@@ -155,5 +155,17 @@
     "strangers": "Random players in your team (not friends)",
     "sensitivity": "How strongly you emotionally react to criticism, trolling or failures",
     "hero_selection": "Choosing character/class based on team composition vs personal preference"
+  },
+
+  "status": {
+    "answered": "Answered: {answered}/{total}",
+    "completed": "All questions answered!"
+  },
+
+  "buttons": {
+    "submit": "Get result",
+    "save": "Save results",
+    "share": "Share results"
+	"reclick": "✅ Click again"
   }
 }

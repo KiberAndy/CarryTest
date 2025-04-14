@@ -856,6 +856,7 @@ async function shareResults() {
     console.error('Ошибка:', error);
     alert(error.message);
   } finally {
+	shareBtn.textContent = t('buttons.share');
     shareBtn.disabled = false;
     shareBtn.textContent = 'Поделиться результатами';
   }
@@ -1466,7 +1467,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // При успешной капче сохраняем токен и разблокируем кнопку
   window.onCaptchaSuccess = function(token) {
     hcaptchaPassedToken = token;
-    unblockButton("✅ Нажми снова"); // Подсказка: теперь клик запускает генерацию ссылки
+	const reclickText = translate("buttons.reclick");  // Получаем текст из переводов
+    unblockButton(reclickText); // Подсказка: теперь клик запускает генерацию ссылки
   };
 
   // Ошибка при выполнении капчи
@@ -1980,24 +1982,37 @@ document.addEventListener('DOMContentLoaded', () => {
             checkAllAnswered();
         }
 
-        function checkAllAnswered() {
-            const answeredCount = Object.keys(answers).length;
-            const allAnswered = answeredCount === questions.length;
-            
-            submitBtn.disabled = !allAnswered;
-            
-            completionInfo.textContent = `Ответов: ${answeredCount}/${questions.length}`;
-            completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
-            
-            if (allAnswered) {
-                completionInfo.innerHTML = `Все вопросы отвечены! <span style="color:#28a745">✓</span>`;
-            }
-        }
+function checkAllAnswered() {
+    const answeredCount = Object.keys(answers).length;
+    const allAnswered = answeredCount === questions.length;
+    
+    // Обновляем состояние кнопки отправки
+    submitBtn.disabled = !allAnswered;
 
-        submitBtn.addEventListener('click', function() {
-            calculateResults();
-            showResults();
-        });
+    // Динамическое обновление текста в completionInfo
+    completionInfo.textContent = t('status.answered')
+        .replace('{answered}', answeredCount)
+        .replace('{total}', questions.length);
+    
+    // Стиль для completionInfo
+    completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
+    
+    // Если все вопросы отвечены, выводим сообщение
+    if (allAnswered) {
+        completionInfo.innerHTML = `${t('status.complete')} <span style="color:#28a745">✓</span>`;
+    }
+
+    // Обновляем текст на кнопках с помощью переводов
+    submitBtn.textContent = t('buttons.submit');
+    document.getElementById('save-btn').textContent = t('buttons.save');
+    document.getElementById('share-btn').textContent = t('buttons.share');
+}
+
+submitBtn.addEventListener('click', function() {
+    calculateResults();
+    showResults();
+});
+
 
         function calculateResults() {
             // Сбрасываем счетчики

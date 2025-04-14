@@ -5,11 +5,23 @@ const supportedLanguages = ['ru', 'en'];
 
 // 🔎 Утилита для доступа к переводу по ключу
 function t(keyPath) {
+    // Переводы для кнопок
+    const translations = {
+        "buttons": {
+            "submit": "Получить результат",
+            "save": "Сохранить результаты",
+            "share": "Поделиться результатами",
+            "reclick": "✅ Нажми снова"
+        }
+    };
+
+    // Доступ к переводу по ключу
     return keyPath.split('.').reduce((obj, key) => {
         if (obj && obj.hasOwnProperty(key)) return obj[key];
-        return undefined;
+        return keyPath;  // Возвращаем ключ, если перевода нет
     }, translations[currentLanguage]) || keyPath;
 }
+
 
 // 🧠 Умный детектор предпочтительного языка
 function detectPreferredLanguage() {
@@ -56,21 +68,39 @@ async function setLanguage(lang) {
 function applyTranslations() {
     const tData = translations[currentLanguage];
     if (!tData) return;
+
     // Обновление мета-данных
     document.title = t('title');
     const desc = document.querySelector('meta[name="description"]');
     if (desc) desc.content = t('description');
+
     // Обновление статических элементов
     document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.dataset.i18n);
     });
+
     // Обновление подсказок
     document.querySelectorAll('[data-tooltip]').forEach(el => {
         el.title = t(el.dataset.tooltip);
     });
+
     // Обновление вопросов (в глобальном массиве)
     updateQuestionsData();
+
+    // Обновление текста кнопок
+    const completionInfo = document.getElementById('completion-info');
+    if (completionInfo && answers) checkAllAnswered(); // обновим надпись с ответами
+
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) submitBtn.textContent = t('buttons.submit');
+
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) saveBtn.textContent = t('buttons.save');
+
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) shareBtn.textContent = t('buttons.share');
 }
+
 
 // 🔄 Обновление вопросов и опций по ключам i18n
 function updateQuestionsData() {
