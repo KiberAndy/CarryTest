@@ -161,7 +161,7 @@ function renderQuiz() {
         question.options.forEach((option, optIndex) => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
-            optionDiv.textContent = option.text || '[❌ Нет текста]';
+            optionDiv.textContent = option || '[❌ Нет текста]';
 
             // Обработчик выбора ответа
             optionDiv.addEventListener('click', () => {
