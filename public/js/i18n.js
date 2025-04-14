@@ -92,7 +92,7 @@ function updateQuestionsData() {
 
     questions.forEach((q, index) => {
         const qKey = q.question_i18n;
-        const optionsKey = q.options_i18n || q.question_i18n;  // Используем правильный ключ для опций
+        const optionsKey = q.options_i18n || q.question_i18n;
 
         // ✅ Перевод текста вопроса
         if (qKey && tData.questions && tData.questions[qKey]) {
@@ -104,7 +104,10 @@ function updateQuestionsData() {
 
         // ✅ Перевод текста вариантов ответа
         if (Array.isArray(q.options)) {
-            const translatedOptions = tData.options?.[optionsKey];  // Правильный ключ для опций
+            // Логируем перед извлечением перевода опций
+            console.log('Translating options for key:', optionsKey, '=>', tData.options?.[optionsKey]);
+
+            const translatedOptions = tData.options?.[optionsKey];
 
             if (Array.isArray(translatedOptions)) {
                 q.options.forEach((optText, i) => {
@@ -124,6 +127,7 @@ function updateQuestionsData() {
         }
     });
 }
+
 
 
 
