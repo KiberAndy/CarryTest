@@ -5,13 +5,11 @@ const supportedLanguages = ['ru', 'en'];
 
 // 🔎 Утилита для доступа к переводу по ключу
 function t(keyPath) {
-    // Переводы для кнопок и других элементов должны храниться в глобальном объекте translations
     return keyPath.split('.').reduce((obj, key) => {
         if (obj && obj.hasOwnProperty(key)) return obj[key];
         return undefined;
     }, translations[currentLanguage]) || keyPath;
 }
-
 
 // 🧠 Умный детектор предпочтительного языка
 function detectPreferredLanguage() {
@@ -38,7 +36,6 @@ async function loadTranslations(lang) {
 }
 
 // 🌍 Установка языка и применение переводов
-let translationsInitialized = false;
 async function setLanguage(lang) {
     if (currentLanguage === lang) return;
     if (!translations[lang]) {
@@ -53,46 +50,27 @@ async function setLanguage(lang) {
     applyTranslations();
     // После обновления переводов обновляем уже отрисованный DOM (сохраняя выделение и обработчики)
     updateQuizTranslations();
-	translationsInitialized = true;
 }
 
 // 🎨 Применение переводов для статичных элементов
 function applyTranslations() {
     const tData = translations[currentLanguage];
     if (!tData) return;
-
     // Обновление мета-данных
     document.title = t('title');
     const desc = document.querySelector('meta[name="description"]');
     if (desc) desc.content = t('description');
-
     // Обновление статических элементов
     document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.dataset.i18n);
     });
-
     // Обновление подсказок
     document.querySelectorAll('[data-tooltip]').forEach(el => {
         el.title = t(el.dataset.tooltip);
     });
-
     // Обновление вопросов (в глобальном массиве)
     updateQuestionsData();
-
-    // Обновление текста кнопок
-    const completionInfo = document.getElementById('completion-info');
-    if (completionInfo && answers) checkAllAnswered(); // обновим надпись с ответами
-
-    const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) submitBtn.textContent = t('buttons.submit');
-
-    const saveBtn = document.getElementById('save-btn');
-    if (saveBtn) saveBtn.textContent = t('buttons.save');
-
-    const shareBtn = document.getElementById('share-btn');
-    if (shareBtn) shareBtn.textContent = t('buttons.share');
 }
-
 
 // 🔄 Обновление вопросов и опций по ключам i18n
 function updateQuestionsData() {
@@ -205,13 +183,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lang = detectPreferredLanguage();
     const select = document.getElementById('language-select');
     if (select) select.value = lang;
-
     await setLanguage(lang);
-
-    // ✨ Показываем страницу только после перевода
-    document.body.classList.remove('preload');
+    // Первый рендер после загрузки переводов
+    renderQuiz();
 });
-
 
 // 🎮 Обработчик выбора языка
 const langSelect = document.getElementById('language-select');
