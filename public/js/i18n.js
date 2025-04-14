@@ -92,6 +92,7 @@ function updateQuestionsData() {
 
     questions.forEach((q, index) => {
         const qKey = q.question_i18n;
+        const optionsKey = q.options_i18n || q.question_i18n;  // Используем правильный ключ для опций
 
         // ✅ Перевод текста вопроса
         if (qKey && tData.questions && tData.questions[qKey]) {
@@ -103,19 +104,19 @@ function updateQuestionsData() {
 
         // ✅ Перевод текста вариантов ответа
         if (Array.isArray(q.options)) {
-            const translatedOptions = tData.options?.[qKey];
+            const translatedOptions = tData.options?.[optionsKey];  // Правильный ключ для опций
 
             if (Array.isArray(translatedOptions)) {
                 q.options.forEach((optText, i) => {
                     if (translatedOptions[i]) {
                         q.options[i] = translatedOptions[i];
                     } else {
-                        console.warn(`[i18n] Не найден перевод для опции ${i + 1} вопроса ${qKey}`);
+                        console.warn(`[i18n] Не найден перевод для опции ${i + 1} вопроса ${optionsKey}`);
                         q.options[i] = '[❌ Нет перевода опции]';
                     }
                 });
             } else {
-                console.warn(`[i18n] Не найден список опций для ${qKey}`);
+                console.warn(`[i18n] Не найден список опций для ${optionsKey}`);
                 q.options = q.options.map(() => '[❌ Нет перевода]');
             }
         } else {
@@ -123,6 +124,7 @@ function updateQuestionsData() {
         }
     });
 }
+
 
 
 // 📋 Функция отрисовки викторины
