@@ -38,6 +38,7 @@ async function loadTranslations(lang) {
 }
 
 // 🌍 Установка языка и применение переводов
+let translationsInitialized = false;
 async function setLanguage(lang) {
     if (currentLanguage === lang) return;
     if (!translations[lang]) {
@@ -52,6 +53,7 @@ async function setLanguage(lang) {
     applyTranslations();
     // После обновления переводов обновляем уже отрисованный DOM (сохраняя выделение и обработчики)
     updateQuizTranslations();
+	translationsInitialized = true;
 }
 
 // 🎨 Применение переводов для статичных элементов

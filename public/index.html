@@ -10,8 +10,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
-	<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 	<script src="/js/i18n.js" defer></script>
+	<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
     <style>
 	
@@ -1001,7 +1001,17 @@ checkForSharedResults();
         <!-- Add more languages as needed -->
     </select>
 </div>
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const langSelect = document.getElementById('language-select');
+    if (langSelect) {
+        langSelect.value = detectPreferredLanguage();
+        langSelect.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+    }
+});
+</script>
 
 
 
@@ -1886,6 +1896,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+		document.addEventListener('DOMContentLoaded', function() {
         let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
         let scores = {
             temperament: 0,
@@ -1921,7 +1932,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Инициализация теста
-        initTest();
+        document.addEventListener('DOMContentLoaded', function() {
+			initTest();
+		});
 
         function initTest() {
             // Создаем вопросы
@@ -1990,7 +2003,7 @@ function checkAllAnswered() {
     submitBtn.disabled = !allAnswered;
 
     // Динамическое обновление текста в completionInfo
-    completionInfo.textContent = t('status.answered')
+    completionInfo.textContent = tSafe('status.answered')
         .replace('{answered}', answeredCount)
         .replace('{total}', questions.length);
     
