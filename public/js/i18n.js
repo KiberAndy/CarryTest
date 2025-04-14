@@ -78,7 +78,7 @@ function applyTranslations() {
 
     // Обновление вопросов
     updateQuestionsData();
-    renderQuiz();
+    //renderQuiz();
 }
 
 // 🔄 Обновление вопросов и опций по ключам i18n
