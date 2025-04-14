@@ -89,13 +89,18 @@ function updateQuestionsData() {
     }
 
     const tData = translations[currentLanguage];
+    console.log('[i18n] Загружены переводы:', tData); // Логируем все загруженные переводы
 
     questions.forEach((q, index) => {
         const qKey = q.question_i18n;
         const optionsKey = q.options_i18n || q.question_i18n;
 
+        // Логируем каждый вопрос и ключи
+        console.log(`[i18n] Обработка вопроса ${index + 1}: ${qKey}`);
+
         // ✅ Перевод текста вопроса
         if (qKey && tData.questions && tData.questions[qKey]) {
+            console.log(`[i18n] Перевод для вопроса "${qKey}":`, tData.questions[qKey]);
             q.question = tData.questions[qKey];
         } else {
             console.warn(`[i18n] Не найден перевод для question_i18n: ${qKey}`);
@@ -104,14 +109,16 @@ function updateQuestionsData() {
 
         // ✅ Перевод текста вариантов ответа
         if (Array.isArray(q.options)) {
-            // Логируем перед извлечением перевода опций
+            console.log(`[i18n] Вопрос ${index + 1} содержит варианты ответа. Ключ для перевода опций:`, optionsKey);
             console.log('Translating options for key:', optionsKey, '=>', tData.options?.[optionsKey]);
 
             const translatedOptions = tData.options?.[optionsKey];
 
             if (Array.isArray(translatedOptions)) {
+                console.log(`[i18n] Найден переведённый список опций для ${optionsKey}:`, translatedOptions);
                 q.options.forEach((optText, i) => {
                     if (translatedOptions[i]) {
+                        console.log(`[i18n] Опция ${i + 1}: заменена на ${translatedOptions[i]}`);
                         q.options[i] = translatedOptions[i];
                     } else {
                         console.warn(`[i18n] Не найден перевод для опции ${i + 1} вопроса ${optionsKey}`);
@@ -126,7 +133,10 @@ function updateQuestionsData() {
             console.warn(`[i18n] Вопрос ${index + 1} не содержит корректный массив опций`);
         }
     });
+
+    console.log('[i18n] Завершена обработка вопросов и опций:', questions); // Логируем обновленные вопросы и опции
 }
+
 
 
 
