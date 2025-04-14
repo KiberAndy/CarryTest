@@ -155,17 +155,5 @@
     "strangers": "Random players in your team (not friends)",
     "sensitivity": "How strongly you emotionally react to criticism, trolling or failures",
     "hero_selection": "Choosing character/class based on team composition vs personal preference"
-  },
-
-  "status": {
-    "answered": "Answered: {answered}/{total}",
-    "completed": "All questions answered!"
-  },
-
-  "buttons": {
-    "submit": "Get result",
-    "save": "Save results",
-    "share": "Share results"
-	"reclick": "✅ Click again"
   }
 }
