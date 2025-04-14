@@ -81,52 +81,49 @@ function applyTranslations() {
     renderQuiz();
 }
 
-// 🔄 Обновление данных вопросов
+// 🔄 Обновление вопросов и опций по ключам i18n
 function updateQuestionsData() {
     if (!window.questions || !translations[currentLanguage]) {
         console.warn('[i18n] Вопросы или переводы не загружены');
         return;
     }
 
-    if (!Array.isArray(window.questions) || !window.questions.every(q => q.options && Array.isArray(q.options))) {
-        console.error('[i18n] Неверная структура window.questions. Ожидается массив объектов с массивом options');
-        return;
-    }
-
-    const qData = translations[currentLanguage];
-    const qList = qData.questions || {};
-    const optList = qData.options || {};
+    const tData = translations[currentLanguage];
 
     questions.forEach((q, index) => {
-        const qKey = `question${index + 1}`;
+        const qKey = q.question_i18n;
 
-        // ✅ Обновление текста вопроса
-        if (qList[qKey]) {
-            q.question = qList[qKey];
+        // ✅ Перевод текста вопроса
+        if (qKey && tData.questions && tData.questions[qKey]) {
+            q.question = tData.questions[qKey];
         } else {
-            console.warn(`[i18n] Не найден текст вопроса: ${qKey}`);
+            console.warn(`[i18n] Не найден перевод для question_i18n: ${qKey}`);
             q.question = '[❌ Нет перевода вопроса]';
         }
 
-        // ✅ Обновление текста вариантов ответа
-        if (optList[qKey] && Array.isArray(optList[qKey])) {
-            const optsFromTranslation = optList[qKey];
-            q.options.forEach((opt, i) => {
-                if (optsFromTranslation[i]) {
-                    opt.text = optsFromTranslation[i];
-                } else {
-                    console.warn(`[i18n] Не найден перевод опции ${i + 1} в ${qKey}`);
-                    opt.text = `[❌ Нет текста]`;
-                }
-            });
+        // ✅ Перевод текста вариантов ответа
+        if (Array.isArray(q.options)) {
+            const translatedOptions = tData.options?.[qKey];
+
+            if (Array.isArray(translatedOptions)) {
+                q.options.forEach((optText, i) => {
+                    if (translatedOptions[i]) {
+                        q.options[i] = translatedOptions[i];
+                    } else {
+                        console.warn(`[i18n] Не найден перевод для опции ${i + 1} вопроса ${qKey}`);
+                        q.options[i] = '[❌ Нет перевода опции]';
+                    }
+                });
+            } else {
+                console.warn(`[i18n] Не найден список опций для ${qKey}`);
+                q.options = q.options.map(() => '[❌ Нет перевода]');
+            }
         } else {
-            console.warn(`[i18n] Не найден список вариантов для ${qKey}`);
-            q.options.forEach(opt => {
-                opt.text = '[❌ Нет текста]';
-            });
+            console.warn(`[i18n] Вопрос ${index + 1} не содержит корректный массив опций`);
         }
     });
 }
+
 
 // 📋 Функция отрисовки викторины
 function renderQuiz() {
