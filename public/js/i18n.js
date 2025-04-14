@@ -183,10 +183,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lang = detectPreferredLanguage();
     const select = document.getElementById('language-select');
     if (select) select.value = lang;
+
     await setLanguage(lang);
-    // Первый рендер после загрузки переводов
-    renderQuiz();
+
+    // ✨ Показываем страницу только после перевода
+    document.body.classList.remove('preload');
 });
+
 
 // 🎮 Обработчик выбора языка
 const langSelect = document.getElementById('language-select');
