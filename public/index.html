@@ -10,8 +10,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест на совместимость игроков</title>
-	<script src="/js/i18n.js" defer></script>
 	<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+	<script src="/js/i18n.js" defer></script>
     <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
     <style>
 	
@@ -856,7 +856,6 @@ async function shareResults() {
     console.error('Ошибка:', error);
     alert(error.message);
   } finally {
-	shareBtn.textContent = t('buttons.share');
     shareBtn.disabled = false;
     shareBtn.textContent = 'Поделиться результатами';
   }
@@ -1001,17 +1000,7 @@ checkForSharedResults();
         <!-- Add more languages as needed -->
     </select>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const langSelect = document.getElementById('language-select');
-    if (langSelect) {
-        langSelect.value = detectPreferredLanguage();
-        langSelect.addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-        });
-    }
-});
-</script>
+
 
 
 
@@ -1477,8 +1466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // При успешной капче сохраняем токен и разблокируем кнопку
   window.onCaptchaSuccess = function(token) {
     hcaptchaPassedToken = token;
-	const reclickText = translate("buttons.reclick");  // Получаем текст из переводов
-    unblockButton(reclickText); // Подсказка: теперь клик запускает генерацию ссылки
+    unblockButton("✅ Нажми снова"); // Подсказка: теперь клик запускает генерацию ссылки
   };
 
   // Ошибка при выполнении капчи
@@ -1896,7 +1884,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-		document.addEventListener('DOMContentLoaded', function() {
         let answers = JSON.parse(localStorage.getItem('playerCompatibilityAnswers')) || {};
         let scores = {
             temperament: 0,
@@ -1932,9 +1919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Инициализация теста
-        document.addEventListener('DOMContentLoaded', function() {
-			initTest();
-		});
+        initTest();
 
         function initTest() {
             // Создаем вопросы
@@ -1995,37 +1980,24 @@ document.addEventListener('DOMContentLoaded', () => {
             checkAllAnswered();
         }
 
-function checkAllAnswered() {
-    const answeredCount = Object.keys(answers).length;
-    const allAnswered = answeredCount === questions.length;
-    
-    // Обновляем состояние кнопки отправки
-    submitBtn.disabled = !allAnswered;
+        function checkAllAnswered() {
+            const answeredCount = Object.keys(answers).length;
+            const allAnswered = answeredCount === questions.length;
+            
+            submitBtn.disabled = !allAnswered;
+            
+            completionInfo.textContent = `Ответов: ${answeredCount}/${questions.length}`;
+            completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
+            
+            if (allAnswered) {
+                completionInfo.innerHTML = `Все вопросы отвечены! <span style="color:#28a745">✓</span>`;
+            }
+        }
 
-    // Динамическое обновление текста в completionInfo
-    completionInfo.textContent = tSafe('status.answered')
-        .replace('{answered}', answeredCount)
-        .replace('{total}', questions.length);
-    
-    // Стиль для completionInfo
-    completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
-    
-    // Если все вопросы отвечены, выводим сообщение
-    if (allAnswered) {
-        completionInfo.innerHTML = `${t('status.complete')} <span style="color:#28a745">✓</span>`;
-    }
-
-    // Обновляем текст на кнопках с помощью переводов
-    submitBtn.textContent = t('buttons.submit');
-    document.getElementById('save-btn').textContent = t('buttons.save');
-    document.getElementById('share-btn').textContent = t('buttons.share');
-}
-
-submitBtn.addEventListener('click', function() {
-    calculateResults();
-    showResults();
-});
-
+        submitBtn.addEventListener('click', function() {
+            calculateResults();
+            showResults();
+        });
 
         function calculateResults() {
             // Сбрасываем счетчики
