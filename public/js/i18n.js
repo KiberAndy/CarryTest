@@ -49,6 +49,8 @@ async function setLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('preferredLanguage', lang);
     applyTranslations();
+	// Обновляем статичные элементы
+    updateStaticUITranslations();  // <-- вот тут
     // После обновления переводов обновляем уже отрисованный DOM (сохраняя выделение и обработчики)
     updateQuizTranslations();
 }
