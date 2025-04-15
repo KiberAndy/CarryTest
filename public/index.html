@@ -1923,17 +1923,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		await loadTranslations(lang); // Загружаем переводы
 		currentLanguage = lang;
 
-		// Теперь t точно будет возвращать перевод
 		if (typeof t === 'function' && submitBtn && completionInfo) {
 			submitBtn.textContent = t('submit_button');
 			completionInfo.textContent = t('all_answered');
 		} else {
 			console.warn('Перевод не загружен или элементы не найдены');
 		}
+
+		// 💥 Вот тут вызываем initTest — когда ВСЁ ГОТОВО
+		initTest();
 	};
 
-        // Инициализация теста
-        initTest();
 
         function initTest() {
             // Создаем вопросы
