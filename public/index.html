@@ -1938,7 +1938,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// 💥 Вот тут вызываем initTest — когда ВСЁ ГОТОВО
 		initTest();
-	};
+		// 🪄 Показать тест, спрятать лоадер
+		document.getElementById('loader').style.display = 'none';
+		document.getElementById('quiz-container').style.display = 'block';
+		};
 
 
         function initTest() {
