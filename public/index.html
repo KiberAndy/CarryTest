@@ -1230,9 +1230,11 @@ checkForSharedResults();
             <p id="interaction-tips"></p>
         </div>
         
-        <button class="save-button" id="save-btn">Сохранить результаты</button>
+        <button class="save-button" id="save-btn" data-i18n="save_results">Сохранить результаты</button>
+
 <!-- Кнопка и блок для ссылки -->
-<button class="share-button" id="share-btn">Поделиться результатами</button>
+<button class="share-button" id="share-btn" data-i18n="share_results">Поделиться результатами</button>
+
 <!-- Контейнер для капчи (не visible до того, как её активируют) -->
 <div id="hcaptcha"
      class="h-captcha"
@@ -1937,15 +1939,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 	
-	// 🔘 Перевод кнопки "Сохранить результаты"
-	if (document.getElementById('save-btn')) {
-		document.getElementById('save-btn').textContent = t('save_results');
-	}
 
-	// 🔗 Перевод кнопки "Поделиться результатами"
-	if (document.getElementById('share-btn')) {
-		document.getElementById('share-btn').textContent = t('share_results');
-	}
 
 
 	window.onload = async function () {
