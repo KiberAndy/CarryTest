@@ -4,12 +4,13 @@ const translations = {};
 const supportedLanguages = ['ru', 'en'];
 
 // 🔎 Утилита для доступа к переводу по ключу
-function t(keyPath) {
+window.t = window.t || function (keyPath) {
     return keyPath.split('.').reduce((obj, key) => {
         if (obj && obj.hasOwnProperty(key)) return obj[key];
         return undefined;
     }, translations[currentLanguage]) || keyPath;
-}
+};
+
 
 // 🧠 Умный детектор предпочтительного языка
 function detectPreferredLanguage() {
