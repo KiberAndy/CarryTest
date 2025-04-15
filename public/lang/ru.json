@@ -157,6 +157,9 @@
     "hero_selection": "Выбор героя/класса на основе потребностей команды или личных предпочтений"
   },
   
-  "question_label": "Вопрос"
-
+  "question_label": "Вопрос",
+  "submit_button": "Получить результат",
+  "all_answered": "Все вопросы отвечены! <span style='color:#28a745'>✓</span>",
+  "progress": "Отвечено"
+  
 }
