@@ -1930,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const allAnswered = answeredCount === questions.length;
 
 			if (allAnswered) {
-				completionInfo.innerHTML = `${t('all_answered')} <span style="color:#28a745">✓</span>`;
+				completionInfo.textContent = t('all_answered');
 			} else {
 				completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
 			}
@@ -2021,10 +2021,10 @@ document.addEventListener('DOMContentLoaded', () => {
             completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
             completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
             
-			if (allAnswered) {
-				completionInfo.textContent = t('all_answered');
-			}
-		}
+            if (allAnswered) {
+                completionInfo.innerHTML = ${t('all_answered')} <span style="color:#28a745">✓</span>;
+            }
+        }
 
 
         submitBtn.addEventListener('click', function() {
