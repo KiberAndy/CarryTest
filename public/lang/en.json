@@ -160,6 +160,8 @@
   "question_label": "Question",
   "submit_button": "Get Result",
   "all_answered": "All questions answered!",
-  "progress": "Answered"
+  "progress": "Answered",
+  "save_results": "Save Results",
+  "share_results": "Share Results"
 
 }

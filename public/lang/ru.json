@@ -160,6 +160,8 @@
   "question_label": "Вопрос",
   "submit_button": "Получить результат",
   "all_answered": "Все вопросы отвечены!",
-  "progress": "Отвечено"
+  "progress": "Ответы получены",
+  "save_results": "Сохранить результаты",
+  "share_results": "Поделиться результатами"
   
 }
