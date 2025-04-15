@@ -1918,13 +1918,20 @@ document.addEventListener('DOMContentLoaded', () => {
             priority: 0
         };
 
-		window.onload = function () {
-	// Проверяем, существует ли элемент, чтобы избежать ошибки
-    if (submitBtn && completionInfo) {
-        submitBtn.textContent = t('submit_button');
-        completionInfo.textContent = t('all_answered');
-    }
+	window.onload = async function () {
+		const lang = detectPreferredLanguage();
+		await loadTranslations(lang); // Загружаем переводы
+		currentLanguage = lang;
+
+		// Теперь t точно будет возвращать перевод
+		if (typeof t === 'function' && submitBtn && completionInfo) {
+			submitBtn.textContent = t('submit_button');
+			completionInfo.textContent = t('all_answered');
+		} else {
+			console.warn('Перевод не загружен или элементы не найдены');
+		}
 	};
+
         // Инициализация теста
         initTest();
 
