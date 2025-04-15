@@ -157,6 +157,9 @@
     "hero_selection": "Choosing character/class based on team composition vs personal preference"
   },
   
-  "question_label": "Question"
+  "question_label": "Question",
+  "submit_button": "Get Result",
+  "all_answered": "All questions answered! <span style='color:#28a745'>✓</span>",
+  "progress": "Answered"
 
 }
