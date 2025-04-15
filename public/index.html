@@ -990,14 +990,8 @@ checkForSharedResults();
 
 </style>
 
-<div id="loader" style="text-align: center; margin-top: 100px;">
-    <p>Загрузка теста...</p>
-</div>
-<div id="quiz-container" style="display: none;"></div>
-
 </head>
 <body class="preload">
-
 
 <div class="language-switcher">
     <select id="language-select">
@@ -1924,24 +1918,36 @@ document.addEventListener('DOMContentLoaded', () => {
             priority: 0
         };
 
+	function updateStaticUITranslations() {
+		if (typeof t !== 'function') return;
+
+		if (submitBtn) {
+			submitBtn.textContent = t('submit_button');
+		}
+
+		if (completionInfo) {
+			const answeredCount = Object.keys(answers).length;
+			const allAnswered = answeredCount === questions.length;
+
+			if (allAnswered) {
+				completionInfo.innerHTML = `${t('all_answered')} <span style="color:#28a745">✓</span>`;
+			} else {
+				completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
+			}
+		}
+	}
+
+
 	window.onload = async function () {
 		const lang = detectPreferredLanguage();
 		await loadTranslations(lang); // Загружаем переводы
 		currentLanguage = lang;
 
-		if (typeof t === 'function' && submitBtn && completionInfo) {
-			submitBtn.textContent = t('submit_button');
-			completionInfo.textContent = t('all_answered');
-		} else {
-			console.warn('Перевод не загружен или элементы не найдены');
-		}
+		updateStaticUITranslations();
 
 		// 💥 Вот тут вызываем initTest — когда ВСЁ ГОТОВО
 		initTest();
-		// 🪄 Показать тест, спрятать лоадер
-		document.getElementById('loader').style.display = 'none';
-		document.getElementById('quiz-container').style.display = 'block';
-		};
+	};
 
 
         function initTest() {
@@ -2015,10 +2021,11 @@ document.addEventListener('DOMContentLoaded', () => {
             completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
             completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
             
-            if (allAnswered) {
-                completionInfo.innerHTML = `${t('all_answered')} <span style="color:#28a745">✓</span>`;
-            }
-        }
+			if (allAnswered) {
+				completionInfo.textContent = t('all_answered');
+			}
+		}
+
 
         submitBtn.addEventListener('click', function() {
             calculateResults();
