@@ -1,0 +1,165 @@
+{
+  "title": "Player Compatibility Test",
+  "description": "Take the test to determine your gaming style and compatibility with other players",
+
+  "questions": {
+    "question1": "How do you react to losing?",
+    "question2": "You prefer to play:",
+    "question3": "How often do you communicate in voice chat?",
+    "question4": "How do you treat teammates' mistakes?",
+    "question5": "How do you learn in games?",
+    "question6": "What role do you prefer in a team?",
+    "question7": "How long can you play without a break?",
+    "question8": "How do you react to toxic players?",
+    "question9": "How do you feel about strategic gameplay?",
+    "question10": "How do you behave in critical situations?",
+    "question11": "How do you treat newcomers in the team?",
+    "question12": "How do you choose your hero/class?",
+    "question13": "What do you do after several consecutive defeats?",
+    "question14": "How do you play with strangers?",
+    "question15": "How do you react to playing against stronger opponents?",
+    "question16": "How do you feel about cheaters?",
+    "question17": "How do you behave in arguments with the team?",
+    "question18": "How sensitive are you?",
+    "question19": "What's more important to you in the game?",
+    "question20": "How often do you get distracted during the game?"
+  },
+
+  "options": {
+    "question1": [
+      "Calmly analyze mistakes",
+      "Slightly displeased",
+      "Get very upset",
+      "Get angry and blame the team"
+    ],
+    "question2": [
+      "Always with the team",
+      "Mostly with the team",
+      "More individually",
+      "Only solo"
+    ],
+    "question3": [
+      "Very actively",
+      "Moderately",
+      "Rarely",
+      "Don't communicate at all"
+    ],
+    "question4": [
+      "Calmly, everyone makes mistakes",
+      "Might point out errors",
+      "Get angry but stay silent",
+      "Yell and blame"
+    ],
+    "question5": [
+      "Quickly figure out and apply",
+      "Learn gradually",
+      "Need time to adapt",
+      "Don't want to learn"
+    ],
+    "question6": [
+      "Support (helping team)",
+      "Leader (organizing play)",
+      "Attacker (making pushes)",
+      "Lone wolf (playing solo)"
+    ],
+    "question7": [
+      "Very long (5+ hours)",
+      "Long (3-4 hours)",
+      "Not too long (1-2 hours)",
+      "Get tired quickly (less than hour)"
+    ],
+    "question8": [
+      "Ignore them",
+      "Respond calmly",
+      "Start arguing",
+      "Fuel the conflict"
+    ],
+    "question9": [
+      "Love clear plans",
+      "Like it but not always",
+      "Hinders improvisation",
+      "Dislike strategies"
+    ],
+    "question10": [
+      "Calm and collected",
+      "Slightly nervous",
+      "Panic",
+      "Quit the game"
+    ],
+    "question11": [
+      "Help and explain",
+      "Tolerate with remarks",
+      "Ignore",
+      "Get annoyed"
+    ],
+    "question12": [
+      "Choose team needs",
+      "Choose favorite hero",
+      "Pick strongest option",
+      "Always same role"
+    ],
+    "question13": [
+      "Keep playing calmly",
+      "Analyze mistakes",
+      "Get angry but continue",
+      "Quit playing"
+    ],
+    "question14": [
+      "Easily find common ground",
+      "Try to cooperate",
+      "Don't trust",
+      "Find annoying"
+    ],
+    "question15": [
+      "Challenge! It's interesting!",
+      "Try harder",
+      "Feel irritated",
+      "Quickly give up"
+    ],
+    "question16": [
+      "Report and block",
+      "Ignore them",
+      "Try to adapt",
+      "Cheat back"
+    ],
+    "question17": [
+      "Discuss reasonably",
+      "Might flare up but cool down",
+      "Argue often",
+      "Insist and get angry"
+    ],
+    "question18": [
+      "Very calm, hard to provoke",
+      "Mostly calm, sometimes upset",
+      "Quite emotional",
+      "Extremely sensitive"
+    ],
+    "question19": [
+      "Team victory",
+      "Personal success",
+      "Enjoyable pastime",
+      "Ratings and ranks"
+    ],
+    "question20": [
+      "Rarely, fully focused",
+      "Sometimes, doesn't affect play",
+      "Often lose focus",
+      "Constantly distracted"
+    ]
+  },
+
+  "tooltips": {
+    "toxicity": "Players who are rude, insulting, or intentionally disrupting gameplay",
+    "strategy": "When team plans tactics in advance and strictly follows them",
+    "critical": "Difficult, tense moments (e.g., when team is losing or outnumbered)",
+    "strangers": "Random players in your team (not friends)",
+    "sensitivity": "How strongly you emotionally react to criticism, trolling or failures",
+    "hero_selection": "Choosing character/class based on team composition vs personal preference"
+  },
+  
+  "question_label": "Question",
+  "submit_button": "Get Result",
+  "all_answered": "All questions answered! <span style='color:#28a745'>✓</span>",
+  "progress": "Answered"
+
+}
