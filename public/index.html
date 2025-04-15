@@ -1918,6 +1918,7 @@ document.addEventListener('DOMContentLoaded', () => {
             priority: 0
         };
 
+		submitBtn.textContent = lang.submit_button;
         // Инициализация теста
         initTest();
 
@@ -1989,11 +1990,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             submitBtn.disabled = !allAnswered;
             
-            completionInfo.textContent = `Ответов: ${answeredCount}/${questions.length}`;
+            completionInfo.textContent = `${lang.progress}: ${answeredCount}/${questions.length}`;
             completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
             
             if (allAnswered) {
-                completionInfo.innerHTML = `Все вопросы отвечены! <span style="color:#28a745">✓</span>`;
+                completionInfo.innerHTML = `${lang.all_answered} <span style="color:#28a745">✓</span>`;
             }
         }
 
