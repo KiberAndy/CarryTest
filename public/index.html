@@ -1918,22 +1918,18 @@ document.addEventListener('DOMContentLoaded', () => {
             priority: 0
         };
 
-		function t(keyPath) {
-    return keyPath.split('.').reduce((obj, key) => {
-        if (obj && obj.hasOwnProperty(key)) return obj[key];
-        return undefined;
-    }, translations[currentLanguage]) || keyPath;
-}
-		window.onload = function () {
+		
+
+        // Инициализация теста
+        initTest();
+		
+				window.onload = function () {
 	// Проверяем, существует ли элемент, чтобы избежать ошибки
     if (submitBtn && completionInfo) {
         submitBtn.textContent = t('submit_button');
         completionInfo.textContent = t('all_answered');
     }
 	};
-	document.addEventListener('DOMContentLoaded', () => {
-        // Инициализация теста
-        initTest();
 
         function initTest() {
             // Создаем вопросы
