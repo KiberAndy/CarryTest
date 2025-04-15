@@ -1919,17 +1919,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
 		
-
-        // Инициализация теста
-        initTest();
-		
-				window.onload = function () {
+		window.onload = function () {
 	// Проверяем, существует ли элемент, чтобы избежать ошибки
     if (submitBtn && completionInfo) {
         submitBtn.textContent = t('submit_button');
         completionInfo.textContent = t('all_answered');
     }
 	};
+        // Инициализация теста
+        initTest();
 
         function initTest() {
             // Создаем вопросы
