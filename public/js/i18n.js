@@ -82,7 +82,7 @@ function updateQuestionsData() {
     console.log('[i18n] Загружены переводы:', tData);
     questions.forEach((q, index) => {
         const qKey = q.question_i18n;
-        // const optionsKey = q.options_i18n || q.question_i18n;
+        const optionsKey = q.options_i18n || q.question_i18n;
         console.log(`[i18n] Обработка вопроса ${index + 1}: ${qKey}`);
         // Перевод вопроса
         if (qKey && tData.questions && tData.questions[qKey]) {
@@ -93,7 +93,7 @@ function updateQuestionsData() {
             q.question = '[❌ Нет перевода вопроса]';
         }
         // Перевод вариантов ответа
-		 /*
+		 
         if (Array.isArray(q.options)) {
             console.log(`[i18n] Вопрос ${index + 1} содержит варианты ответа. Ключ для опций:`, optionsKey);
             console.log('Translating options for key:', optionsKey, '=>', tData.options?.[optionsKey]);
@@ -116,7 +116,7 @@ function updateQuestionsData() {
         } else {
             console.warn(`[i18n] Вопрос ${index + 1} не содержит корректный массив опций`);
         }
-		 */
+		 
     });
     console.log('[i18n] Завершена обработка вопросов и опций:', questions);
 }
@@ -171,8 +171,8 @@ function updateQuizTranslations() {
     const questionElements = quizContainer.querySelectorAll('.question');
     questionElements.forEach((qEl, index) => {
         const question = questions[index];
-        const h3 = qEl.querySelector('h3');
-        if (h3) h3.innerHTML = question.question;
+		const questionText = qEl.querySelector('.question-text');
+		if (questionText) questionText.textContent = question.question;
         const optionElements = qEl.querySelectorAll('.option');
         optionElements.forEach((optEl, optIndex) => {
             optEl.textContent = question.options[optIndex];
