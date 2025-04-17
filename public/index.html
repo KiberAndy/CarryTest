@@ -1013,6 +1013,13 @@ checkForSharedResults();
 </head>
 <body class="preload">
 
+<div id="loader" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+	<img src="/favicon/Loading.svg" alt="Загрузка..." style="max-width: 1024px; margin-bottom: 20px;">
+	<p style="color: white; font-size: 1.6em;">Загрузка теста...</p>
+</div>
+
+<div id="quiz-container" style="display: none;"></div>
+
     <div class="quiz-header-container">
         <!-- Значок сверху -->
         <div class="icon"></div>
@@ -1044,12 +1051,7 @@ checkForSharedResults();
         </header>
     </div>
 
-<div id="loader" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
-	<img src="/favicon/Loading.svg" alt="Загрузка..." style="max-width: 300px; margin-bottom: 20px;">
-	<p style="color: white; font-size: 1.2em;">Загрузка теста...</p>
-</div>
 
-<div id="quiz-container" style="display: none;"></div>
 
 
 <div class="language-switcher">
