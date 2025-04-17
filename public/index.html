@@ -15,6 +15,26 @@
     <meta name="description" content="Пройди тест, чтобы определить свой игровой стиль и совместимость с другими игроками">
     <style>
 	
+	/* Loader */
+	    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f0f1b;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    #loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-size: 1.2em;
+      color: #aaa;
+    }
+	
+	
 	/* Языки */
 .language-switcher {
     position: fixed;
@@ -993,6 +1013,11 @@ checkForSharedResults();
 </head>
 <body class="preload">
 
+  <div id="loader">
+    <p>Загрузка теста...</p>
+  </div>
+  <div id="quiz-container" style="display: none;"></div>
+
 <div class="language-switcher">
     <select id="language-select">
         <option value="ru">Русский</option>
@@ -1948,6 +1973,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		currentLanguage = lang;
 
 		updateStaticUITranslations();
+		
+		  // 💥 Спрячем лоадер, покажем контент
+	  document.getElementById('loader').style.display = 'none';
+	  document.getElementById('quiz-container').style.display = 'block';
 
 		// 💥 Вот тут вызываем initTest — когда ВСЁ ГОТОВО
 		initTest();
