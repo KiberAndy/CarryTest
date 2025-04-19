@@ -1248,30 +1248,31 @@ checkForSharedResults();
     <h2>Результаты другого игрока</h2>
     <div id="shared-result-content"></div>
     <button onclick="resetTest()" class="reset-button">Пройти тест самому</button>
-</div>
-        <h2>Твой профиль игрока</h2>
-        
-        <div class="compatibility-level" id="compatibility-level"></div>
-        
-        <div class="progress-container">
-            <div class="progress-bar" id="compatibility-bar"></div>
-            <span class="progress-text" id="progress-text">0%</span>
-        </div>
-        
-        <div class="profile-section">
-            <h3>Характеристики:</h3>
-            <div id="traits-container"></div>
-        </div>
-        
-        <div class="profile-section">
-            <h3>Описание профиля:</h3>
-            <p id="profile-description"></p>
-        </div>
-        
-        <div class="profile-section">
-            <h3>Советы по взаимодействию:</h3>
-            <p id="interaction-tips"></p>
-        </div>
+		</div>
+		<h2 data-i18n="result.profile_title">Твой профиль игрока</h2>
+
+		<div class="compatibility-level" id="compatibility-level"></div>
+
+		<div class="progress-container">
+			<div class="progress-bar" id="compatibility-bar"></div>
+			<span class="progress-text" id="progress-text">0%</span>
+		</div>
+
+		<div class="profile-section">
+			<h3 data-i18n="result.traits_title">Характеристики:</h3>
+			<div id="traits-container"></div>
+		</div>
+
+		<div class="profile-section">
+			<h3 data-i18n="result.description_title">Описание профиля:</h3>
+			<p id="profile-description"></p>
+		</div>
+
+		<div class="profile-section">
+			<h3 data-i18n="result.tips_title">Советы по взаимодействию:</h3>
+			<p id="interaction-tips"></p>
+		</div>
+
         
         <button class="save-button" id="save-btn" data-i18n="save_results">Сохранить результаты</button>
 
@@ -2144,27 +2145,28 @@ document.addEventListener('DOMContentLoaded', () => {
             // Устанавливаем текстовое описание совместимости
             let compatibilityText, description, levelColor;
             
-            if (roundedScore >= 90) {
-                compatibilityText = "Лучший друг по играм";
-                description = "Ты идеальный командный игрок, с которым приятно и продуктивно играть. Твои напарники ценят тебя за позитивный настрой, готовность помочь и стремление к победе.";
-                levelColor = "#28a745";
-            } else if (roundedScore >= 75) {
-                compatibilityText = "Идеальный напарник";
-                description = "Ты отличный командный игрок, с которым большинству будет комфортно играть. Твои сильные стороны - уравновешенность и готовность работать в команде.";
-                levelColor = "#5cb85c";
-            } else if (roundedScore >= 60) {
-                compatibilityText = "Хороший вариант";
-                description = "Ты неплохой напарник, хотя есть моменты, над которыми можно поработать. В целом, с тобой приятно играть, но иногда могут возникать небольшие трения.";
-                levelColor = "#ffc107";
-            } else if (roundedScore >= 40) {
-                compatibilityText = "Можно попробовать";
-                description = "Ты неплохо играешь, но твоё поведение в команде иногда может вызывать напряжение. Возможно, стоит поработать над коммуникацией и терпимостью к ошибкам.";
-                levelColor = "#fd7e14";
-            } else {
-                compatibilityText = "Проблемный игрок";
-                description = "К сожалению, твоё поведение в игре может создавать проблемы для команды. Возможно, стоит пересмотреть своё отношение к игре и взаимодействию с напарниками.";
-                levelColor = "#dc3545";
-            }
+		if (roundedScore >= 90) {
+			compatibilityText = i18next.t("result.level.best");
+			description = i18next.t("result.description.best");
+			levelColor = "#28a745";
+		} else if (roundedScore >= 75) {
+			compatibilityText = i18next.t("result.level.perfect");
+			description = i18next.t("result.description.perfect");
+			levelColor = "#5cb85c";
+		} else if (roundedScore >= 60) {
+			compatibilityText = i18next.t("result.level.good");
+			description = i18next.t("result.description.good");
+			levelColor = "#ffc107";
+		} else if (roundedScore >= 40) {
+			compatibilityText = i18next.t("result.level.average");
+			description = i18next.t("result.description.average");
+			levelColor = "#fd7e14";
+		} else {
+			compatibilityText = i18next.t("result.level.problem");
+			description = i18next.t("result.description.problem");
+			levelColor = "#dc3545";
+		}
+
             
             compatibilityLevel.textContent = compatibilityText;
             compatibilityLevel.style.color = levelColor;

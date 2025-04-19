@@ -168,6 +168,13 @@
   "icons_by": "Icons by"
 },
 
+"result": {
+  "profile_title": "Your Player Profile",
+  "traits_title": "Traits:",
+  "description_title": "Profile Description:",
+  "tips_title": "Interaction Tips:"
+},
+
 "header": {
   "title": {
     "part1": "Compatibility Test",
@@ -176,6 +183,23 @@
   "subtitle": {
     "part1": "Answer the questions to find your playstyle",
     "part2": "and your compatibility with other players."
+    }
+  },
+  
+  "result": {
+  "level": {
+    "best": "Best Gaming Buddy",
+    "perfect": "Ideal Teammate",
+    "good": "Solid Choice",
+    "average": "Could Work",
+    "problem": "Difficult Player"
+  },
+  "description": {
+    "best": "You're a perfect team player — fun, productive, and reliable. Your teammates appreciate your positivity, helpfulness, and drive to win.",
+    "perfect": "You're a great team player — calm, cooperative, and easy to play with. Most people would enjoy gaming with you.",
+    "good": "You're a decent teammate, though there's room for improvement. Playing with you is generally fine, but minor conflicts can happen.",
+    "average": "You play well, but your teamwork may cause tension at times. Improving communication and tolerance could help.",
+    "problem": "Unfortunately, your in-game behavior may cause issues. Consider rethinking your attitude and team interactions."
     }
   }
 }
