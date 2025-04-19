@@ -2233,13 +2233,7 @@ function showTraits() {
         priority: i18next.t("traits.priority")
     };
 
-    for (const [trait, name] of Object.entries(traitNames)) {
-        const div = document.createElement('div');
-        div.className = 'trait-item';
-        div.textContent = `${name}: ${scores[trait] ?? "–"}%`;
-        traitsContainer.appendChild(div);
-    }
-}
+
 
             
             // Показываем только основные характеристики
