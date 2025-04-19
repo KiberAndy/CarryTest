@@ -2257,7 +2257,7 @@ function showTraits() {
         
         const nameSpan = document.createElement('div');
         nameSpan.className = 'trait-name';
-        nameSpan.textContent = traitNames[trait];
+        nameSpan.textContent = t(`traits.${trait}`);
         
         const barDiv = document.createElement('div');
         barDiv.className = 'trait-bar';
@@ -2323,7 +2323,7 @@ function showTraits() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои результаты теста на совместимость игроков</title>
+    <title>${t("result.title2")}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -2433,7 +2433,7 @@ function showTraits() {
     </style>
 </head>
 <body>
-    <h1>Мои результаты теста на совместимость игроков</h1>
+    <h1>${t("result.title2")}</h1>
     <div class="date">${new Date().toLocaleString()}</div>
     
     <div class="profile-section">
@@ -2446,19 +2446,19 @@ function showTraits() {
     </div>
     
     <div class="profile-section">
-        <h3>Характеристики:</h3>
+        <h3>${t("result.traits_title")}</h3>
         ${traitsContainer.innerHTML}
     </div>
     
-    <div class="profile-section">
-        <h3>Описание профиля:</h3>
-        <p>${document.getElementById('profile-description').textContent}</p>
-    </div>
+	<div class="profile-section">
+		<h3>${t("result.description_title")}</h3>
+		<p id="profile-description"></p>
+	</div>
     
-    <div class="profile-section">
-        <h3>Советы по взаимодействию:</h3>
-        <p>${document.getElementById('interaction-tips').innerHTML}</p>
-    </div>
+	<div class="profile-section">
+		<h3>${t("result.tips_title")}</h3>
+		<p id="interaction-tips"></p>
+	</div>
     
     ${answersHTML}
 </body>
