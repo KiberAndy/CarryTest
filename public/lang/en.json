@@ -195,8 +195,16 @@
       "average": "Worth a Try",
       "problem": "Difficult Teammate"
     },
+
+    "description": {
+      "best": "You are the perfect teammate — positive, helpful, and fun to play with. Everyone wants you in their squad.",
+      "perfect": "You're a solid team player who communicates well and supports the group. Most will enjoy playing with you.",
+      "good": "You're a decent teammate overall, though there's room for improvement. Some friction might occasionally happen.",
+      "average": "Your team behavior might create tension at times. Consider working on communication and patience.",
+      "problem": "Sadly, your current in-game behavior might be disruptive. Rethinking your attitude toward teamwork could help."
+    },
 	
-		  "tips": {
+	  "tips": {
     "temperament": "Try to keep your emotions in check during gameplay. Taking deep breaths before reacting can help.",
     "tolerance": "Remember that everyone was a beginner once. Try offering constructive advice instead of criticism.",
     "communication": {
@@ -208,16 +216,6 @@
     "none": "You're already a great team player! Keep it up and be a role model for others."
 	}
   },
-
-    "description": {
-      "best": "You are the perfect teammate — positive, helpful, and fun to play with. Everyone wants you in their squad.",
-      "perfect": "You're a solid team player who communicates well and supports the group. Most will enjoy playing with you.",
-      "good": "You're a decent teammate overall, though there's room for improvement. Some friction might occasionally happen.",
-      "average": "Your team behavior might create tension at times. Consider working on communication and patience.",
-      "problem": "Sadly, your current in-game behavior might be disruptive. Rethinking your attitude toward teamwork could help."
-    },
-	
-
   
   "traits": {
     "temperament": "Temperament",
