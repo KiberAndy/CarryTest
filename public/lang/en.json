@@ -162,6 +162,20 @@
   "all_answered": "All questions answered!",
   "progress": "Answered",
   "save_results": "Save Results",
-  "share_results": "Share Results"
+  "share_results": "Share Results",
 
+  "credits": {
+  "icons_by": "Icons by"
+},
+
+"header": {
+  "title": {
+    "part1": "Compatibility Test",
+    "part2": "for Players"
+  },
+  "subtitle": {
+    "part1": "Answer the questions to find your playstyle",
+    "part2": "and your compatibility with other players."
+    }
+  }
 }
