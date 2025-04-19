@@ -2146,23 +2146,23 @@ document.addEventListener('DOMContentLoaded', () => {
             let compatibilityText, description, levelColor;
             
 		if (roundedScore >= 90) {
-			compatibilityText = i18next.t("result.level.best");
+			compatibilityText = t("result.level.best");
 			description = i18next.t("result.description.best");
 			levelColor = "#28a745";
 		} else if (roundedScore >= 75) {
-			compatibilityText = i18next.t("result.level.perfect");
+			compatibilityText = t("result.level.perfect");
 			description = i18next.t("result.description.perfect");
 			levelColor = "#5cb85c";
 		} else if (roundedScore >= 60) {
-			compatibilityText = i18next.t("result.level.good");
+			compatibilityText = t("result.level.good");
 			description = i18next.t("result.description.good");
 			levelColor = "#ffc107";
 		} else if (roundedScore >= 40) {
-			compatibilityText = i18next.t("result.level.average");
-			description = i18next.t("result.description.average");
+			compatibilityText = t("result.level.average");
+			description = t("result.description.average");
 			levelColor = "#fd7e14";
 		} else {
-			compatibilityText = i18next.t("result.level.problem");
+			compatibilityText = t("result.level.problem");
 			description = i18next.t("result.description.problem");
 			levelColor = "#dc3545";
 		}
@@ -2216,66 +2216,59 @@ function generateInteractionTips() {
 function showTraits() {
     traitsContainer.innerHTML = '';
 
+    // Определяем traitNames здесь
     const traitNames = {
-        temperament: i18next.t("traits.temperament"),
-        tolerance: i18next.t("traits.tolerance"),
-        communication: i18next.t("traits.communication"),
-        teamSpirit: i18next.t("traits.teamSpirit"),
-        learning: i18next.t("traits.learning"),
-        humor: i18next.t("traits.humor"),
-        teamRole: i18next.t("traits.teamRole"),
-        stamina: i18next.t("traits.stamina"),
-        competitiveness: i18next.t("traits.competitiveness"),
-        strategy: i18next.t("traits.strategy"),
-        ethics: i18next.t("traits.ethics"),
-        focus: i18next.t("traits.focus"),
-        flexibility: i18next.t("traits.flexibility"),
-        priority: i18next.t("traits.priority")
+        temperament: t("traits.temperament"),
+        tolerance: t("traits.tolerance"),
+        communication: t("traits.communication"),
+        teamSpirit: t("traits.teamSpirit"),
+        learning: t("traits.learning"),
+        humor: t("traits.humor"),
+        teamRole: t("traits.teamRole"),
+        stamina: t("traits.stamina"),
+        competitiveness: t("traits.competitiveness"),
+        strategy: t("traits.strategy"),
+        ethics: t("traits.ethics"),
+        focus: t("traits.focus"),
+        flexibility: t("traits.flexibility"),
+        priority: t("traits.priority")
     };
 
-    for (const [trait, name] of Object.entries(traitNames)) {
-        const div = document.createElement('div');
-        div.className = 'trait-item';
-        div.textContent = `${name}: ${scores[trait] ?? "–"}%`;
-        traitsContainer.appendChild(div);
-    }
+    // Показываем только основные характеристики
+    const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];
+    
+    mainTraits.forEach(trait => {
+        const traitDiv = document.createElement('div');
+        traitDiv.className = 'trait';
+        
+        const nameSpan = document.createElement('div');
+        nameSpan.className = 'trait-name';
+        nameSpan.textContent = traitNames[trait];
+        
+        const barDiv = document.createElement('div');
+        barDiv.className = 'trait-bar';
+        
+        const fillDiv = document.createElement('div');
+        fillDiv.className = 'trait-fill';
+        fillDiv.style.width = `${scores[trait]}%`;
+        
+        const percentSpan = document.createElement('span');
+        percentSpan.className = 'trait-percent';
+        percentSpan.textContent = `${scores[trait]}%`;
+        
+        barDiv.appendChild(fillDiv);
+        barDiv.appendChild(percentSpan);
+        traitDiv.appendChild(nameSpan);
+        traitDiv.appendChild(barDiv);
+        
+        traitsContainer.appendChild(traitDiv);
+        
+        // Анимируем заполнение
+        setTimeout(() => {
+            fillDiv.style.width = `${scores[trait]}%`;
+        }, 100);
+    });
 }
-
-            
-            // Показываем только основные характеристики
-            const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];
-            
-            mainTraits.forEach(trait => {
-                const traitDiv = document.createElement('div');
-                traitDiv.className = 'trait';
-                
-                const nameSpan = document.createElement('div');
-                nameSpan.className = 'trait-name';
-                nameSpan.textContent = traitNames[trait];
-                
-                const barDiv = document.createElement('div');
-                barDiv.className = 'trait-bar';
-                
-                const fillDiv = document.createElement('div');
-                fillDiv.className = 'trait-fill';
-                fillDiv.style.width = `${scores[trait]}%`;
-                
-                const percentSpan = document.createElement('span');
-                percentSpan.className = 'trait-percent';
-                percentSpan.textContent = `${scores[trait]}%`;
-                
-                barDiv.appendChild(fillDiv);
-                barDiv.appendChild(percentSpan);
-                traitDiv.appendChild(nameSpan);
-                traitDiv.appendChild(barDiv);
-                
-                traitsContainer.appendChild(traitDiv);
-                
-                // Анимируем заполнение
-                setTimeout(() => {
-                    fillDiv.style.width = `${scores[trait]}%`;
-                }, 100);
-            });
         
 
         function resetTest() {
