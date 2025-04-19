@@ -2179,59 +2179,68 @@ document.addEventListener('DOMContentLoaded', () => {
             showTraits();
         }
 
-        function generateInteractionTips() {
-            let tips = [];
-            
-            if (scores.temperament < 50) {
-                tips.push("Старайся контролировать эмоции во время игры. Глубокие вдохи перед реакцией могут помочь.");
-            }
-            
-            if (scores.tolerance < 50) {
-                tips.push("Помни, что все когда-то были новичками. Попробуй давать конструктивные советы вместо критики.");
-            }
-            
-            if (scores.communication < 50) {
-                if (scores.communication < 30) {
-                    tips.push("Попробуй больше общаться с командой, даже простые указания могут значительно улучшить координацию.");
-                } else {
-                    tips.push("Обращай внимание на тон твоих сообщений, чтобы они не звучали как критика.");
-                }
-            }
-            
-            if (scores.teamSpirit < 50) {
-                tips.push("Попробуй иногда жертвовать личными достижениями ради командной победы - это может принести больше удовольствия.");
-            }
-            
-            if (scores.humor < 50) {
-                tips.push("Попробуй относиться к неудачам с юмором - это снизит напряжение и сделает игру приятнее.");
-            }
-            
-            if (tips.length === 0) {
-                tips.push("Ты уже отличный командный игрок! Продолжай в том же духе и становись примером для других.");
-            }
-            
-            interactionTips.innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
-        }
+function generateInteractionTips() {
+    let tips = [];
 
-        function showTraits() {
-            traitsContainer.innerHTML = '';
-            
-            const traitNames = {
-                temperament: "Темперамент",
-                tolerance: "Толерантность",
-                communication: "Коммуникация",
-                teamSpirit: "Командный дух",
-                learning: "Обучение",
-                humor: "Чувство юмора",
-                teamRole: "Роль в команде",
-                stamina: "Выносливость",
-                competitiveness: "Конкурентоспособность",
-                strategy: "Стратегия",
-                ethics: "Этика",
-                focus: "Концентрация",
-                flexibility: "Гибкость",
-                priority: "Приоритеты"
-            };
+    if (scores.temperament < 50) {
+        tips.push(i18next.t("result.tips.temperament"));
+    }
+
+    if (scores.tolerance < 50) {
+        tips.push(i18next.t("result.tips.tolerance"));
+    }
+
+    if (scores.communication < 50) {
+        if (scores.communication < 30) {
+            tips.push(i18next.t("result.tips.communication.low"));
+        } else {
+            tips.push(i18next.t("result.tips.communication.medium"));
+        }
+    }
+
+    if (scores.teamSpirit < 50) {
+        tips.push(i18next.t("result.tips.teamSpirit"));
+    }
+
+    if (scores.humor < 50) {
+        tips.push(i18next.t("result.tips.humor"));
+    }
+
+    if (tips.length === 0) {
+        tips.push(i18next.t("result.tips.none"));
+    }
+
+    interactionTips.innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
+}
+
+function showTraits() {
+    traitsContainer.innerHTML = '';
+
+    const traitNames = {
+        temperament: i18next.t("traits.temperament"),
+        tolerance: i18next.t("traits.tolerance"),
+        communication: i18next.t("traits.communication"),
+        teamSpirit: i18next.t("traits.teamSpirit"),
+        learning: i18next.t("traits.learning"),
+        humor: i18next.t("traits.humor"),
+        teamRole: i18next.t("traits.teamRole"),
+        stamina: i18next.t("traits.stamina"),
+        competitiveness: i18next.t("traits.competitiveness"),
+        strategy: i18next.t("traits.strategy"),
+        ethics: i18next.t("traits.ethics"),
+        focus: i18next.t("traits.focus"),
+        flexibility: i18next.t("traits.flexibility"),
+        priority: i18next.t("traits.priority")
+    };
+
+    for (const [trait, name] of Object.entries(traitNames)) {
+        const div = document.createElement('div');
+        div.className = 'trait-item';
+        div.textContent = `${name}: ${scores[trait] ?? "–"}%`;
+        traitsContainer.appendChild(div);
+    }
+}
+
             
             // Показываем только основные характеристики
             const mainTraits = ['temperament', 'tolerance', 'communication', 'teamSpirit', 'humor', 'focus'];

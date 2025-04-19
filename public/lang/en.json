@@ -207,5 +207,35 @@
     "average": "Your team behavior might create tension at times. Consider working on communication and patience.",
     "problem": "Sadly, your current in-game behavior might be disruptive. Rethinking your attitude toward teamwork could help."
     }
+  },
+  
+  "traits": {
+  "temperament": "Temperament",
+  "tolerance": "Tolerance",
+  "communication": "Communication",
+  "teamSpirit": "Team Spirit",
+  "learning": "Learning",
+  "humor": "Sense of Humor",
+  "teamRole": "Team Role",
+  "stamina": "Stamina",
+  "competitiveness": "Competitiveness",
+  "strategy": "Strategy",
+  "ethics": "Ethics",
+  "focus": "Focus",
+  "flexibility": "Flexibility",
+  "priority": "Priorities"
+},
+"result": {
+  "tips": {
+    "temperament": "Try to keep your emotions in check during gameplay. Taking deep breaths before reacting can help.",
+    "tolerance": "Remember that everyone was a beginner once. Try offering constructive advice instead of criticism.",
+    "communication": {
+      "low": "Try to communicate more with your team—even simple directions can greatly improve coordination.",
+      "medium": "Pay attention to the tone of your messages to ensure they don't come off as criticism."
+    },
+    "teamSpirit": "Try sacrificing personal achievements for the team win sometimes—it can be more rewarding.",
+    "humor": "Try to laugh off failures—it reduces tension and makes the game more enjoyable.",
+    "none": "You're already a great team player! Keep it up and be a role model for others."
+    }
   }
 }
