@@ -1964,24 +1964,38 @@ document.addEventListener('DOMContentLoaded', () => {
             priority: 0
         };
 
-	function updateStaticUITranslations() {
-		if (typeof t !== 'function') return;
-
-		if (submitBtn) {
-			submitBtn.textContent = t('submit_button');
-		}
-
-		if (completionInfo) {
-			const answeredCount = Object.keys(answers).length;
-			const allAnswered = answeredCount === questions.length;
-
-			if (allAnswered) {
-				completionInfo.textContent = t('all_answered');
-			} else {
-				completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
-			}
-		}
-	}
+function updateStaticUITranslations() {
+    // Обновляем кнопки
+    if (submitBtn) submitBtn.textContent = t('ui.submit_button');
+    if (saveBtn) saveBtn.textContent = t('ui.save_results');
+    if (shareBtn) shareBtn.textContent = t('ui.share_results');
+    
+    // Обновляем текст о прогрессе
+    if (completionInfo) {
+        const answeredCount = Object.keys(answers).length;
+        const allAnswered = answeredCount === questions.length;
+        
+        if (allAnswered) {
+            completionInfo.textContent = t('ui.all_answered');
+        } else {
+            completionInfo.textContent = `${t('ui.progress')}: ${answeredCount}/${questions.length}`;
+        }
+    }
+    
+    // Обновляем заголовки результатов
+    if (resultSection) {
+        const elementsToTranslate = {
+            'result.profile_title': document.querySelector('#result h2'),
+            'result.traits_title': document.querySelector('.profile-section h3'),
+            'result.description_title': document.querySelectorAll('.profile-section h3')[1],
+            'result.tips_title': document.querySelectorAll('.profile-section h3')[2]
+        };
+        
+        for (const [key, element] of Object.entries(elementsToTranslate)) {
+            if (element) element.textContent = t(key);
+        }
+    }
+}
 	
 
 
@@ -2142,20 +2156,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 20);
             
-            // Устанавливаем текстовое описание совместимости
-            let compatibilityText, description, levelColor;
-            
+		// Устанавливаем текстовое описание совместимости
+		let compatibilityText, description, levelColor;
+
 		if (roundedScore >= 90) {
 			compatibilityText = t("result.level.best");
-			description = i18next.t("result.description.best");
+			description = t("result.description.best");
 			levelColor = "#28a745";
 		} else if (roundedScore >= 75) {
 			compatibilityText = t("result.level.perfect");
-			description = i18next.t("result.description.perfect");
+			description = t("result.description.perfect");
 			levelColor = "#5cb85c";
 		} else if (roundedScore >= 60) {
 			compatibilityText = t("result.level.good");
-			description = i18next.t("result.description.good");
+			description = t("result.description.good");
 			levelColor = "#ffc107";
 		} else if (roundedScore >= 40) {
 			compatibilityText = t("result.level.average");
@@ -2163,7 +2177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			levelColor = "#fd7e14";
 		} else {
 			compatibilityText = t("result.level.problem");
-			description = i18next.t("result.description.problem");
+			description = t("result.description.problem");
 			levelColor = "#dc3545";
 		}
 
