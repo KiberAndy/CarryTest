@@ -186,20 +186,26 @@
     }
   },
   
-  "result": {
+"result": {
+  "profile_title": "Your Player Profile",
+  "traits_title": "Traits:",
+  "description_title": "Profile Description:",
+  "tips_title": "Interaction Tips:",
+
   "level": {
-    "best": "Best Gaming Buddy",
-    "perfect": "Ideal Teammate",
-    "good": "Solid Choice",
-    "average": "Could Work",
-    "problem": "Difficult Player"
+    "best": "Gaming Soulmate",
+    "perfect": "Perfect Teammate",
+    "good": "Good Match",
+    "average": "Worth a Try",
+    "problem": "Difficult Teammate"
   },
+
   "description": {
-    "best": "You're a perfect team player — fun, productive, and reliable. Your teammates appreciate your positivity, helpfulness, and drive to win.",
-    "perfect": "You're a great team player — calm, cooperative, and easy to play with. Most people would enjoy gaming with you.",
-    "good": "You're a decent teammate, though there's room for improvement. Playing with you is generally fine, but minor conflicts can happen.",
-    "average": "You play well, but your teamwork may cause tension at times. Improving communication and tolerance could help.",
-    "problem": "Unfortunately, your in-game behavior may cause issues. Consider rethinking your attitude and team interactions."
+    "best": "You are the perfect teammate — positive, helpful, and fun to play with. Everyone wants you in their squad.",
+    "perfect": "You’re a solid team player who communicates well and supports the group. Most will enjoy playing with you.",
+    "good": "You’re a decent teammate overall, though there’s room for improvement. Some friction might occasionally happen.",
+    "average": "Your team behavior might create tension at times. Consider working on communication and patience.",
+    "problem": "Sadly, your current in-game behavior might be disruptive. Rethinking your attitude toward teamwork could help."
     }
   }
 }
