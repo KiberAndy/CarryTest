@@ -2078,19 +2078,19 @@ function updateStaticUITranslations() {
             checkAllAnswered();
         }
 
-        function checkAllAnswered() {
-            const answeredCount = Object.keys(answers).length;
-            const allAnswered = answeredCount === questions.length;
-            
-            submitBtn.disabled = !allAnswered;
-            
-            completionInfo.textContent = `${t('progress')}: ${answeredCount}/${questions.length}`;
-            completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
-            
-            if (allAnswered) {
-                completionInfo.textContent = t('all_answered');
-            }
-        }
+		function checkAllAnswered() {
+			const answeredCount = Object.keys(answers).length;
+			const allAnswered = answeredCount === questions.length;
+			
+			submitBtn.disabled = !allAnswered;
+			
+			completionInfo.textContent = `${t('ui.progress')}: ${answeredCount}/${questions.length}`;
+			completionInfo.style.color = allAnswered ? '#28a745' : '#ffc107';
+			
+			if (allAnswered) {
+				completionInfo.textContent = t('ui.all_answered');
+			}
+		}
 
 
         submitBtn.addEventListener('click', function() {
