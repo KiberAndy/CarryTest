@@ -2197,31 +2197,31 @@ function generateInteractionTips() {
     let tips = [];
 
     if (scores.temperament < 50) {
-        tips.push(i18next.t("result.tips.temperament"));
+        tips.push(t("result.tips.temperament"));
     }
 
     if (scores.tolerance < 50) {
-        tips.push(i18next.t("result.tips.tolerance"));
+        tips.push(t("result.tips.tolerance"));
     }
 
     if (scores.communication < 50) {
         if (scores.communication < 30) {
-            tips.push(i18next.t("result.tips.communication.low"));
+            tips.push(t("result.tips.communication.low"));
         } else {
-            tips.push(i18next.t("result.tips.communication.medium"));
+            tips.push(t("result.tips.communication.medium"));
         }
     }
 
     if (scores.teamSpirit < 50) {
-        tips.push(i18next.t("result.tips.teamSpirit"));
+        tips.push(t("result.tips.teamSpirit"));
     }
 
     if (scores.humor < 50) {
-        tips.push(i18next.t("result.tips.humor"));
+        tips.push(t("result.tips.humor"));
     }
 
     if (tips.length === 0) {
-        tips.push(i18next.t("result.tips.none"));
+        tips.push(t("result.tips.none"));
     }
 
     interactionTips.innerHTML = tips.map(tip => `• ${tip}`).join('<br>');
