@@ -2233,7 +2233,13 @@ function showTraits() {
         priority: i18next.t("traits.priority")
     };
 
-
+    for (const [trait, name] of Object.entries(traitNames)) {
+        const div = document.createElement('div');
+        div.className = 'trait-item';
+        div.textContent = `${name}: ${scores[trait] ?? "–"}%`;
+        traitsContainer.appendChild(div);
+    }
+}
 
             
             // Показываем только основные характеристики
@@ -2270,7 +2276,7 @@ function showTraits() {
                     fillDiv.style.width = `${scores[trait]}%`;
                 }, 100);
             });
-        }
+        
 
         function resetTest() {
             if (confirm("Ты уверен, что хочешь сбросить все ответы и начать заново?")) {
